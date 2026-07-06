@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import type { Lead } from '../../../lib/supabase/database.types';
 import { X, Calendar, User, Mail, Phone, Bookmark, MessageSquare } from 'lucide-react';
+import { useNotification } from '../../../core/context/NotificationContext';
 
 interface LeadDetailDrawerProps {
   isOpen: boolean;
@@ -13,6 +14,7 @@ export function LeadDetailDrawer({ isOpen, onClose, lead, onSaveNotes }: LeadDet
   const [notes, setNotes] = useState('');
   const [status, setStatus] = useState<Lead['status']>('new');
   const [isSaving, setIsSaving] = useState(false);
+  const { showError } = useNotification();
 
   useEffect(() => {
     if (lead) {
@@ -30,7 +32,7 @@ export function LeadDetailDrawer({ isOpen, onClose, lead, onSaveNotes }: LeadDet
       await onSaveNotes(lead.id, notes.trim(), status);
       onClose();
     } catch (err) {
-      alert('Failed to update lead details');
+      showError('Failed to update lead details');
     } finally {
       setIsSaving(false);
     }

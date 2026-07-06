@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useAdminUser } from '../hooks/useAdminUser';
 import { usePermissions } from '../hooks/usePermissions';
-import { fetchExpenses, createExpense, updateExpense, deleteExpense } from '../api/expenses';
+import { fetchExpensesPaginated, createExpense, updateExpense, deleteExpense } from '../api/expenses';
 import type { Expense } from '../../../lib/supabase/database.types';
 import { DataTable } from '../components/DataTable';
 import type { Column } from '../components/DataTable';
@@ -9,13 +9,23 @@ import { Plus, Edit2, Trash2, Receipt, Calendar, Tag, ArrowUpRight } from 'lucid
 import { PermissionGate } from '../components/PermissionGate';
 import { ExpenseFormModal } from '../components/ExpenseFormModal';
 import { StatsCard } from '../components/StatsCard';
-import { TENANT_ID } from '../../../lib/supabase/supabaseClient';
+import { TENANT_ID, supabase } from '../../../lib/supabase/supabaseClient';
+import { useNotification } from '../../../core/context/NotificationContext';
 
 export function ExpensesPage() {
   const { adminUser, tenant } = useAdminUser();
   const { canEdit, canDelete } = usePermissions('expenses');
+  const { showError, showConfirm } = useNotification();
   const [expenses, setExpenses] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+
+  // Pagination & Server States
+  const [page, setPage] = useState(1);
+  const [pageSize] = useState(10);
+  const [totalCount, setTotalCount] = useState(0);
+  const [search, setSearch] = useState('');
+  const [sortBy, setSortBy] = useState('date');
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
 
   // Summary Metrics
   const [totalMonth, setTotalMonth] = useState(0);
@@ -29,18 +39,40 @@ export function ExpensesPage() {
   const tenantId = adminUser?.tenant_id ?? TENANT_ID;
   const currency = tenant?.currency_symbol ?? '₱';
 
+  // Reset page when search changes
+  useEffect(() => {
+    setPage(1);
+  }, [search]);
+
   useEffect(() => {
     if (tenantId) {
       loadExpenses();
     }
-  }, [tenantId]);
+  }, [tenantId, page, search, sortBy, sortDir]);
 
   async function loadExpenses() {
     setIsLoading(true);
     try {
-      const data = await fetchExpenses(tenantId);
-      setExpenses(data);
-      calculateSummary(data);
+      const res = await fetchExpensesPaginated({
+        tenantId,
+        page,
+        pageSize,
+        search,
+        sortBy,
+        sortDir
+      });
+      setExpenses(res.data);
+      setTotalCount(res.totalCount);
+
+      // Fetch lightweight columns to calculate stats
+      const { data: statsData } = await supabase
+        .from('expenses')
+        .select('amount, date')
+        .eq('tenant_id', tenantId);
+
+      if (statsData) {
+        calculateSummary(statsData);
+      }
     } catch (err) {
       console.error('Error loading expenses:', err);
     } finally {
@@ -95,12 +127,13 @@ export function ExpensesPage() {
   }
 
   async function handleDeleteExpense(id: string) {
-    if (window.confirm('Are you sure you want to delete this expense record?')) {
+    const confirmed = await showConfirm('Are you sure you want to delete this expense record?');
+    if (confirmed) {
       try {
         await deleteExpense(id);
         await loadExpenses();
       } catch (err) {
-        alert('Failed to delete expense: ' + (err as any).message);
+        showError('Failed to delete expense: ' + (err as any).message);
       }
     }
   }
@@ -262,6 +295,15 @@ export function ExpensesPage() {
         data={expenses}
         isLoading={isLoading}
         searchPlaceholder="Search expense records..."
+        serverSide={true}
+        totalCount={totalCount}
+        currentPage={page}
+        onPageChange={setPage}
+        onSearchChange={setSearch}
+        onSortChange={(key, dir) => {
+          setSortBy(key);
+          setSortDir(dir);
+        }}
       />
 
       {/* Modals */}

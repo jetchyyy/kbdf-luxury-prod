@@ -9,10 +9,12 @@ import { Plus, Edit2, Trash2 } from 'lucide-react';
 import { PermissionGate } from '../components/PermissionGate';
 import { RoleFormModal } from '../components/RoleFormModal';
 import { TENANT_ID } from '../../../lib/supabase/supabaseClient';
+import { useNotification } from '../../../core/context/NotificationContext';
 
 export function RolesPage() {
   const { adminUser } = useAdminUser();
   const { canEdit, canDelete } = usePermissions('roles');
+  const { showError, showConfirm } = useNotification();
   const [roles, setRoles] = useState<Role[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -50,12 +52,13 @@ export function RolesPage() {
   }
 
   async function handleDeleteRole(id: string) {
-    if (window.confirm('Are you sure you want to delete this role? All staff users with this role will be updated to no role.')) {
+    const confirmed = await showConfirm('Are you sure you want to delete this role? All staff users with this role will be updated to no role.');
+    if (confirmed) {
       try {
         await deleteRole(id);
         await loadRoles();
       } catch (err) {
-        alert('Failed to delete role: ' + (err as any).message);
+        showError('Failed to delete role: ' + (err as any).message);
       }
     }
   }

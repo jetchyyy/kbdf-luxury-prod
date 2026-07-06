@@ -7,10 +7,12 @@ import { Plus, Edit2, Trash2, QrCode, CreditCard, Banknote, HelpCircle, Eye, X }
 import { PermissionGate } from '../components/PermissionGate';
 import { PaymentMethodFormModal } from '../components/PaymentMethodFormModal';
 import { TENANT_ID } from '../../../lib/supabase/supabaseClient';
+import { useNotification } from '../../../core/context/NotificationContext';
 
 export function PaymentMethodsPage() {
   const { adminUser } = useAdminUser();
   const { canEdit, canDelete } = usePermissions('payment_methods');
+  const { showError, showConfirm } = useNotification();
   const [methods, setMethods] = useState<PaymentMethod[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -52,12 +54,13 @@ export function PaymentMethodsPage() {
   }
 
   async function handleDeleteMethod(id: string) {
-    if (window.confirm('Are you sure you want to delete this payment method?')) {
+    const confirmed = await showConfirm('Are you sure you want to delete this payment method?');
+    if (confirmed) {
       try {
         await deletePaymentMethod(id);
         await loadMethods();
       } catch (err) {
-        alert('Failed to delete payment method: ' + (err as any).message);
+        showError('Failed to delete payment method: ' + (err as any).message);
       }
     }
   }
@@ -67,7 +70,7 @@ export function PaymentMethodsPage() {
       await togglePaymentMethod(id, !currentVal);
       await loadMethods();
     } catch (err) {
-      alert('Failed to toggle status: ' + (err as any).message);
+      showError('Failed to toggle status: ' + (err as any).message);
     }
   }
 

@@ -4,7 +4,9 @@ import { useTenant } from '../../core/context/TenantContext';
 import { supabase, TENANT_ID } from '../../lib/supabase/supabaseClient';
 import { LOCATION_PRESETS } from '../cart/locationData';
 import { ImageUploadInput } from '../admin/components/ImageUploadInput';
-import { Check, Clipboard, CreditCard, ShoppingBag, MapPin, Truck, ChevronRight, Download, Loader2 } from 'lucide-react';
+import { useUserAuth } from '../../core/context/UserAuthContext';
+import { useNotification } from '../../core/context/NotificationContext';
+import { Check, X, Clipboard, CreditCard, ShoppingBag, MapPin, Truck, ChevronRight, Download, Loader2, User, LogIn } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 interface PaymentMethod {
@@ -20,6 +22,20 @@ interface PaymentMethod {
 export function CheckoutPage() {
   const { items, cartTotal, clearCart } = useCart();
   const { tenant } = useTenant();
+  const { user, signIn, signUp } = useUserAuth();
+  const { showSuccess, showError, showInfo } = useNotification();
+
+  // Checkout Auth decision: 'guest' | 'auth' | null
+  const [checkoutMode, setCheckoutMode] = useState<'guest' | 'auth' | null>(user ? 'auth' : null);
+  
+  // Login form states inside Checkout
+  const [authTab, setAuthTab] = useState<'login' | 'register'>('login');
+  const [authEmail, setAuthEmail] = useState('');
+  const [authPassword, setAuthPassword] = useState('');
+  const [authConfirmPassword, setAuthConfirmPassword] = useState('');
+  const [authName, setAuthName] = useState('');
+  const [authError, setAuthError] = useState('');
+  const [authLoading, setAuthLoading] = useState(false);
 
   const [step, setStep] = useState<1 | 2 | 3 | 4 | 5>(1);
   const [isPlacing, setIsPlacing] = useState(false);
@@ -56,6 +72,21 @@ export function CheckoutPage() {
   const currencySymbol = tenant?.currency_symbol || '₱';
   const tenantId = tenant?.id || TENANT_ID || '';
 
+  // Prefill details if user changes
+  useEffect(() => {
+    if (user) {
+      setCheckoutMode('auth');
+      setEmail(user.email || '');
+      
+      const fullName = user.user_metadata?.full_name || '';
+      if (fullName) {
+        const parts = fullName.split(' ');
+        setFirstName(parts[0] || '');
+        setLastName(parts.slice(1).join(' ') || '');
+      }
+    }
+  }, [user]);
+
   // Load Admin payment methods
   useEffect(() => {
     if (tenantId) {
@@ -70,6 +101,53 @@ export function CheckoutPage() {
         });
     }
   }, [tenantId]);
+
+  const authPasswordCriteria = [
+    { label: "At least 6 characters", met: authPassword.length >= 6 },
+    { label: "At least one uppercase letter", met: /[A-Z]/.test(authPassword) },
+    { label: "At least one number", met: /[0-9]/.test(authPassword) },
+    { label: "At least one special symbol (e.g. @, #, $, !)", met: /[^A-Za-z0-9]/.test(authPassword) }
+  ];
+  const allAuthCriteriaMet = authPasswordCriteria.every(c => c.met);
+
+  // Handle local Auth submit
+  const handleAuthSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!authEmail || !authPassword || (authTab === 'register' && (!authName || !authConfirmPassword))) {
+      setAuthError('Please fill in all inputs.');
+      return;
+    }
+
+    if (authTab === 'register') {
+      if (authPassword !== authConfirmPassword) {
+        setAuthError('Passwords do not match.');
+        return;
+      }
+      if (!allAuthCriteriaMet) {
+        setAuthError('Please satisfy all password complexity requirements.');
+        return;
+      }
+    }
+
+    setAuthLoading(true);
+    setAuthError('');
+    try {
+      if (authTab === 'login') {
+        await signIn(authEmail, authPassword);
+      } else {
+        await signUp(authEmail, authPassword, authName);
+        showSuccess('Verification email sent! You can continue checkout.');
+        setAuthTab('login');
+        setAuthName('');
+        setAuthPassword('');
+        setAuthConfirmPassword('');
+      }
+    } catch (err: any) {
+      setAuthError(err.message || 'Authentication failed.');
+    } finally {
+      setAuthLoading(false);
+    }
+  };
 
   // Handle province change
   const handleProvinceChange = (val: string) => {
@@ -113,7 +191,6 @@ export function CheckoutPage() {
   const isStep3Valid = () => {
     if (selectedMethodId === 'walk_in') return true;
     if (selectedPaymentMethod?.type === 'cod') return true;
-    // For QR or Bank Transfers, proof of payment is optional but recommended. We will allow placing but encourage it.
     return true;
   };
 
@@ -129,6 +206,7 @@ export function CheckoutPage() {
 
       const orderPayload = {
         tenant_id: tenantId,
+        customer_id: user?.id || null, // Link customer if authenticated!
         tracking_number: code,
         customer_first_name: firstName.trim(),
         customer_last_name: lastName.trim(),
@@ -145,7 +223,7 @@ export function CheckoutPage() {
         payment_method_type: selectedMethodId === 'walk_in' ? 'walk_in' : (selectedPaymentMethod?.type || 'custom'),
         proof_of_payment_url: proofOfPaymentUrl || null,
         subtotal: cartTotal,
-        shipping_fee: 0, // Free delivery
+        shipping_fee: 0,
         total: cartTotal,
         status: 'pending_verification',
         notes: ''
@@ -181,7 +259,7 @@ export function CheckoutPage() {
       setStep(5);
     } catch (err: any) {
       console.error('Failed to create order:', err);
-      alert('Order Placement Failed: ' + (err.message || err));
+      showError('Order Placement Failed: ' + (err.message || err));
     } finally {
       setIsPlacing(false);
     }
@@ -189,7 +267,7 @@ export function CheckoutPage() {
 
   const copyToClipboard = () => {
     navigator.clipboard.writeText(trackingCode);
-    alert('Tracking number copied to clipboard!');
+    showSuccess('Tracking number copied to clipboard!');
   };
 
   if (items.length === 0 && step !== 5) {
@@ -199,6 +277,157 @@ export function CheckoutPage() {
         <h2 className="text-xl font-serif text-typography-primary mb-2">Your Bag is Empty</h2>
         <p className="text-xs text-typography-muted mb-6 uppercase tracking-wider">Please add items to your cart before checking out.</p>
         <Link to="/shop" className="bg-brand-navy hover:bg-brand-pink text-white px-8 py-3 text-[10px] uppercase tracking-widest font-bold transition-all">Go Shop</Link>
+      </div>
+    );
+  }
+
+  // STEP 0: Auth Decision Screen (Renders if user not logged in and hasn't chosen guest mode)
+  if (!user && checkoutMode === null) {
+    return (
+      <div className="pt-32 pb-24 min-h-screen bg-surface-white">
+        <div className="max-w-4xl mx-auto px-6">
+          <div className="text-center mb-12">
+            <h2 className="text-2xl font-serif text-typography-primary mb-2">Secure Checkout</h2>
+            <p className="text-xs uppercase tracking-widest text-typography-muted font-bold">Choose how you want to complete your order</p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-2xl mx-auto items-stretch">
+            {/* Guest Checkout Card */}
+            <div className="border border-surface-light hover:border-brand-pink rounded-3xl p-8 bg-surface-offWhite flex flex-col justify-between transition-all">
+              <div className="space-y-4">
+                <div className="w-12 h-12 rounded-full bg-brand-pink/10 flex items-center justify-center text-brand-pink">
+                  <User className="w-6 h-6" />
+                </div>
+                <h3 className="text-lg font-serif text-typography-primary">Checkout as Guest</h3>
+                <p className="text-xs text-typography-muted">You can place your order instantly. You will receive a tracking number to query status updates later.</p>
+              </div>
+              <button 
+                type="button" 
+                onClick={() => setCheckoutMode('guest')}
+                className="w-full bg-brand-navy hover:bg-brand-pink text-white rounded-xl py-3.5 text-xs font-bold uppercase tracking-widest transition-all mt-8"
+              >
+                Continue as Guest
+              </button>
+            </div>
+
+            {/* Login Checkout Card */}
+            <div className="border border-surface-light hover:border-brand-pink rounded-3xl p-8 bg-surface-offWhite flex flex-col justify-between transition-all">
+              <div className="space-y-4">
+                <div className="w-12 h-12 rounded-full bg-brand-navy/10 flex items-center justify-center text-brand-navy">
+                  <LogIn className="w-6 h-6" />
+                </div>
+                <h3 className="text-lg font-serif text-typography-primary">Log In or Register</h3>
+                <p className="text-xs text-typography-muted">Save your orders automatically. You can track your purchase history directly under your profile dashboard.</p>
+              </div>
+              <button 
+                type="button" 
+                onClick={() => setCheckoutMode('auth')}
+                className="w-full bg-gradient-to-r from-[#fb7a90] to-[#f16881] hover:opacity-90 text-white rounded-xl py-3.5 text-xs font-bold uppercase tracking-widest transition-all mt-8"
+              >
+                Sign In to Account
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Renders the Login Form inside Checkout if selected auth and not yet logged in
+  if (!user && checkoutMode === 'auth') {
+    return (
+      <div className="pt-32 pb-24 min-h-screen bg-surface-white">
+        <div className="max-w-md mx-auto px-6">
+          <div className="text-center mb-8">
+            <h2 className="text-2xl font-serif text-typography-primary mb-2">
+              {authTab === 'login' ? 'Sign In to Checkout' : 'Create Account'}
+            </h2>
+            <p className="text-xs uppercase tracking-widest text-typography-muted font-bold">
+              {authTab === 'login' ? 'Access your prefilled shipping profiles' : 'Register to save order history'}
+            </p>
+          </div>
+
+          {authError && (
+            <div className="text-red-500 bg-red-50 border border-red-200/50 p-4 rounded-xl flex items-center gap-2 text-xs mb-6">
+              <span>{authError}</span>
+            </div>
+          )}
+
+          <form onSubmit={handleAuthSubmit} className="space-y-5 bg-surface-offWhite border border-surface-light p-6 rounded-2xl">
+            {authTab === 'register' && (
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[10px] font-bold uppercase text-typography-primary">Full Name *</label>
+                <input type="text" value={authName} onChange={e => setAuthName(e.target.value)} required placeholder="Jane Doe" className="w-full bg-white border border-surface-light rounded-xl px-4 py-2.5 text-sm text-typography-primary outline-none focus:border-brand-pink" />
+              </div>
+            )}
+            <div className="flex flex-col gap-1.5">
+              <label className="text-[10px] font-bold uppercase text-typography-primary">Email Address *</label>
+              <input type="email" value={authEmail} onChange={e => setAuthEmail(e.target.value)} required placeholder="jane.doe@example.com" className="w-full bg-white border border-surface-light rounded-xl px-4 py-2.5 text-sm text-typography-primary outline-none focus:border-brand-pink" />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-[10px] font-bold uppercase text-typography-primary">Password *</label>
+              <input type="password" value={authPassword} onChange={e => setAuthPassword(e.target.value)} required placeholder="••••••••" className="w-full bg-white border border-surface-light rounded-xl px-4 py-2.5 text-sm text-typography-primary outline-none focus:border-brand-pink" />
+              {authTab === 'register' && (
+                <div className="mt-2 space-y-1 bg-white border border-surface-light rounded-xl p-3 text-[10px]">
+                  <span className="font-bold text-typography-primary uppercase tracking-wider block mb-1">Password Requirements:</span>
+                  {authPasswordCriteria.map((c, i) => (
+                    <div key={i} className="flex items-center gap-1.5 font-semibold">
+                      {c.met ? (
+                        <Check className="w-3.5 h-3.5 text-emerald-500 flex-shrink-0" />
+                      ) : (
+                        <X className="w-3.5 h-3.5 text-typography-muted/40 flex-shrink-0" />
+                      )}
+                      <span className={c.met ? "text-emerald-600 line-through opacity-70" : "text-typography-muted"}>
+                        {c.label}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {authTab === 'register' && (
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[10px] font-bold uppercase text-typography-primary">Confirm Password *</label>
+                <input type="password" value={authConfirmPassword} onChange={e => setAuthConfirmPassword(e.target.value)} required placeholder="••••••••" className="w-full bg-white border border-surface-light rounded-xl px-4 py-2.5 text-sm text-typography-primary outline-none focus:border-brand-pink" />
+              </div>
+            )}
+
+            <button 
+              type="submit" 
+              disabled={authLoading}
+              className="w-full bg-brand-navy hover:bg-brand-pink text-white rounded-xl py-3 text-xs font-bold uppercase tracking-widest transition-all flex items-center justify-center gap-2"
+            >
+              {authLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+              {authTab === 'login' ? 'Sign In' : 'Register'}
+            </button>
+
+            <div className="relative my-6 text-center">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-surface-light"></div>
+              </div>
+              <span className="relative bg-surface-offWhite px-3 text-[10px] uppercase text-typography-muted font-bold tracking-widest">Or</span>
+            </div>
+
+            <button 
+              type="button" 
+              onClick={() => showInfo("Google Login is coming soon! Please sign in or register using your Email Address and Password.")}
+              className="w-full flex items-center justify-center gap-2 bg-white hover:bg-surface-offWhite border border-surface-light text-typography-primary py-3 text-xs font-bold rounded-xl transition-all"
+            >
+              Google Login (Coming Soon)
+            </button>
+          </form>
+
+          <div className="mt-8 flex justify-between items-center text-xs">
+            <button onClick={() => setCheckoutMode('guest')} className="text-typography-muted hover:text-brand-pink font-semibold">Continue as Guest instead</button>
+            <button 
+              onClick={() => setAuthTab(authTab === 'login' ? 'register' : 'login')} 
+              className="text-brand-pink hover:text-brand-navy font-bold border-b border-brand-pink pb-0.5"
+            >
+              {authTab === 'login' ? 'Register Account' : 'Back to Login'}
+            </button>
+          </div>
+        </div>
       </div>
     );
   }
@@ -535,14 +764,23 @@ export function CheckoutPage() {
                       <Clipboard className="w-5 h-5" />
                     </button>
                   </div>
-                  <div className="text-left text-xs text-red-500 bg-red-50 border border-red-200/50 p-4 rounded-xl space-y-1">
-                    <strong className="block text-[10px] uppercase tracking-wider">⚠️ CRITICAL REQUIREMENT:</strong>
-                    <p>Please write down, screenshot, or copy this tracking number now! You will need it to query your order updates on the <strong>Track Order</strong> page.</p>
-                  </div>
+                  {user ? (
+                    <div className="text-left text-xs text-emerald-500 bg-emerald-50 border border-emerald-200/50 p-4 rounded-xl">
+                      <strong className="block text-[10px] uppercase tracking-wider">Order Linked to Profile:</strong>
+                      <p>Since you are logged in, this order has been saved to your profile history. You can view its progress anytime under your <strong>My Orders</strong> history page.</p>
+                    </div>
+                  ) : (
+                    <div className="text-left text-xs text-red-500 bg-red-50 border border-red-200/50 p-4 rounded-xl space-y-1">
+                      <strong className="block text-[10px] uppercase tracking-wider">⚠️ CRITICAL REQUIREMENT:</strong>
+                      <p>Please write down, screenshot, or copy this tracking number now! You will need it to query your order updates on the <strong>Track Order</strong> page.</p>
+                    </div>
+                  )}
                 </div>
 
-                <div className="pt-6">
-                  <Link to="/track" className="bg-brand-navy hover:bg-brand-pink text-white rounded-xl px-8 py-3.5 font-bold text-xs uppercase tracking-widest transition-all">Go to Track Page</Link>
+                <div className="pt-6 flex gap-4">
+                  <Link to={user ? "/orders" : "/track"} className="bg-brand-navy hover:bg-brand-pink text-white rounded-xl px-8 py-3.5 font-bold text-xs uppercase tracking-widest transition-all">
+                    {user ? "View My Orders" : "Track Order"}
+                  </Link>
                 </div>
               </div>
             )}

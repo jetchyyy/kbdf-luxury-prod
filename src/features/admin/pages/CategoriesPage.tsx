@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useAdminUser } from '../hooks/useAdminUser';
 import { usePermissions } from '../hooks/usePermissions';
-import { fetchCategories, createCategory, updateCategory, deleteCategory } from '../api/categories';
+import { fetchCategoriesPaginated, createCategory, updateCategory, deleteCategory } from '../api/categories';
 import type { Category } from '../../../lib/supabase/database.types';
 import { DataTable } from '../components/DataTable';
 import type { Column } from '../components/DataTable';
@@ -9,12 +9,22 @@ import { Plus, Edit2, Trash2 } from 'lucide-react';
 import { PermissionGate } from '../components/PermissionGate';
 import { CategoryFormModal } from '../components/CategoryFormModal';
 import { TENANT_ID } from '../../../lib/supabase/supabaseClient';
+import { useNotification } from '../../../core/context/NotificationContext';
 
 export function CategoriesPage() {
   const { adminUser } = useAdminUser();
   const { canEdit, canDelete } = usePermissions('categories');
+  const { showError, showConfirm } = useNotification();
   const [categories, setCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+
+  // Pagination & Server States
+  const [page, setPage] = useState(1);
+  const [pageSize] = useState(10);
+  const [totalCount, setTotalCount] = useState(0);
+  const [search, setSearch] = useState('');
+  const [sortBy, setSortBy] = useState('sort_order');
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
 
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -22,17 +32,30 @@ export function CategoriesPage() {
 
   const tenantId = adminUser?.tenant_id ?? TENANT_ID;
 
+  // Reset page when search changes
+  useEffect(() => {
+    setPage(1);
+  }, [search]);
+
   useEffect(() => {
     if (tenantId) {
       loadCategories();
     }
-  }, [tenantId]);
+  }, [tenantId, page, search, sortBy, sortDir]);
 
   async function loadCategories() {
     setIsLoading(true);
     try {
-      const data = await fetchCategories(tenantId);
-      setCategories(data);
+      const res = await fetchCategoriesPaginated({
+        tenantId,
+        page,
+        pageSize,
+        search,
+        sortBy,
+        sortDir
+      });
+      setCategories(res.data);
+      setTotalCount(res.totalCount);
     } catch (err) {
       console.error('Error loading categories:', err);
     } finally {
@@ -50,12 +73,13 @@ export function CategoriesPage() {
   }
 
   async function handleDeleteCategory(id: string) {
-    if (window.confirm('Are you sure you want to delete this category? All products under this category will have their category cleared.')) {
+    const confirmed = await showConfirm('Are you sure you want to delete this category? All products under this category will have their category cleared.');
+    if (confirmed) {
       try {
         await deleteCategory(id);
         await loadCategories();
       } catch (err) {
-        alert('Failed to delete category: ' + (err as any).message);
+        showError('Failed to delete category: ' + (err as any).message);
       }
     }
   }
@@ -176,6 +200,15 @@ export function CategoriesPage() {
         data={categories}
         isLoading={isLoading}
         searchPlaceholder="Search category name or slug..."
+        serverSide={true}
+        totalCount={totalCount}
+        currentPage={page}
+        onPageChange={setPage}
+        onSearchChange={setSearch}
+        onSortChange={(key, dir) => {
+          setSortBy(key);
+          setSortDir(dir);
+        }}
       />
 
       {/* Modals */}

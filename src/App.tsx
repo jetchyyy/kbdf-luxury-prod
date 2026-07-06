@@ -37,32 +37,38 @@ import { PlatformSettingsPage } from "./features/superadmin/pages/PlatformSettin
 import { CheckoutPage } from "./features/checkout/CheckoutPage";
 import { OrdersPage } from "./features/admin/pages/OrdersPage";
 import { TenantProvider } from "./core/context/TenantContext";
+import { UserAuthProvider } from "./core/context/UserAuthContext";
+import { CustomerOrdersPage } from "./features/checkout/CustomerOrdersPage";
+import { NotificationProvider } from "./core/context/NotificationContext";
 
 function App() {
   return (
-    <AdminAuthProvider>
-      <CartProvider>
-        <Routes>
-          {/* Storefront Routes (wrapped in AppShell with custom navbar/footer) */}
-          <Route
-            path="/*"
-            element={
-              <TenantProvider>
-                <AppShell>
-                  <Routes>
-                    <Route path="/" element={<HomePage />} />
-                    <Route path="/shop" element={<ShopPage />} />
-                    <Route path="/categories" element={<CategoriesPage />} />
-                    <Route path="/contact" element={<ContactPage />} />
-                    <Route path="/track" element={<TrackPage />} />
-                    <Route path="/checkout" element={<CheckoutPage />} />
-                    <Route path="/auth" element={<AuthPage />} />
-                  </Routes>
-                  <CartDrawer />
-                </AppShell>
-              </TenantProvider>
-            }
-          />
+    <NotificationProvider>
+      <AdminAuthProvider>
+        <UserAuthProvider>
+          <CartProvider>
+            <Routes>
+            {/* Storefront Routes (wrapped in AppShell with custom navbar/footer) */}
+            <Route
+              path="/*"
+              element={
+                <TenantProvider>
+                  <AppShell>
+                    <Routes>
+                      <Route path="/" element={<HomePage />} />
+                      <Route path="/shop" element={<ShopPage />} />
+                      <Route path="/categories" element={<CategoriesPage />} />
+                      <Route path="/contact" element={<ContactPage />} />
+                      <Route path="/track" element={<TrackPage />} />
+                      <Route path="/checkout" element={<CheckoutPage />} />
+                      <Route path="/orders" element={<CustomerOrdersPage />} />
+                      <Route path="/auth" element={<AuthPage />} />
+                    </Routes>
+                    <CartDrawer />
+                  </AppShell>
+                </TenantProvider>
+              }
+            />
 
           {/* Tenant Admin Routes */}
           <Route path="/admin/login" element={<AdminLoginPage />} />
@@ -107,8 +113,10 @@ function App() {
             }
           />
         </Routes>
-      </CartProvider>
-    </AdminAuthProvider>
+       </CartProvider>
+      </UserAuthProvider>
+     </AdminAuthProvider>
+    </NotificationProvider>
   );
 }
 

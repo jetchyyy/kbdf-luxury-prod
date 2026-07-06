@@ -5,6 +5,7 @@ import { supabase, TENANT_ID } from '../../../lib/supabase/supabaseClient';
 import { DataTable } from '../components/DataTable';
 import type { Column } from '../components/DataTable';
 import { ShoppingBag, Eye, CheckCircle, Truck, FileCheck, XCircle, Info, Calendar, Trash2 } from 'lucide-react';
+import { useNotification } from '../../../core/context/NotificationContext';
 
 interface OrderItem {
   id: string;
@@ -42,6 +43,7 @@ interface Order {
 export function OrdersPage() {
   const { adminUser, tenant } = useAdminUser();
   const { canEdit } = usePermissions('orders');
+  const { showSuccess, showError, showConfirm } = useNotification();
 
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -96,15 +98,16 @@ export function OrdersPage() {
       // Update local state
       setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: newStatus, notes: notes.trim() || null } : o));
       setSelectedOrder(prev => prev ? { ...prev, status: newStatus, notes: notes.trim() || null } : null);
-      alert(`Order status updated to: ${newStatus.replace('_', ' ')}`);
+      showSuccess(`Order status updated to: ${newStatus.replace('_', ' ')}`);
     } catch (err: any) {
-      alert('Failed to update status: ' + (err.message || err));
+      showError('Failed to update status: ' + (err.message || err));
     }
   }
 
   async function handleDeleteOrder(orderId: string) {
     if (!canEdit) return;
-    if (!window.confirm('Are you sure you want to delete this order? This action cannot be undone.')) return;
+    const confirmed = await showConfirm('Are you sure you want to delete this order? This action cannot be undone.');
+    if (!confirmed) return;
 
     try {
       const { error } = await supabase
@@ -119,9 +122,9 @@ export function OrdersPage() {
         setIsModalOpen(false);
         setSelectedOrder(null);
       }
-      alert('Order deleted successfully.');
+      showSuccess('Order deleted successfully.');
     } catch (err: any) {
-      alert('Failed to delete order: ' + (err.message || err));
+      showError('Failed to delete order: ' + (err.message || err));
     }
   }
 

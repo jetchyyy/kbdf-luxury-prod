@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useAdminUser } from '../hooks/useAdminUser';
 import { usePermissions } from '../hooks/usePermissions';
-import { fetchItems, createItem, updateItem, deleteItem } from '../api/items';
+import { fetchItemsPaginated, createItem, updateItem, deleteItem } from '../api/items';
 import { fetchCategories } from '../api/categories';
 import type { Item, Category } from '../../../lib/supabase/database.types';
 import { DataTable } from '../components/DataTable';
@@ -10,13 +10,23 @@ import { Plus, Edit2, Trash2, Filter } from 'lucide-react';
 import { PermissionGate } from '../components/PermissionGate';
 import { ItemFormModal } from '../components/ItemFormModal';
 import { TENANT_ID } from '../../../lib/supabase/supabaseClient';
+import { useNotification } from '../../../core/context/NotificationContext';
 
 export function ItemsPage() {
   const { adminUser, tenant } = useAdminUser();
   const { canEdit, canDelete } = usePermissions('items');
+  const { showError, showConfirm } = useNotification();
   const [items, setItems] = useState<any[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+
+  // Pagination & Server States
+  const [page, setPage] = useState(1);
+  const [pageSize] = useState(10);
+  const [totalCount, setTotalCount] = useState(0);
+  const [search, setSearch] = useState('');
+  const [sortBy, setSortBy] = useState('created_at');
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
 
   // Filters
   const [selectedCategory, setSelectedCategory] = useState('all');
@@ -30,21 +40,42 @@ export function ItemsPage() {
   const tenantId = adminUser?.tenant_id ?? TENANT_ID;
   const currency = tenant?.currency_symbol ?? '₱';
 
+  // Load static categories once
+  useEffect(() => {
+    if (tenantId) {
+      fetchCategories(tenantId)
+        .then(data => setCategories(data))
+        .catch(err => console.error('Error loading categories:', err));
+    }
+  }, [tenantId]);
+
+  // Reset page when filters or search change
+  useEffect(() => {
+    setPage(1);
+  }, [search, selectedCategory, selectedStock, selectedCondition]);
+
   useEffect(() => {
     if (tenantId) {
       loadData();
     }
-  }, [tenantId]);
+  }, [tenantId, page, search, sortBy, sortDir, selectedCategory, selectedStock, selectedCondition]);
 
   async function loadData() {
     setIsLoading(true);
     try {
-      const [itemsData, categoriesData] = await Promise.all([
-        fetchItems(tenantId),
-        fetchCategories(tenantId)
-      ]);
-      setItems(itemsData);
-      setCategories(categoriesData);
+      const itemsResult = await fetchItemsPaginated({
+        tenantId,
+        page,
+        pageSize,
+        search,
+        sortBy,
+        sortDir,
+        categoryFilter: selectedCategory,
+        stockFilter: selectedStock,
+        conditionFilter: selectedCondition,
+      });
+      setItems(itemsResult.data);
+      setTotalCount(itemsResult.totalCount);
     } catch (err) {
       console.error('Error loading data:', err);
     } finally {
@@ -62,12 +93,13 @@ export function ItemsPage() {
   }
 
   async function handleDeleteItem(id: string) {
-    if (window.confirm('Are you sure you want to delete this item?')) {
+    const confirmed = await showConfirm('Are you sure you want to delete this item?');
+    if (confirmed) {
       try {
         await deleteItem(id);
         await loadData();
       } catch (err) {
-        alert('Failed to delete item: ' + (err as any).message);
+        showError('Failed to delete item: ' + (err as any).message);
       }
     }
   }
@@ -81,14 +113,6 @@ export function ItemsPage() {
     setEditingItem(null);
     setIsModalOpen(true);
   }
-
-  // Apply frontend filters (DataTable does search)
-  const filteredItems = items.filter(item => {
-    const categoryMatch = selectedCategory === 'all' || item.category_id === selectedCategory;
-    const stockMatch = selectedStock === 'all' || item.stock_status === selectedStock;
-    const conditionMatch = selectedCondition === 'all' || item.condition === selectedCondition;
-    return categoryMatch && stockMatch && conditionMatch;
-  });
 
   const columns: Column<any>[] = [
     {
@@ -274,10 +298,19 @@ export function ItemsPage() {
       {/* Main Table */}
       <DataTable
         columns={columns}
-        data={filteredItems}
+        data={items}
         isLoading={isLoading}
         searchPlaceholder="Search title, SKU or brand..."
         emptyMessage="No items matching your criteria."
+        serverSide={true}
+        totalCount={totalCount}
+        currentPage={page}
+        onPageChange={setPage}
+        onSearchChange={setSearch}
+        onSortChange={(key, dir) => {
+          setSortBy(key);
+          setSortDir(dir);
+        }}
       />
 
       {/* Modals */}

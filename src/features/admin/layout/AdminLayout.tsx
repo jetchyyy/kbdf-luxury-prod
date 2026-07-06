@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { AdminSidebar } from './AdminSidebar';
 import { AdminHeader } from './AdminHeader';
+import { useAdminAuth } from '../context/AdminAuthContext';
 
 const PAGE_TITLES: Record<string, string> = {
   '/admin': 'Overview',
@@ -20,8 +21,14 @@ const PAGE_TITLES: Record<string, string> = {
 export function AdminLayout({ children }: { children: React.ReactNode }) {
   const [collapsed, setCollapsed] = useState(false);
   const location = useLocation();
+  const { tenant } = useAdminAuth();
 
   const title = PAGE_TITLES[location.pathname] ?? 'Dashboard';
+
+  useEffect(() => {
+    const tenantName = tenant?.name || 'Store Admin';
+    document.title = `${title} — ${tenantName}`;
+  }, [title, tenant]);
 
   return (
     <div className="flex h-screen bg-[#0f1117] overflow-hidden">

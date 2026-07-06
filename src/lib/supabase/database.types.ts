@@ -299,6 +299,7 @@ export interface Database {
         Row: {
           id: string;
           tenant_id: string;
+          customer_id: string | null;
           tracking_number: string;
           customer_first_name: string;
           customer_last_name: string;
@@ -325,6 +326,7 @@ export interface Database {
         Insert: {
           id?: string;
           tenant_id: string;
+          customer_id?: string | null;
           tracking_number: string;
           customer_first_name: string;
           customer_last_name: string;

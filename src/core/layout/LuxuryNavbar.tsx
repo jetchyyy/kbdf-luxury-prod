@@ -1,14 +1,19 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, ShoppingBag, User } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Search, ShoppingBag, User, LogOut, ClipboardList } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
 import { useCart } from "../../features/cart/CartContext";
 import { useTenant } from "../context/TenantContext";
+import { useUserAuth } from "../context/UserAuthContext";
 
 export function LuxuryNavbar() {
   const [isOpen, setIsOpen] = useState(false);
+  const [showUserDropdown, setShowUserDropdown] = useState(false);
+  
   const { openCart, items } = useCart();
   const { tenant } = useTenant();
+  const { user, signOut } = useUserAuth();
+  const navigate = useNavigate();
 
   const navLinks = [
     { label: "Home", href: "/" },
@@ -19,9 +24,24 @@ export function LuxuryNavbar() {
     { label: "Track", href: "/track" },
   ];
 
+  // Append My Orders to desktop nav if logged in
+  if (user) {
+    navLinks.push({ label: "My Orders", href: "/orders" });
+  }
+
   const storeSettings = (tenant?.store_settings as any) || {};
   const homepageSettings = storeSettings.homepage || {};
   const announcementText = homepageSettings.announcement_text || "Free Shipping for Orders Over $500";
+
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      setShowUserDropdown(false);
+      navigate("/");
+    } catch (err) {
+      console.error("Sign out failed", err);
+    }
+  };
 
   return (
     <header className="fixed top-0 inset-x-0 z-50 bg-surface-white border-b border-surface-light">
@@ -58,13 +78,54 @@ export function LuxuryNavbar() {
         </div>
 
         {/* Right: Actions */}
-        <div className="flex-1 flex items-center justify-end gap-6">
+        <div className="flex-1 flex items-center justify-end gap-6 relative">
           <button className="text-typography-primary hover:text-brand-pink transition-colors">
             <Search className="w-5 h-5" strokeWidth={1.5} />
           </button>
-          <Link to="/auth" className="hidden md:block text-typography-primary hover:text-brand-pink transition-colors">
-            <User className="w-5 h-5" strokeWidth={1.5} />
-          </Link>
+          
+          {/* User Auth Controls */}
+          {user ? (
+            <div className="relative">
+              <button 
+                onClick={() => setShowUserDropdown(!showUserDropdown)} 
+                className="hidden md:flex items-center gap-1.5 text-typography-primary hover:text-brand-pink transition-colors"
+                title="Account Menu"
+              >
+                <User className="w-5 h-5" strokeWidth={1.5} />
+                <span className="text-[10px] uppercase font-bold tracking-wider max-w-[80px] truncate">
+                  {user.user_metadata?.full_name || user.email?.split("@")[0]}
+                </span>
+              </button>
+
+              {/* User Dropdown Popover */}
+              {showUserDropdown && (
+                <>
+                  <div className="fixed inset-0 z-10" onClick={() => setShowUserDropdown(false)} />
+                  <div className="absolute right-0 mt-3 w-48 bg-white border border-surface-light rounded-xl shadow-xl py-2 z-20 animate-fadeIn">
+                    <Link 
+                      to="/orders" 
+                      onClick={() => setShowUserDropdown(false)}
+                      className="flex items-center gap-2 px-4 py-2.5 text-xs text-typography-primary hover:bg-surface-offWhite font-semibold transition-colors"
+                    >
+                      <ClipboardList className="w-4 h-4 text-typography-muted" /> Order History
+                    </Link>
+                    <button 
+                      onClick={handleSignOut}
+                      className="w-full flex items-center gap-2 px-4 py-2.5 text-xs text-red-500 hover:bg-red-50 font-semibold transition-colors text-left"
+                    >
+                      <LogOut className="w-4 h-4" /> Sign Out
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          ) : (
+            <Link to="/auth" className="hidden md:block text-typography-primary hover:text-brand-pink transition-colors" title="Sign In">
+              <User className="w-5 h-5" strokeWidth={1.5} />
+            </Link>
+          )}
+
+          {/* Cart trigger */}
           <button onClick={openCart} className="text-typography-primary hover:text-brand-pink transition-colors relative">
             <ShoppingBag className="w-5 h-5" strokeWidth={1.5} />
             {items.length > 0 && (
@@ -74,7 +135,7 @@ export function LuxuryNavbar() {
             )}
           </button>
           
-          {/* Mobile Hamburger Morph */}
+          {/* Mobile Hamburger */}
           <button 
             className="lg:hidden flex flex-col justify-center items-center w-6 h-6 relative z-50 text-typography-primary ml-2"
             onClick={() => setIsOpen(!isOpen)}
@@ -86,7 +147,7 @@ export function LuxuryNavbar() {
         </div>
       </nav>
 
-      {/* The Modal Expansion for Mobile */}
+      {/* Mobile Drawer Navigation */}
       <AnimatePresence>
         {isOpen && (
           <motion.div 
@@ -94,7 +155,7 @@ export function LuxuryNavbar() {
             animate={{ opacity: 1, backdropFilter: "blur(24px)" }}
             exit={{ opacity: 0, backdropFilter: "blur(0px)" }}
             transition={{ duration: 0.5, ease: [0.32, 0.72, 0, 1] }}
-            className="fixed inset-0 top-[100px] z-40 bg-surface-white/95 pointer-events-auto flex flex-col py-12 px-6"
+            className="fixed inset-0 top-[100px] z-40 bg-surface-white/95 pointer-events-auto flex flex-col py-8 px-6 overflow-y-auto"
           >
             <div className="flex flex-col gap-6">
               {navLinks.map((link, i) => (
@@ -103,17 +164,46 @@ export function LuxuryNavbar() {
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -10 }}
-                  transition={{ delay: i * 0.1, duration: 0.4, ease: [0.32, 0.72, 0, 1] }}
+                  transition={{ delay: i * 0.05, duration: 0.4, ease: [0.32, 0.72, 0, 1] }}
                 >
                   <Link
                     to={link.href}
-                    className="text-2xl font-sans uppercase tracking-widest text-typography-primary hover:text-typography-muted block border-b border-surface-light pb-4"
+                    className="text-xl font-sans uppercase tracking-widest text-typography-primary hover:text-typography-muted block border-b border-surface-light pb-4"
                     onClick={() => setIsOpen(false)}
                   >
                     {link.label}
                   </Link>
                 </motion.div>
               ))}
+
+              {/* Mobile Auth button */}
+              {user ? (
+                <motion.button
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -10 }}
+                  transition={{ delay: navLinks.length * 0.05, duration: 0.4 }}
+                  onClick={() => { setIsOpen(false); handleSignOut(); }}
+                  className="text-xl font-sans uppercase tracking-widest text-red-500 text-left block border-b border-surface-light pb-4"
+                >
+                  Sign Out
+                </motion.button>
+              ) : (
+                <motion.div
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -10 }}
+                  transition={{ delay: navLinks.length * 0.05, duration: 0.4 }}
+                >
+                  <Link
+                    to="/auth"
+                    className="text-xl font-sans uppercase tracking-widest text-typography-primary hover:text-typography-muted block border-b border-surface-light pb-4"
+                    onClick={() => setIsOpen(false)}
+                  >
+                    Sign In
+                  </Link>
+                </motion.div>
+              )}
             </div>
           </motion.div>
         )}

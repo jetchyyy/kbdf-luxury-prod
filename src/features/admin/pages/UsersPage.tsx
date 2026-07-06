@@ -9,10 +9,12 @@ import { Plus, Edit2, ShieldAlert } from 'lucide-react';
 import { PermissionGate } from '../components/PermissionGate';
 import { UserFormModal } from '../components/UserFormModal';
 import { TENANT_ID } from '../../../lib/supabase/supabaseClient';
+import { useNotification } from '../../../core/context/NotificationContext';
 
 export function UsersPage() {
   const { adminUser } = useAdminUser();
   const { canEdit } = usePermissions('users');
+  const { showSuccess, showError, showConfirm } = useNotification();
   const [users, setUsers] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -49,23 +51,24 @@ export function UsersPage() {
         const { email, ...rest } = payload;
         const res = await createAdminUser(email, password, rest);
         if (res && (res as any).createdAutomatically === false) {
-          alert("Staff profile created successfully! \n\nNote: Auth account could not be auto-created (requires Service Role Key). Please manually create/invite user email '" + email + "' in your Supabase Auth dashboard. The profile will auto-link upon signup.");
+          showSuccess("Staff profile created successfully! \n\nNote: Auth account could not be auto-created (requires Service Role Key). Please manually create/invite user email '" + email + "' in your Supabase Auth dashboard. The profile will auto-link upon signup.");
         }
       }
       await loadUsers();
     } catch (err: any) {
-      alert('Error saving user: ' + err.message);
+      showError('Error saving user: ' + err.message);
       throw err;
     }
   }
 
   async function handleDeactivate(id: string) {
-    if (window.confirm('Are you sure you want to deactivate this staff user account? They will lose access immediately.')) {
+    const confirmed = await showConfirm('Are you sure you want to deactivate this staff user account? They will lose access immediately.');
+    if (confirmed) {
       try {
         await deactivateAdminUser(id);
         await loadUsers();
       } catch (err) {
-        alert('Failed to deactivate user: ' + (err as any).message);
+        showError('Failed to deactivate user: ' + (err as any).message);
       }
     }
   }

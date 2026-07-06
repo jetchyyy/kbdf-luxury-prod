@@ -4,6 +4,7 @@ import { ArrowRight, Search, Check, RefreshCw, AlertCircle, ShoppingBag, MapPin,
 import { supabase } from "../../lib/supabase/supabaseClient";
 import { ImageUploadInput } from "../admin/components/ImageUploadInput";
 import { useTenant } from "../../core/context/TenantContext";
+import { useNotification } from "../../core/context/NotificationContext";
 
 interface OrderItem {
   id: string;
@@ -39,6 +40,7 @@ interface Order {
 
 export function TrackPage() {
   const { tenant } = useTenant();
+  const { showSuccess, showError } = useNotification();
   const [trackingCode, setTrackingCode] = useState("");
   const [isSearching, setIsSearching] = useState(false);
   const [order, setOrder] = useState<Order | null>(null);
@@ -85,9 +87,9 @@ export function TrackPage() {
       if (error) throw error;
 
       setOrder(prev => prev ? { ...prev, proof_of_payment_url: receiptUrl } : null);
-      alert("Receipt saved successfully!");
+      showSuccess("Receipt saved successfully!");
     } catch (err: any) {
-      alert("Failed to save receipt: " + (err.message || err));
+      showError("Failed to save receipt: " + (err.message || err));
     }
   };
 

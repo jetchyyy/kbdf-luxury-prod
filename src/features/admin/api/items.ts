@@ -15,6 +15,60 @@ export async function fetchItems(tenantId?: string) {
   return data;
 }
 
+export async function fetchItemsPaginated(params: {
+  tenantId?: string;
+  page: number;
+  pageSize: number;
+  search?: string;
+  sortBy?: string;
+  sortDir?: 'asc' | 'desc';
+  categoryFilter?: string;
+  stockFilter?: string;
+  conditionFilter?: string;
+}) {
+  const tid = params.tenantId ?? TENANT_ID;
+  const from = (params.page - 1) * params.pageSize;
+  const to = from + params.pageSize - 1;
+
+  let query = supabase
+    .from('items')
+    .select('*, categories(name)', { count: 'exact' })
+    .eq('tenant_id', tid!);
+
+  if (params.search && params.search.trim()) {
+    const q = params.search.trim();
+    query = query.or(`title.ilike.%${q}%,description.ilike.%${q}%`);
+  }
+
+  if (params.categoryFilter && params.categoryFilter !== 'all') {
+    query = query.eq('category_id', params.categoryFilter);
+  }
+
+  if (params.stockFilter && params.stockFilter !== 'all') {
+    query = query.eq('stock_status', params.stockFilter);
+  }
+
+  if (params.conditionFilter && params.conditionFilter !== 'all') {
+    query = query.eq('condition', params.conditionFilter);
+  }
+
+  // Handle sorting
+  const sortBy = params.sortBy || 'created_at';
+  const sortDir = params.sortDir || 'desc';
+  query = query.order(sortBy, { ascending: sortDir === 'asc' });
+
+  // Apply pagination range
+  query = query.range(from, to);
+
+  const { data, error, count } = await query;
+  if (error) throw error;
+
+  return {
+    data: data || [],
+    totalCount: count || 0,
+  };
+}
+
 export async function createItem(payload: ItemInsert) {
   const { data, error } = await supabase
     .from('items')

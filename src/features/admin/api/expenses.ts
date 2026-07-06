@@ -40,6 +40,43 @@ export async function fetchExpenses(tenantId?: string) {
   return data;
 }
 
+export async function fetchExpensesPaginated(params: {
+  tenantId?: string;
+  page: number;
+  pageSize: number;
+  search?: string;
+  sortBy?: string;
+  sortDir?: 'asc' | 'desc';
+}) {
+  const tid = params.tenantId ?? TENANT_ID;
+  const from = (params.page - 1) * params.pageSize;
+  const to = from + params.pageSize - 1;
+
+  let query = supabase
+    .from('expenses')
+    .select('*, expense_categories(name, color), admin_users(full_name)', { count: 'exact' })
+    .eq('tenant_id', tid!);
+
+  if (params.search && params.search.trim()) {
+    const q = params.search.trim();
+    query = query.or(`title.ilike.%${q}%,description.ilike.%${q}%`);
+  }
+
+  const sortBy = params.sortBy || 'date';
+  const sortDir = params.sortDir || 'desc';
+  query = query.order(sortBy, { ascending: sortDir === 'asc' });
+
+  query = query.range(from, to);
+
+  const { data, error, count } = await query;
+  if (error) throw error;
+
+  return {
+    data: data || [],
+    totalCount: count || 0,
+  };
+}
+
 export async function createExpense(payload: Omit<Expense, 'id' | 'created_at' | 'updated_at'>) {
   const { data, error } = await supabase
     .from('expenses')

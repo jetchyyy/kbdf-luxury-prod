@@ -37,12 +37,16 @@ export function AdminSidebar({ collapsed, onToggle }: AdminSidebarProps) {
     <motion.aside
       animate={{ width: collapsed ? 72 : 260 }}
       transition={{ duration: 0.25, ease: [0.32, 0.72, 0, 1] }}
-      className="relative flex flex-col h-full bg-[#111827] border-r border-white/5 overflow-hidden flex-shrink-0"
+      className="relative flex flex-col h-full bg-[#111827] border-r border-white/5 overflow-visible flex-shrink-0"
     >
       {/* Logo / Brand */}
       <div className="flex items-center gap-3 px-4 py-5 border-b border-white/5 min-h-[72px]">
-        <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-[#fb7a90] to-[#f16881] flex items-center justify-center flex-shrink-0">
-          <Store className="w-5 h-5 text-white" strokeWidth={1.5} />
+        <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-[#fb7a90] to-[#f16881] flex items-center justify-center flex-shrink-0 overflow-hidden">
+          {!isSuperadmin && tenant?.logo_url ? (
+            <img src={tenant.logo_url} alt={tenant.name} className="w-full h-full object-cover" />
+          ) : (
+            <Store className="w-5 h-5 text-white" strokeWidth={1.5} />
+          )}
         </div>
         <AnimatePresence>
           {!collapsed && (

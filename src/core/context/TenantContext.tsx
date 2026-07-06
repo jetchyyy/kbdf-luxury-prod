@@ -41,6 +41,9 @@ export function TenantProvider({ children }: { children: ReactNode }) {
           if (data.accent_color) {
             root.style.setProperty('--brand-pink', data.accent_color);
           }
+          if (data.name) {
+            document.title = data.name;
+          }
         }
       } catch (err: any) {
         console.error('Failed to load tenant details on storefront:', err);

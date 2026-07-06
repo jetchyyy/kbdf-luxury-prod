@@ -15,6 +15,43 @@ export async function fetchCategories(tenantId?: string) {
   return data;
 }
 
+export async function fetchCategoriesPaginated(params: {
+  tenantId?: string;
+  page: number;
+  pageSize: number;
+  search?: string;
+  sortBy?: string;
+  sortDir?: 'asc' | 'desc';
+}) {
+  const tid = params.tenantId ?? TENANT_ID;
+  const from = (params.page - 1) * params.pageSize;
+  const to = from + params.pageSize - 1;
+
+  let query = supabase
+    .from('categories')
+    .select('*', { count: 'exact' })
+    .eq('tenant_id', tid!);
+
+  if (params.search && params.search.trim()) {
+    const q = params.search.trim();
+    query = query.or(`name.ilike.%${q}%,description.ilike.%${q}%`);
+  }
+
+  const sortBy = params.sortBy || 'sort_order';
+  const sortDir = params.sortDir || 'asc';
+  query = query.order(sortBy, { ascending: sortDir === 'asc' });
+
+  query = query.range(from, to);
+
+  const { data, error, count } = await query;
+  if (error) throw error;
+
+  return {
+    data: data || [],
+    totalCount: count || 0,
+  };
+}
+
 export async function createCategory(payload: CategoryInsert) {
   const { data, error } = await supabase
     .from('categories')

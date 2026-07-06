@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Navigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Eye, EyeOff, LogIn } from 'lucide-react';
+import { Eye, EyeOff, LogIn, Store } from 'lucide-react';
 import { adminSignIn } from '../api/auth';
 import { useAdminAuth } from '../context/AdminAuthContext';
+import { supabase, TENANT_ID } from '../../../lib/supabase/supabaseClient';
 
 export function AdminLoginPage() {
   const { adminUser, isLoading } = useAdminAuth();
@@ -12,6 +13,23 @@ export function AdminLoginPage() {
   const [showPw, setShowPw] = useState(false);
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [tenant, setTenant] = useState<any>(null);
+
+  useEffect(() => {
+    if (TENANT_ID) {
+      supabase
+        .from('tenants')
+        .select('*')
+        .eq('id', TENANT_ID)
+        .single()
+        .then(({ data }: any) => {
+          if (data) {
+            setTenant(data);
+            document.title = `Admin — ${data.name}`;
+          }
+        });
+    }
+  }, []);
 
   if (!isLoading && adminUser) return <Navigate to="/admin" replace />;
 
@@ -46,11 +64,17 @@ export function AdminLoginPage() {
         <div className="bg-[#111827] border border-white/8 rounded-3xl p-8 shadow-2xl">
           {/* Logo */}
           <div className="flex items-center gap-3 mb-8">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#fb7a90] to-[#f16881] flex items-center justify-center">
-              <span className="text-white font-bold text-sm">A</span>
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#fb7a90] to-[#f16881] flex items-center justify-center overflow-hidden flex-shrink-0">
+              {tenant?.logo_url ? (
+                <img src={tenant.logo_url} alt={tenant.name} className="w-full h-full object-cover" />
+              ) : (
+                <Store className="w-5 h-5 text-white" strokeWidth={1.5} />
+              )}
             </div>
             <div>
-              <p className="text-white font-bold text-sm">Store Admin</p>
+              <p className="text-white font-bold text-sm truncate max-w-[200px]">
+                {tenant?.name || 'Store Admin'}
+              </p>
               <p className="text-white/40 text-xs">Sign in to your dashboard</p>
             </div>
           </div>

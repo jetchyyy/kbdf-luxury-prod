@@ -1,19 +1,29 @@
 import { useEffect, useState } from 'react';
 import { useAdminUser } from '../hooks/useAdminUser';
 import { usePermissions } from '../hooks/usePermissions';
-import { fetchLeads, updateLead, deleteLead } from '../api/leads';
+import { fetchLeadsPaginated, updateLead, deleteLead } from '../api/leads';
 import type { Lead } from '../../../lib/supabase/database.types';
 import { DataTable } from '../components/DataTable';
 import type { Column } from '../components/DataTable';
 import { MessageSquare, Trash2, Filter } from 'lucide-react';
 import { LeadDetailDrawer } from '../components/LeadDetailDrawer';
 import { TENANT_ID } from '../../../lib/supabase/supabaseClient';
+import { useNotification } from '../../../core/context/NotificationContext';
 
 export function LeadsPage() {
   const { adminUser } = useAdminUser();
   const { canDelete } = usePermissions('leads');
+  const { showError, showConfirm } = useNotification();
   const [leads, setLeads] = useState<Lead[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+
+  // Pagination & Server States
+  const [page, setPage] = useState(1);
+  const [pageSize] = useState(10);
+  const [totalCount, setTotalCount] = useState(0);
+  const [search, setSearch] = useState('');
+  const [sortBy, setSortBy] = useState('created_at');
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
 
   // Filter
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -24,17 +34,31 @@ export function LeadsPage() {
 
   const tenantId = adminUser?.tenant_id ?? TENANT_ID;
 
+  // Reset page when search or filters change
+  useEffect(() => {
+    setPage(1);
+  }, [search, statusFilter]);
+
   useEffect(() => {
     if (tenantId) {
       loadLeads();
     }
-  }, [tenantId]);
+  }, [tenantId, page, search, sortBy, sortDir, statusFilter]);
 
   async function loadLeads() {
     setIsLoading(true);
     try {
-      const data = await fetchLeads(tenantId);
-      setLeads(data);
+      const res = await fetchLeadsPaginated({
+        tenantId,
+        page,
+        pageSize,
+        search,
+        sortBy,
+        sortDir,
+        statusFilter
+      });
+      setLeads(res.data);
+      setTotalCount(res.totalCount);
     } catch (err) {
       console.error('Error loading leads:', err);
     } finally {
@@ -53,12 +77,13 @@ export function LeadsPage() {
   }
 
   async function handleDeleteLead(id: string) {
-    if (window.confirm('Are you sure you want to delete this lead submission permanently?')) {
+    const confirmed = await showConfirm('Are you sure you want to delete this lead submission permanently?');
+    if (confirmed) {
       try {
         await deleteLead(id);
         await loadLeads();
       } catch (err) {
-        alert('Failed to delete lead: ' + (err as any).message);
+        showError('Failed to delete lead: ' + (err as any).message);
       }
     }
   }
@@ -75,10 +100,6 @@ export function LeadsPage() {
     converted: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
     archived: 'bg-white/5 text-white/40 border-white/5',
   };
-
-  const filteredLeads = leads.filter(l => {
-    return statusFilter === 'all' || l.status === statusFilter;
-  });
 
   const columns: Column<Lead>[] = [
     {
@@ -190,10 +211,19 @@ export function LeadsPage() {
       {/* Main Table */}
       <DataTable
         columns={columns}
-        data={filteredLeads}
+        data={leads}
         isLoading={isLoading}
         searchPlaceholder="Search leads by name, email or message..."
         onRowClick={handleRowClick}
+        serverSide={true}
+        totalCount={totalCount}
+        currentPage={page}
+        onPageChange={setPage}
+        onSearchChange={setSearch}
+        onSortChange={(key, dir) => {
+          setSortBy(key);
+          setSortDir(dir);
+        }}
       />
 
       {/* Detail Drawer */}

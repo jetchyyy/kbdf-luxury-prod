@@ -20,6 +20,13 @@ interface DataTableProps<T extends { id: string }> {
   onRowClick?: (row: T) => void;
   emptyMessage?: string;
   pageSize?: number;
+  // For Server-side pagination
+  serverSide?: boolean;
+  totalCount?: number;
+  currentPage?: number;
+  onPageChange?: (page: number) => void;
+  onSortChange?: (key: string, dir: 'asc' | 'desc') => void;
+  onSearchChange?: (search: string) => void;
 }
 
 export function DataTable<T extends { id: string }>({
@@ -31,13 +38,22 @@ export function DataTable<T extends { id: string }>({
   onRowClick,
   emptyMessage = 'No records found.',
   pageSize = 10,
+  serverSide = false,
+  totalCount = 0,
+  currentPage = 1,
+  onPageChange,
+  onSortChange,
+  onSearchChange,
 }: DataTableProps<T>) {
   const [search, setSearch] = useState('');
   const [sortKey, setSortKey] = useState<string | null>(null);
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
   const [page, setPage] = useState(1);
 
+  const activePage = serverSide ? currentPage : page;
+
   const filtered = useMemo(() => {
+    if (serverSide) return data;
     if (!search.trim()) return data;
     const q = search.toLowerCase();
     return data.filter(row =>
@@ -45,9 +61,10 @@ export function DataTable<T extends { id: string }>({
         String(v ?? '').toLowerCase().includes(q)
       )
     );
-  }, [data, search]);
+  }, [data, search, serverSide]);
 
   const sorted = useMemo(() => {
+    if (serverSide) return data;
     if (!sortKey) return filtered;
     return [...filtered].sort((a, b) => {
       const av = (a as Record<string, unknown>)[sortKey];
@@ -55,24 +72,43 @@ export function DataTable<T extends { id: string }>({
       const cmp = String(av ?? '').localeCompare(String(bv ?? ''));
       return sortDir === 'asc' ? cmp : -cmp;
     });
-  }, [filtered, sortKey, sortDir]);
+  }, [filtered, sortKey, sortDir, serverSide, data]);
 
-  const totalPages = Math.max(1, Math.ceil(sorted.length / pageSize));
-  const paginated = sorted.slice((page - 1) * pageSize, page * pageSize);
+  const totalPages = Math.max(1, Math.ceil((serverSide ? totalCount : sorted.length) / pageSize));
+  const paginated = serverSide ? data : sorted.slice((page - 1) * pageSize, page * pageSize);
 
   function handleSort(key: string) {
+    let nextDir: 'asc' | 'desc' = 'asc';
     if (sortKey === key) {
-      setSortDir(d => d === 'asc' ? 'desc' : 'asc');
+      nextDir = sortDir === 'asc' ? 'desc' : 'asc';
+      setSortDir(nextDir);
     } else {
       setSortKey(key);
       setSortDir('asc');
     }
-    setPage(1);
+    
+    if (serverSide) {
+      onSortChange?.(key, nextDir);
+    } else {
+      setPage(1);
+    }
   }
 
   function handleSearch(val: string) {
     setSearch(val);
-    setPage(1);
+    if (serverSide) {
+      onSearchChange?.(val);
+    } else {
+      setPage(1);
+    }
+  }
+
+  function handlePageChange(newPage: number) {
+    if (serverSide) {
+      onPageChange?.(newPage);
+    } else {
+      setPage(newPage);
+    }
   }
 
   return (
@@ -122,7 +158,7 @@ export function DataTable<T extends { id: string }>({
             <tbody>
               <AnimatePresence mode="wait">
                 {isLoading ? (
-                  Array.from({ length: 5 }).map((_, i) => (
+                  Array.from({ length: pageSize }).map((_, i) => (
                     <tr key={i} className="border-b border-white/5 last:border-0">
                       {columns.map(col => (
                         <td key={String(col.key)} className="px-4 py-3.5">
@@ -169,20 +205,20 @@ export function DataTable<T extends { id: string }>({
         {!isLoading && totalPages > 1 && (
           <div className="flex items-center justify-between px-4 py-3 border-t border-white/5">
             <p className="text-white/30 text-xs">
-              {sorted.length} record{sorted.length !== 1 ? 's' : ''}
+              {serverSide ? totalCount : sorted.length} record{(serverSide ? totalCount : sorted.length) !== 1 ? 's' : ''}
             </p>
             <div className="flex items-center gap-2">
               <button
-                onClick={() => setPage(p => Math.max(1, p - 1))}
-                disabled={page === 1}
+                onClick={() => handlePageChange(Math.max(1, activePage - 1))}
+                disabled={activePage === 1}
                 className="w-7 h-7 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center text-white/50 disabled:opacity-30 transition-colors"
               >
                 <ChevronLeft className="w-3.5 h-3.5" />
               </button>
-              <span className="text-white/40 text-xs">{page} / {totalPages}</span>
+              <span className="text-white/40 text-xs">{activePage} / {totalPages}</span>
               <button
-                onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-                disabled={page === totalPages}
+                onClick={() => handlePageChange(Math.min(totalPages, activePage + 1))}
+                disabled={activePage === totalPages}
                 className="w-7 h-7 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center text-white/50 disabled:opacity-30 transition-colors"
               >
                 <ChevronRight className="w-3.5 h-3.5" />

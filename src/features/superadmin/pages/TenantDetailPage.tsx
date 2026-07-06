@@ -9,6 +9,7 @@ import { DataTable } from '../../admin/components/DataTable';
 import type { Column } from '../../admin/components/DataTable';
 import { EnvGenerator } from '../components/EnvGenerator';
 import { UserFormModal } from '../../admin/components/UserFormModal';
+import { useNotification } from '../../../core/context/NotificationContext';
 
 export function TenantDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -17,6 +18,7 @@ export function TenantDetailPage() {
   const [items, setItems] = useState<Item[]>([]);
   const [staff, setStaff] = useState<AdminUser[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const { showSuccess, showError, showConfirm } = useNotification();
 
   // Edit branding state
   const [primaryColor, setPrimaryColor] = useState('');
@@ -60,12 +62,14 @@ export function TenantDetailPage() {
     const confirmMsg = tenant.is_active
       ? 'Deactivate this tenant? Storefront will become offline.'
       : 'Activate this tenant? Storefront will become online.';
-    if (window.confirm(confirmMsg)) {
+    const confirmed = await showConfirm(confirmMsg);
+    if (confirmed) {
       try {
         const updated = await updateTenant(tenant.id, { is_active: !tenant.is_active });
         setTenant(updated);
+        showSuccess(`Tenant status updated to: ${!tenant.is_active ? 'Active' : 'Inactive'}`);
       } catch (err) {
-        alert('Failed to update tenant status');
+        showError('Failed to update tenant status');
       }
     }
   }
@@ -80,9 +84,9 @@ export function TenantDetailPage() {
         accent_color: accentColor,
       });
       setTenant(updated);
-      alert('Branding colors updated successfully.');
+      showSuccess('Branding colors updated successfully.');
     } catch (err) {
-      alert('Failed to save branding changes.');
+      showError('Failed to save branding changes.');
     } finally {
       setIsSavingBranding(false);
     }
@@ -90,12 +94,13 @@ export function TenantDetailPage() {
 
   async function handleDeleteStore() {
     if (!tenant) return;
-    if (window.confirm('WARNING: Are you absolutely sure you want to delete this tenant and all associated data? This action is irreversible.')) {
+    const confirmed = await showConfirm('WARNING: Are you absolutely sure you want to delete this tenant and all associated data? This action is irreversible.');
+    if (confirmed) {
       try {
         await deleteTenant(tenant.id);
         navigate('/odc/tenants');
       } catch (err) {
-        alert('Failed to delete tenant storefront: ' + (err as any).message);
+        showError('Failed to delete tenant storefront: ' + (err as any).message);
       }
     }
   }
@@ -109,25 +114,26 @@ export function TenantDetailPage() {
         const { email, ...rest } = payload;
         const res = await createAdminUser(email, password, rest);
         if (res && (res as any).createdAutomatically === false) {
-          alert("Staff profile created successfully! \n\nNote: Auth account could not be auto-created (requires Service Role Key). Please manually create/invite user email '" + email + "' in your Supabase Auth dashboard. The profile will auto-link upon signup.");
+          showSuccess("Staff profile created successfully! \n\nNote: Auth account could not be auto-created (requires Service Role Key). Please manually create/invite user email '" + email + "' in your Supabase Auth dashboard. The profile will auto-link upon signup.");
         }
       }
       const staffData = await fetchAdminUsers(id!);
       setStaff(staffData);
     } catch (err: any) {
-      alert('Error saving staff user: ' + err.message);
+      showError('Error saving staff user: ' + err.message);
       throw err;
     }
   }
 
   async function handleDeactivateUser(userId: string) {
-    if (window.confirm('Are you sure you want to deactivate this staff user account? They will lose access immediately.')) {
+    const confirmed = await showConfirm('Are you sure you want to deactivate this staff user account? They will lose access immediately.');
+    if (confirmed) {
       try {
         await deactivateAdminUser(userId);
         const staffData = await fetchAdminUsers(id!);
         setStaff(staffData);
       } catch (err: any) {
-        alert('Failed to deactivate user: ' + err.message);
+        showError('Failed to deactivate user: ' + err.message);
       }
     }
   }
