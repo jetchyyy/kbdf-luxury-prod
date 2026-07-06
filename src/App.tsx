@@ -8,6 +8,7 @@ import { ContactPage } from "./features/contact/ContactPage";
 import { AuthPage } from "./features/auth/AuthPage";
 import { CartProvider } from "./features/cart/CartContext";
 import { CartDrawer } from "./features/cart/CartDrawer";
+import { ProductDetailPage } from "./features/products/ProductDetailPage";
 
 // Admin Imports
 import { AdminAuthProvider } from "./features/admin/context/AdminAuthContext";
@@ -58,6 +59,7 @@ function App() {
                     <Routes>
                       <Route path="/" element={<HomePage />} />
                       <Route path="/shop" element={<ShopPage />} />
+                      <Route path="/product/:slug" element={<ProductDetailPage />} />
                       <Route path="/categories" element={<CategoriesPage />} />
                       <Route path="/contact" element={<ContactPage />} />
                       <Route path="/track" element={<TrackPage />} />

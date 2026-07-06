@@ -52,6 +52,7 @@ export function OrdersPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [notes, setNotes] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [dateFilter, setDateFilter] = useState<'all' | 'today' | 'week'>('all');
 
   const tenantId = adminUser?.tenant_id ?? TENANT_ID;
   const currency = tenant?.currency_symbol ?? '₱';
@@ -130,9 +131,24 @@ export function OrdersPage() {
   }
 
   // Filter orders
-  const filteredOrders = statusFilter === 'all' 
-    ? orders 
-    : orders.filter(o => o.status === statusFilter);
+  const filteredOrders = orders.filter(o => {
+    // 1. Status Filter
+    if (statusFilter !== 'all' && o.status !== statusFilter) return false;
+
+    // 2. Date Filter
+    if (dateFilter === 'today') {
+      const orderDate = new Date(o.created_at);
+      const today = new Date();
+      return orderDate.toDateString() === today.toDateString();
+    }
+    if (dateFilter === 'week') {
+      const orderDate = new Date(o.created_at);
+      const oneWeekAgo = new Date();
+      oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+      return orderDate >= oneWeekAgo;
+    }
+    return true;
+  });
 
   const columns: Column<Order>[] = [
     {
@@ -248,20 +264,34 @@ export function OrdersPage() {
           <p className="text-white/40 text-xs mt-0.5">Verify digital transfer receipts, shipping address details, and update tracking progress.</p>
         </div>
 
-        {/* Status Filters */}
-        <select
-          value={statusFilter}
-          onChange={e => setStatusFilter(e.target.value)}
-          className="bg-[#0f1117] border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white outline-none focus:border-[#fb7a90]/50 self-start sm:self-auto"
-        >
-          <option value="all">All Orders</option>
-          <option value="pending_verification">Pending Verification</option>
-          <option value="verified">Verified Payments</option>
-          <option value="processing">Processing</option>
-          <option value="shipped">Shipped</option>
-          <option value="completed">Completed</option>
-          <option value="cancelled">Cancelled</option>
-        </select>
+        {/* Filters */}
+        <div className="flex flex-wrap gap-2.5 self-start sm:self-auto">
+          {/* Status Filter */}
+          <select
+            value={statusFilter}
+            onChange={e => setStatusFilter(e.target.value)}
+            className="bg-[#0f1117] border border-white/10 rounded-xl px-4 py-2.5 text-xs font-semibold text-white outline-none focus:border-[#fb7a90]/50"
+          >
+            <option value="all">All Statuses</option>
+            <option value="pending_verification">Pending Verification</option>
+            <option value="verified">Verified Payments</option>
+            <option value="processing">Processing</option>
+            <option value="shipped">Shipped</option>
+            <option value="completed">Completed</option>
+            <option value="cancelled">Cancelled</option>
+          </select>
+
+          {/* Date Range Filter */}
+          <select
+            value={dateFilter}
+            onChange={e => setDateFilter(e.target.value as any)}
+            className="bg-[#0f1117] border border-white/10 rounded-xl px-4 py-2.5 text-xs font-semibold text-white outline-none focus:border-[#fb7a90]/50"
+          >
+            <option value="all">All Time</option>
+            <option value="today">Today's Orders</option>
+            <option value="week">Past 7 Days</option>
+          </select>
+        </div>
       </div>
 
       {/* Table */}

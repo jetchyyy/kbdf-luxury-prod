@@ -1,8 +1,7 @@
-import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import type { Product } from "../types";
 import { FadeUp } from "../../../ui/Motion/FadeUp";
 import { useCart } from "../../cart/CartContext";
-import { ProductDetailModal } from "./ProductDetailModal";
 
 interface ProductCardProps {
   product: Product;
@@ -11,14 +10,14 @@ interface ProductCardProps {
 
 export function ProductCard({ product, index }: ProductCardProps) {
   const { addToCart } = useCart();
-  const [isDetailOpen, setIsDetailOpen] = useState(false);
+  const navigate = useNavigate();
 
   const hasSizes = product.sizes && product.sizes.length > 0;
 
   return (
     <FadeUp delay={index * 0.1}>
       <div 
-        onClick={() => setIsDetailOpen(true)}
+        onClick={() => navigate(`/product/${product.slug}`)}
         className="group cursor-pointer flex flex-col"
       >
         <div className="relative w-full h-[28rem] bg-surface-light overflow-hidden mb-4">
@@ -39,7 +38,7 @@ export function ProductCard({ product, index }: ProductCardProps) {
                 e.preventDefault(); 
                 e.stopPropagation(); 
                 if (hasSizes) {
-                  setIsDetailOpen(true);
+                  navigate(`/product/${product.slug}`);
                 } else {
                   addToCart(product);
                 }
@@ -63,12 +62,6 @@ export function ProductCard({ product, index }: ProductCardProps) {
           </p>
         </div>
       </div>
-
-      <ProductDetailModal
-        isOpen={isDetailOpen}
-        onClose={() => setIsDetailOpen(false)}
-        product={product}
-      />
     </FadeUp>
   );
 }
