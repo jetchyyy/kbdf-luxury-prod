@@ -288,6 +288,60 @@ export function OrdersPage() {
             {/* Modal Body */}
             <div className="flex-1 overflow-y-auto p-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
               
+              {/* Status Timeline */}
+              {(() => {
+                const STATUS_STEPS = [
+                  { key: 'pending_verification', label: 'Verify' },
+                  { key: 'verified', label: 'Verified' },
+                  { key: 'processing', label: 'Processing' },
+                  { key: 'shipped', label: 'Shipped' },
+                  { key: 'completed', label: 'Completed' }
+                ];
+                const currentStatusIndex = STATUS_STEPS.findIndex(step => step.key === selectedOrder.status);
+
+                return (
+                  <div className="col-span-1 lg:col-span-3 bg-[#0f1117] border border-white/5 rounded-2xl p-6 flex flex-col items-center justify-center space-y-4">
+                    <strong className="text-white/40 text-[10px] uppercase tracking-widest self-start">Order Progress</strong>
+                    {selectedOrder.status === 'cancelled' ? (
+                      <div className="text-red-400 bg-red-500/10 border border-red-500/20 px-6 py-3 rounded-xl w-full text-center font-bold text-xs">
+                        This order has been cancelled and cannot be processed further.
+                      </div>
+                    ) : (
+                      <div className="w-full flex items-center justify-between relative max-w-2xl px-4 py-2">
+                        {/* Connector Line background */}
+                        <div className="absolute left-10 right-10 top-7 h-0.5 bg-white/5 -translate-y-1/2 z-0" />
+                        {/* Connector Line progress */}
+                        <div 
+                          className="absolute left-10 top-7 h-0.5 bg-gradient-to-r from-[#fb7a90] to-[#f16881] -translate-y-1/2 transition-all duration-500 z-0"
+                          style={{ width: `${currentStatusIndex >= 0 ? (currentStatusIndex / (STATUS_STEPS.length - 1)) * 90 : 0}%` }}
+                        />
+
+                        {STATUS_STEPS.map((step, idx) => {
+                          const isDone = idx <= currentStatusIndex;
+                          const isCurrent = idx === currentStatusIndex;
+                          return (
+                            <div key={step.key} className="flex flex-col items-center relative z-10 flex-1">
+                              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-300 border ${
+                                isDone 
+                                  ? 'bg-gradient-to-r from-[#fb7a90] to-[#f16881] border-[#fb7a90] text-white shadow-lg shadow-[#fb7a90]/20' 
+                                  : 'bg-[#111827] border-white/10 text-white/40'
+                              } ${isCurrent ? 'ring-4 ring-[#fb7a90]/20 scale-110' : ''}`}>
+                                {idx + 1}
+                              </div>
+                              <span className={`text-[10px] mt-2 font-medium tracking-wide uppercase text-center transition-all ${
+                                isDone ? 'text-white' : 'text-white/30'
+                              }`}>
+                                {step.label}
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
+
               {/* Col 1: Customer details */}
               <div className="space-y-4 text-sm text-white/70">
                 <h4 className="text-xs uppercase font-bold text-white tracking-widest border-b border-white/5 pb-1 flex items-center gap-1.5">
@@ -374,59 +428,73 @@ export function OrdersPage() {
                 </div>
 
                 {/* Status Update Actions */}
-                {canEdit && (
-                  <div className="pt-6 border-t border-white/5 space-y-3">
-                    <div className="flex flex-col gap-1.5">
-                      <label className="text-[10px] uppercase font-bold text-white/40">Order Verification Notes</label>
-                      <textarea
-                        value={notes}
-                        onChange={e => setNotes(e.target.value)}
-                        placeholder="Add verification updates, bank reference checks..."
-                        rows={2}
-                        className="bg-[#0f1117] border border-white/10 rounded-xl px-3 py-2 text-xs text-white resize-none outline-none focus:border-[#fb7a90]/50"
-                      />
-                    </div>
+                {(() => {
+                  const isCompletedOrCancelled = selectedOrder.status === 'completed' || selectedOrder.status === 'cancelled';
+                  const canVerify = selectedOrder.status === 'pending_verification';
+                  const canProcess = selectedOrder.status === 'verified';
+                  const canShip = selectedOrder.status === 'processing';
+                  const canComplete = selectedOrder.status === 'shipped';
+                  const canCancel = !isCompletedOrCancelled;
 
-                    <div className="grid grid-cols-2 gap-2">
-                      <button
-                        onClick={() => updateOrderStatus(selectedOrder.id, 'verified')}
-                        className="flex items-center justify-center gap-1 bg-blue-500 hover:bg-blue-600 text-white rounded-xl py-2 text-xs font-semibold tracking-wider active:scale-[0.98] transition-all"
-                      >
-                        <CheckCircle className="w-3.5 h-3.5" /> Verify Payment
-                      </button>
-                      <button
-                        onClick={() => updateOrderStatus(selectedOrder.id, 'processing')}
-                        className="flex items-center justify-center gap-1 bg-purple-500 hover:bg-purple-600 text-white rounded-xl py-2 text-xs font-semibold tracking-wider active:scale-[0.98] transition-all"
-                      >
-                        <CheckCircle className="w-3.5 h-3.5" /> Start Process
-                      </button>
-                      <button
-                        onClick={() => updateOrderStatus(selectedOrder.id, 'shipped')}
-                        className="flex items-center justify-center gap-1 bg-[#fb7a90] hover:bg-[#fb7a90]/90 text-white rounded-xl py-2 text-xs font-semibold tracking-wider active:scale-[0.98] transition-all"
-                      >
-                        <Truck className="w-3.5 h-3.5" /> Ship Order
-                      </button>
-                      <button
-                        onClick={() => updateOrderStatus(selectedOrder.id, 'completed')}
-                        className="flex items-center justify-center gap-1 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl py-2 text-xs font-semibold tracking-wider active:scale-[0.98] transition-all"
-                      >
-                        <CheckCircle className="w-3.5 h-3.5" /> Complete
-                      </button>
-                      <button
-                        onClick={() => updateOrderStatus(selectedOrder.id, 'cancelled')}
-                        className="flex items-center justify-center gap-1 bg-red-500 hover:bg-red-600 text-white rounded-xl py-2 text-xs font-semibold tracking-wider active:scale-[0.98] transition-all"
-                      >
-                        <XCircle className="w-3.5 h-3.5" /> Cancel Order
-                      </button>
-                      <button
-                        onClick={() => handleDeleteOrder(selectedOrder.id)}
-                        className="flex items-center justify-center gap-1 bg-white/5 hover:bg-red-500/10 text-white/50 hover:text-red-400 border border-white/10 hover:border-red-500/20 rounded-xl py-2 text-xs font-semibold tracking-wider active:scale-[0.98] transition-all"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" /> Delete Order
-                      </button>
+                  return canEdit ? (
+                    <div className="pt-6 border-t border-white/5 space-y-3">
+                      <div className="flex flex-col gap-1.5">
+                        <label className="text-[10px] uppercase font-bold text-white/40">Order Verification Notes</label>
+                        <textarea
+                          value={notes}
+                          onChange={e => setNotes(e.target.value)}
+                          placeholder="Add verification updates, bank reference checks..."
+                          rows={2}
+                          className="bg-[#0f1117] border border-white/10 rounded-xl px-3 py-2 text-xs text-white resize-none outline-none focus:border-[#fb7a90]/50"
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2">
+                        <button
+                          onClick={() => updateOrderStatus(selectedOrder.id, 'verified')}
+                          disabled={!canVerify}
+                          className="flex items-center justify-center gap-1 bg-blue-500 hover:bg-blue-600 disabled:opacity-20 disabled:hover:bg-blue-500 disabled:cursor-not-allowed text-white rounded-xl py-2 text-xs font-semibold tracking-wider active:scale-[0.98] disabled:active:scale-100 transition-all"
+                        >
+                          <CheckCircle className="w-3.5 h-3.5" /> Verify Payment
+                        </button>
+                        <button
+                          onClick={() => updateOrderStatus(selectedOrder.id, 'processing')}
+                          disabled={!canProcess}
+                          className="flex items-center justify-center gap-1 bg-purple-500 hover:bg-purple-600 disabled:opacity-20 disabled:hover:bg-purple-500 disabled:cursor-not-allowed text-white rounded-xl py-2 text-xs font-semibold tracking-wider active:scale-[0.98] disabled:active:scale-100 transition-all"
+                        >
+                          <CheckCircle className="w-3.5 h-3.5" /> Start Process
+                        </button>
+                        <button
+                          onClick={() => updateOrderStatus(selectedOrder.id, 'shipped')}
+                          disabled={!canShip}
+                          className="flex items-center justify-center gap-1 bg-[#fb7a90] hover:bg-[#fb7a90]/90 disabled:opacity-20 disabled:hover:bg-[#fb7a90] disabled:cursor-not-allowed text-white rounded-xl py-2 text-xs font-semibold tracking-wider active:scale-[0.98] disabled:active:scale-100 transition-all"
+                        >
+                          <Truck className="w-3.5 h-3.5" /> Ship Order
+                        </button>
+                        <button
+                          onClick={() => updateOrderStatus(selectedOrder.id, 'completed')}
+                          disabled={!canComplete}
+                          className="flex items-center justify-center gap-1 bg-emerald-500 hover:bg-emerald-600 disabled:opacity-20 disabled:hover:bg-emerald-500 disabled:cursor-not-allowed text-white rounded-xl py-2 text-xs font-semibold tracking-wider active:scale-[0.98] disabled:active:scale-100 transition-all"
+                        >
+                          <CheckCircle className="w-3.5 h-3.5" /> Complete
+                        </button>
+                        <button
+                          onClick={() => updateOrderStatus(selectedOrder.id, 'cancelled')}
+                          disabled={!canCancel}
+                          className="flex items-center justify-center gap-1 bg-red-500 hover:bg-red-600 disabled:opacity-20 disabled:hover:bg-red-500 disabled:cursor-not-allowed text-white rounded-xl py-2 text-xs font-semibold tracking-wider active:scale-[0.98] disabled:active:scale-100 transition-all"
+                        >
+                          <XCircle className="w-3.5 h-3.5" /> Cancel Order
+                        </button>
+                        <button
+                          onClick={() => handleDeleteOrder(selectedOrder.id)}
+                          className="flex items-center justify-center gap-1 bg-white/5 hover:bg-red-500/10 text-white/50 hover:text-red-400 border border-white/10 hover:border-red-500/20 rounded-xl py-2 text-xs font-semibold tracking-wider active:scale-[0.98] transition-all"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" /> Delete Order
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                )}
+                  ) : null;
+                })()}
               </div>
 
             </div>

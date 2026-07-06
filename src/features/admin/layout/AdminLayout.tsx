@@ -10,6 +10,7 @@ const PAGE_TITLES: Record<string, string> = {
   '/admin/orders': 'Order Verification',
   '/admin/items': 'Item Management',
   '/admin/categories': 'Categories',
+  '/admin/promo-codes': 'Promo Codes',
   '/admin/users': 'User Management',
   '/admin/roles': 'Role Management',
   '/admin/leads': 'Lead Management',

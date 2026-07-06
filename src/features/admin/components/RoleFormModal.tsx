@@ -20,6 +20,7 @@ const MODULES: { key: PermissionModule; label: string; actions: PermissionAction
   { key: 'leads', label: 'Leads / Contacts', actions: ['read', 'edit', 'delete'] },
   { key: 'expenses', label: 'Expense Tracker', actions: ['create', 'read', 'edit', 'delete'] },
   { key: 'payment_methods', label: 'Payment Methods & QR', actions: ['create', 'read', 'edit', 'delete'] },
+  { key: 'promo_codes', label: 'Promo Codes', actions: ['create', 'read', 'edit', 'delete'] },
   { key: 'settings', label: 'Settings', actions: ['read', 'edit'] },
 ];
 

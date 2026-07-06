@@ -104,6 +104,16 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
       return hasModuleAccess && isSystemOrAdmin;
     }
 
+    // Fallback for new promo_codes module
+    if (module === 'promo_codes') {
+      const hasModuleAccess = hasAccess('promo_codes');
+      const isSystemOrAdmin = 
+        role.name.toLowerCase() === 'admin' || 
+        role.name.toLowerCase() === 'administrator' || 
+        role.is_system_role;
+      return hasModuleAccess && isSystemOrAdmin;
+    }
+
     return false;
   }
 

@@ -83,6 +83,7 @@ export interface Database {
           access_roles: boolean;
           access_payment_methods: boolean;
           access_orders: boolean;
+          access_promo_codes: boolean;
           created_at: string;
           updated_at: string;
         };
@@ -107,6 +108,7 @@ export interface Database {
           access_roles?: boolean;
           access_payment_methods?: boolean;
           access_orders?: boolean;
+          access_promo_codes?: boolean;
           created_at?: string;
           updated_at?: string;
         };
@@ -388,8 +390,25 @@ export type Lead = Database['public']['Tables']['leads']['Row'];
 export type ExpenseCategory = Database['public']['Tables']['expense_categories']['Row'];
 export type Expense = Database['public']['Tables']['expenses']['Row'];
 export type PaymentMethod = Database['public']['Tables']['payment_methods']['Row'];
-export type Order = Database['public']['Tables']['orders']['Row'];
+export type Order = Database['public']['Tables']['orders']['Row'] & {
+  promo_code_id?: string | null;
+  discount_amount?: number;
+};
 export type OrderItem = Database['public']['Tables']['order_items']['Row'];
+
+export interface PromoCode {
+  id: string;
+  tenant_id: string;
+  code: string;
+  discount_type: 'percentage' | 'fixed';
+  discount_value: number;
+  max_uses: number | null;
+  used_count: number;
+  expires_at: string | null;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
 
 // Permission module names
 export type PermissionModule =
@@ -403,7 +422,8 @@ export type PermissionModule =
   | 'expenses'
   | 'payment_methods'
   | 'settings'
-  | 'orders';
+  | 'orders'
+  | 'promo_codes';
 
 export type PermissionAction = 'create' | 'read' | 'edit' | 'delete';
 

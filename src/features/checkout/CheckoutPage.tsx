@@ -42,6 +42,81 @@ export function CheckoutPage() {
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
   const [trackingCode, setTrackingCode] = useState('');
 
+  // Promo code states
+  const [promoCodeInput, setPromoCodeInput] = useState('');
+  const [appliedPromo, setAppliedPromo] = useState<any>(null);
+  const [discountAmt, setDiscountAmt] = useState(0);
+  const [isApplyingPromo, setIsApplyingPromo] = useState(false);
+
+  const calculateDiscount = (promo: any, subtotal: number) => {
+    if (promo.discount_type === 'percentage') {
+      return (subtotal * promo.discount_value) / 100;
+    } else {
+      return promo.discount_value;
+    }
+  };
+
+  useEffect(() => {
+    if (appliedPromo) {
+      const discount = calculateDiscount(appliedPromo, cartTotal);
+      setDiscountAmt(Math.min(discount, cartTotal));
+    } else {
+      setDiscountAmt(0);
+    }
+  }, [appliedPromo, cartTotal]);
+
+  const handleApplyPromoCode = async () => {
+    if (!promoCodeInput.trim()) return;
+    setIsApplyingPromo(true);
+    try {
+      const codeClean = promoCodeInput.trim().toUpperCase();
+      const { data, error } = await supabase
+        .from('promo_codes')
+        .select('*')
+        .eq('tenant_id', tenantId)
+        .eq('code', codeClean)
+        .single();
+
+      if (error || !data) {
+        showError('Invalid promo code. Please check spelling.');
+        setAppliedPromo(null);
+        return;
+      }
+
+      if (!data.is_active) {
+        showError('This promo code is no longer active.');
+        setAppliedPromo(null);
+        return;
+      }
+
+      if (data.expires_at && new Date(data.expires_at) < new Date()) {
+        showError('This promo code has expired.');
+        setAppliedPromo(null);
+        return;
+      }
+
+      if (data.max_uses !== null && data.used_count >= data.max_uses) {
+        showError('This promo code has reached its usage limit.');
+        setAppliedPromo(null);
+        return;
+      }
+
+      setAppliedPromo(data);
+      showSuccess(`Promo code ${data.code} applied successfully!`);
+    } catch (err: any) {
+      console.error(err);
+      showError('Failed to apply promo code.');
+    } finally {
+      setIsApplyingPromo(false);
+    }
+  };
+
+  const handleRemovePromo = () => {
+    setAppliedPromo(null);
+    setPromoCodeInput('');
+    setDiscountAmt(0);
+  };
+
   // Step 1: Customer Details
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
@@ -224,7 +299,9 @@ export function CheckoutPage() {
         proof_of_payment_url: proofOfPaymentUrl || null,
         subtotal: cartTotal,
         shipping_fee: 0,
-        total: cartTotal,
+        total: Math.max(0, cartTotal - discountAmt),
+        promo_code_id: appliedPromo ? appliedPromo.id : null,
+        discount_amount: discountAmt,
         status: 'pending_verification',
         notes: ''
       };
@@ -237,6 +314,11 @@ export function CheckoutPage() {
         .single();
 
       if (orderError) throw orderError;
+
+      // Increment promo usage counter if a promo was used
+      if (appliedPromo) {
+        await supabase.rpc('increment_promo_code_usage', { promo_code_id: appliedPromo.id });
+      }
 
       // 3. Insert Order Items
       const itemsPayload = items.map(item => ({
@@ -807,18 +889,53 @@ export function CheckoutPage() {
                 ))}
               </div>
 
-              <div className="pt-4 border-t border-surface-light space-y-2 text-xs">
+              <div className="pt-4 border-t border-surface-light space-y-3 text-xs">
                 <div className="flex justify-between">
                   <span className="text-typography-muted">Subtotal</span>
                   <span className="font-semibold text-typography-primary">{currencySymbol}{cartTotal.toLocaleString()}</span>
                 </div>
+
+                {/* Promo Code Entry / Discount Display */}
+                {appliedPromo ? (
+                  <div className="flex justify-between text-emerald-600 bg-emerald-500/10 border border-emerald-500/25 px-3 py-2 rounded-xl items-center">
+                    <span className="font-semibold uppercase tracking-wider text-[10px]">Promo ({appliedPromo.code})</span>
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold">-{currencySymbol}{discountAmt.toLocaleString()}</span>
+                      <button 
+                        onClick={handleRemovePromo} 
+                        className="text-emerald-600 hover:text-red-500 font-bold text-xs bg-white/20 w-4 h-4 rounded-full flex items-center justify-center transition-colors" 
+                        title="Remove promo"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex gap-2 pt-1">
+                    <input
+                      type="text"
+                      placeholder="PROMO CODE"
+                      value={promoCodeInput}
+                      onChange={e => setPromoCodeInput(e.target.value.toUpperCase())}
+                      className="bg-white border border-surface-light rounded-xl px-3 py-2 text-xs text-typography-primary outline-none focus:border-brand-pink flex-1 uppercase placeholder:text-typography-muted"
+                    />
+                    <button
+                      onClick={handleApplyPromoCode}
+                      disabled={isApplyingPromo || !promoCodeInput.trim()}
+                      className="bg-brand-navy hover:bg-brand-pink text-white rounded-xl px-4 py-2 font-bold text-xs tracking-widest uppercase transition-all disabled:opacity-50"
+                    >
+                      {isApplyingPromo ? 'Applying...' : 'Apply'}
+                    </button>
+                  </div>
+                )}
+
                 <div className="flex justify-between">
                   <span className="text-typography-muted">Delivery</span>
                   <span className="font-semibold text-brand-pink uppercase">Free</span>
                 </div>
                 <div className="flex justify-between text-sm font-bold pt-4 border-t border-surface-light">
                   <span>Total</span>
-                  <span className="text-typography-primary">{currencySymbol}{cartTotal.toLocaleString()}</span>
+                  <span className="text-typography-primary">{currencySymbol}{Math.max(0, cartTotal - discountAmt).toLocaleString()}</span>
                 </div>
               </div>
             </div>

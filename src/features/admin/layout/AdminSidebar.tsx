@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard, BarChart3, Package, Tag, Users, Shield,
   MessageSquare, Receipt, QrCode, Settings, ChevronLeft, ChevronRight,
-  Store, ShoppingBag
+  Store, ShoppingBag, Ticket
 } from 'lucide-react';
 import { useAdminAuth } from '../context/AdminAuthContext';
 import { clsx } from 'clsx';
@@ -14,6 +14,7 @@ const NAV_ITEMS = [
   { label: 'Orders',           href: '/admin/orders',           icon: ShoppingBag,     key: 'orders' },
   { label: 'Items',            href: '/admin/items',            icon: Package,         key: 'items' },
   { label: 'Categories',       href: '/admin/categories',       icon: Tag,             key: 'categories' },
+  { label: 'Promo Codes',      href: '/admin/promo-codes',      icon: Ticket,          key: 'promo_codes' },
   { label: 'Users',            href: '/admin/users',            icon: Users,           key: 'users' },
   { label: 'Roles',            href: '/admin/roles',            icon: Shield,          key: 'roles' },
   { label: 'Leads',            href: '/admin/leads',            icon: MessageSquare,   key: 'leads' },

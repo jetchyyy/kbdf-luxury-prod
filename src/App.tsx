@@ -24,6 +24,7 @@ import { LeadsPage } from "./features/admin/pages/LeadsPage";
 import { ExpensesPage } from "./features/admin/pages/ExpensesPage";
 import { PaymentMethodsPage } from "./features/admin/pages/PaymentMethodsPage";
 import { SettingsPage } from "./features/admin/pages/SettingsPage";
+import { PromoCodesPage } from "./features/admin/pages/PromoCodesPage";
 
 // Superadmin Imports
 import { SuperAdminGuard } from "./features/superadmin/SuperAdminGuard";
@@ -88,6 +89,7 @@ function App() {
                     <Route path="leads" element={<LeadsPage />} />
                     <Route path="expenses" element={<ExpensesPage />} />
                     <Route path="payment-methods" element={<PaymentMethodsPage />} />
+                    <Route path="promo-codes" element={<PromoCodesPage />} />
                     <Route path="settings" element={<SettingsPage />} />
                   </Routes>
                 </AdminLayout>
