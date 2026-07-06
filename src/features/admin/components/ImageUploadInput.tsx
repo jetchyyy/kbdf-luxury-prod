@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { Upload, Loader2, Check, AlertCircle } from 'lucide-react';
+import { Upload, Loader2, Check, Trash2, AlertCircle } from 'lucide-react';
 import { supabase } from '../../../lib/supabase/supabaseClient';
 import { compressImage } from '../utils/compression';
 
@@ -15,7 +15,7 @@ export function ImageUploadInput({
   value,
   onChange,
   tenantId,
-  placeholder = 'https://images.unsplash.com/...',
+  placeholder = 'Select photo...',
   maxSizeMB = 5
 }: ImageUploadInputProps) {
   const [isUploading, setIsUploading] = useState(false);
@@ -46,7 +46,10 @@ export function ImageUploadInput({
       // 1. Compress Image
       const compressedBlob = await compressImage(file);
       const uuid = crypto.randomUUID();
-      const filePath = `${tenantId}/${uuid}.jpg`;
+      
+      // Determine folder prefix based on path hints
+      const folder = placeholder.toLowerCase().includes('receipt') ? 'receipts' : 'uploads';
+      const filePath = `${tenantId}/${folder}/${uuid}.jpg`;
 
       // 2. Upload to Supabase storage
       const { error: uploadError } = await supabase.storage
@@ -72,45 +75,83 @@ export function ImageUploadInput({
       setErrorMsg(err.message || 'Failed to upload photo.');
     } finally {
       setIsUploading(false);
-      // Reset input value to allow selecting same file again
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
     }
   }
 
-  return (
-    <div className="space-y-1 w-full">
-      <div className="flex items-center gap-2 w-full">
-        {/* Text Input for direct pasting */}
-        <input
-          type="url"
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder={placeholder}
-          className="flex-1 bg-[#0f1117] border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder:text-white/20 outline-none focus:border-[#fb7a90]/50 transition-colors"
-        />
+  const triggerUpload = () => {
+    fileInputRef.current?.click();
+  };
 
-        {/* Upload Trigger Button */}
-        <label className="flex-shrink-0 flex items-center justify-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 text-white rounded-xl px-4 py-2.5 text-sm font-semibold cursor-pointer active:scale-[0.98] transition-all">
-          {isUploading ? (
-            <Loader2 className="w-4 h-4 animate-spin text-[#fb7a90]" />
-          ) : value ? (
-            <Check className="w-4 h-4 text-emerald-400" />
-          ) : (
-            <Upload className="w-4 h-4 text-white/60" />
-          )}
-          <span>{isUploading ? 'Uploading...' : 'Upload'}</span>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            onChange={handleFileChange}
-            disabled={isUploading}
-            className="hidden"
-          />
-        </label>
-      </div>
+  return (
+    <div className="w-full space-y-1">
+      {/* Invisible input file trigger */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        onChange={handleFileChange}
+        disabled={isUploading}
+        className="hidden"
+      />
+
+      {isUploading ? (
+        /* UPLOADING STATE */
+        <div className="flex items-center justify-center gap-3 bg-[#0f1117] border border-white/10 rounded-xl p-4 text-sm text-white/70">
+          <Loader2 className="w-5 h-5 animate-spin text-[#fb7a90]" />
+          <span>Uploading and compressing photo...</span>
+        </div>
+      ) : value ? (
+        /* UPLOAD SUCCESS STATE WITH PREVIEW */
+        <div className="flex items-center justify-between gap-4 bg-[#0f1117]/50 border border-white/10 rounded-xl p-3.5">
+          <div className="flex items-center gap-3 min-w-0">
+            {/* Small image preview circle */}
+            <div className="w-10 h-10 rounded-lg overflow-hidden bg-black border border-white/10 flex-shrink-0">
+              <img src={value} alt="Preview" className="w-full h-full object-cover" />
+            </div>
+            <div className="min-w-0 flex items-center">
+              <span className="text-white text-xs font-semibold flex items-center gap-1">
+                <Check className="w-3.5 h-3.5 text-emerald-400" /> Photo Uploaded
+              </span>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={triggerUpload}
+              className="px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 text-white text-[11px] font-bold rounded-lg transition-all"
+            >
+              Replace
+            </button>
+            <button
+              type="button"
+              onClick={() => onChange('')}
+              className="p-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 rounded-lg transition-all"
+              title="Delete photo"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      ) : (
+        /* DORMANT / EMPTY UPLOAD DROPZONE BUTTON */
+        <button
+          type="button"
+          onClick={triggerUpload}
+          className="w-full flex flex-col items-center justify-center gap-2 bg-[#0f1117] hover:bg-[#0f1117]/80 border border-dashed border-white/10 hover:border-[#fb7a90]/40 rounded-xl p-6 transition-all"
+        >
+          <div className="w-9 h-9 rounded-full bg-white/5 flex items-center justify-center text-white/50">
+            <Upload className="w-4 h-4" />
+          </div>
+          <div className="text-center">
+            <p className="text-white text-xs font-semibold">{placeholder}</p>
+            <p className="text-white/30 text-[10px] mt-0.5">JPEG/PNG up to {maxSizeMB}MB</p>
+          </div>
+        </button>
+      )}
 
       {errorMsg && (
         <div className="flex items-center gap-1.5 text-red-400 text-[11px] mt-1 pl-1">
