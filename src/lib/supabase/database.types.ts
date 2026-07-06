@@ -155,10 +155,11 @@ export interface Database {
           original_price: number | null;
           quantity: number;
           sku: string | null;
-          brand: string | null;
+           brand: string | null;
           condition: 'new' | 'preloved_excellent' | 'preloved_good' | 'preloved_fair';
           stock_status: 'in_stock' | 'low_stock' | 'out_of_stock';
           image_urls: string[];
+           sizes: { size: string; quantity: number }[] | null;
           is_active: boolean;
           created_at: string;
           updated_at: string;
@@ -178,6 +179,7 @@ export interface Database {
           condition?: 'new' | 'preloved_excellent' | 'preloved_good' | 'preloved_fair';
           stock_status?: 'in_stock' | 'low_stock' | 'out_of_stock';
           image_urls?: string[];
+          sizes?: { size: string; quantity: number }[] | null;
           is_active?: boolean;
           created_at?: string;
           updated_at?: string;
@@ -363,6 +365,7 @@ export interface Database {
           title: string;
           price: number;
           quantity: number;
+          size: string | null;
           created_at: string;
         };
         Insert: {
@@ -372,6 +375,7 @@ export interface Database {
           title: string;
           price: number;
           quantity?: number;
+          size?: string | null;
           created_at?: string;
         };
         Update: Partial<Database['public']['Tables']['order_items']['Insert']>;

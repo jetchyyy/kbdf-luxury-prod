@@ -25,6 +25,9 @@ export function ItemFormModal({ isOpen, onClose, onSave, item, tenantId }: ItemF
   const [stockStatus, setStockStatus] = useState<'in_stock' | 'low_stock' | 'out_of_stock'>('in_stock');
   const [categoryId, setCategoryId] = useState('');
   const [imageUrls, setImageUrls] = useState<string[]>(['']);
+  const [sizes, setSizes] = useState<{ size: string; quantity: number }[]>([]);
+  const [sizeInput, setSizeInput] = useState('');
+  const [sizeQuantityInput, setSizeQuantityInput] = useState<number>(1);
   const [categories, setCategories] = useState<Category[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -47,6 +50,7 @@ export function ItemFormModal({ isOpen, onClose, onSave, item, tenantId }: ItemF
         setStockStatus(item.stock_status);
         setCategoryId(item.category_id || '');
         setImageUrls(item.image_urls && item.image_urls.length > 0 ? item.image_urls : ['']);
+        setSizes(item.sizes || []);
       } else {
         setTitle('');
         setDescription('');
@@ -59,10 +63,21 @@ export function ItemFormModal({ isOpen, onClose, onSave, item, tenantId }: ItemF
         setStockStatus('in_stock');
         setCategoryId('');
         setImageUrls(['']);
+        setSizes([]);
       }
+      setSizeInput('');
+      setSizeQuantityInput(1);
       setError('');
     }
   }, [isOpen, item, tenantId]);
+
+  // Auto-calculate global quantity if sizes are defined
+  useEffect(() => {
+    if (sizes.length > 0) {
+      const sum = sizes.reduce((acc, curr) => acc + curr.quantity, 0);
+      setQuantity(sum);
+    }
+  }, [sizes]);
 
   // Auto-adjust stock status when quantity changes
   useEffect(() => {
@@ -76,6 +91,19 @@ export function ItemFormModal({ isOpen, onClose, onSave, item, tenantId }: ItemF
   }, [quantity]);
 
   if (!isOpen) return null;
+
+  function handleAddSize() {
+    const trimmed = sizeInput.trim();
+    if (trimmed && !sizes.some(s => s.size === trimmed)) {
+      setSizes([...sizes, { size: trimmed, quantity: Math.max(0, sizeQuantityInput) }]);
+      setSizeInput('');
+      setSizeQuantityInput(1);
+    }
+  }
+
+  function handleRemoveSize(sizeToRemove: string) {
+    setSizes(sizes.filter(s => s.size !== sizeToRemove));
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -111,6 +139,7 @@ export function ItemFormModal({ isOpen, onClose, onSave, item, tenantId }: ItemF
         condition,
         stock_status: stockStatus,
         image_urls: filteredImages,
+        sizes: sizes.length > 0 ? sizes : null,
         is_active: true
       };
 
@@ -253,9 +282,13 @@ export function ItemFormModal({ isOpen, onClose, onSave, item, tenantId }: ItemF
                 onChange={e => setQuantity(Math.max(0, parseInt(e.target.value) || 0))}
                 required
                 min="0"
+                disabled={sizes.length > 0}
                 placeholder="10"
-                className="bg-[#0f1117] border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white outline-none focus:border-[#fb7a90]/50 transition-colors"
+                className="bg-[#0f1117] border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white outline-none focus:border-[#fb7a90]/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               />
+              {sizes.length > 0 && (
+                <span className="text-[#fb7a90] text-[9px] font-semibold">Total quantity calculated from size inventory below.</span>
+              )}
             </div>
 
             {/* Condition */}
@@ -284,6 +317,94 @@ export function ItemFormModal({ isOpen, onClose, onSave, item, tenantId }: ItemF
               placeholder="A masterpiece in fine-grained calfskin leather..."
               className="bg-[#0f1117] border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder:text-white/20 outline-none focus:border-[#fb7a90]/50 transition-colors resize-none"
             />
+          </div>
+
+          {/* Size Options Section */}
+          <div className="flex flex-col gap-2 border-t border-white/5 pt-4">
+            <label className="text-white/60 text-xs font-medium uppercase tracking-wider">Sizes / Measurement Options</label>
+            <p className="text-white/40 text-[10px] -mt-1">Add selectable sizes with their respective quantities for this product.</p>
+            
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={sizeInput}
+                onChange={e => setSizeInput(e.target.value)}
+                onKeyDown={e => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleAddSize();
+                  }
+                }}
+                placeholder="e.g. S, US 9, Chest 38"
+                className="bg-[#0f1117] border border-white/10 rounded-xl px-4 py-2 text-xs text-white placeholder:text-white/20 outline-none focus:border-[#fb7a90]/50 transition-colors flex-1"
+              />
+              <input
+                type="number"
+                value={sizeQuantityInput}
+                onChange={e => setSizeQuantityInput(Math.max(1, parseInt(e.target.value) || 1))}
+                min="1"
+                placeholder="Qty"
+                className="bg-[#0f1117] border border-white/10 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-[#fb7a90]/50 transition-colors w-20 text-center"
+              />
+              <button
+                type="button"
+                onClick={handleAddSize}
+                className="bg-white/5 hover:bg-white/10 border border-white/10 text-white text-xs px-4 rounded-xl font-semibold transition-all"
+              >
+                Add Size
+              </button>
+            </div>
+
+            {/* Presets */}
+            <div className="flex flex-wrap gap-2 items-center mt-1">
+              <span className="text-white/30 text-[9px] uppercase font-bold mr-1">Presets (Qty: 5):</span>
+              <button
+                type="button"
+                onClick={() => setSizes(['S', 'M', 'L', 'XL', 'XXL'].map(s => ({ size: s, quantity: 5 })))}
+                className="bg-white/5 hover:bg-white/10 text-white/60 text-[9px] px-2 py-1 rounded border border-white/5 hover:text-white transition-all"
+              >
+                Clothes (S-XXL)
+              </button>
+              <button
+                type="button"
+                onClick={() => setSizes(['US 7', 'US 8', 'US 9', 'US 10', 'US 11'].map(s => ({ size: s, quantity: 5 })))}
+                className="bg-white/5 hover:bg-white/10 text-white/60 text-[9px] px-2 py-1 rounded border border-white/5 hover:text-white transition-all"
+              >
+                Shoes (US 7-11)
+              </button>
+              <button
+                type="button"
+                onClick={() => setSizes([{ size: 'One Size', quantity: 5 }])}
+                className="bg-white/5 hover:bg-white/10 text-white/60 text-[9px] px-2 py-1 rounded border border-white/5 hover:text-white transition-all"
+              >
+                One Size
+              </button>
+              {sizes.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setSizes([])}
+                  className="text-red-400 hover:text-red-300 text-[9px] font-bold ml-auto"
+                >
+                  Clear All
+                </button>
+              )}
+            </div>
+
+            {/* Size Tags Display */}
+            {sizes.length > 0 && (
+              <div className="flex flex-wrap gap-1.5 mt-2 bg-[#0f1117] border border-white/5 p-3 rounded-xl">
+                {sizes.map((s) => (
+                  <span
+                    key={s.size}
+                    onClick={() => handleRemoveSize(s.size)}
+                    className="flex items-center gap-1.5 bg-[#fb7a90]/10 hover:bg-red-500/10 text-[#fb7a90] hover:text-red-400 border border-[#fb7a90]/20 hover:border-red-500/20 px-2.5 py-1 rounded-lg text-xs font-semibold cursor-pointer transition-all"
+                    title="Click to remove"
+                  >
+                    {s.size} <span className="text-white/40 text-[10px] font-normal">({s.quantity} left)</span> <X className="w-3 h-3 opacity-60" />
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Image URLs */}

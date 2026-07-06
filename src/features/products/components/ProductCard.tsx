@@ -1,6 +1,8 @@
+import { useState } from 'react';
 import type { Product } from "../types";
 import { FadeUp } from "../../../ui/Motion/FadeUp";
 import { useCart } from "../../cart/CartContext";
+import { ProductDetailModal } from "./ProductDetailModal";
 
 interface ProductCardProps {
   product: Product;
@@ -9,10 +11,16 @@ interface ProductCardProps {
 
 export function ProductCard({ product, index }: ProductCardProps) {
   const { addToCart } = useCart();
+  const [isDetailOpen, setIsDetailOpen] = useState(false);
+
+  const hasSizes = product.sizes && product.sizes.length > 0;
 
   return (
     <FadeUp delay={index * 0.1}>
-      <div className="group cursor-pointer flex flex-col">
+      <div 
+        onClick={() => setIsDetailOpen(true)}
+        className="group cursor-pointer flex flex-col"
+      >
         <div className="relative w-full h-[28rem] bg-surface-light overflow-hidden mb-4">
           <img 
             src={product.image_urls[0]} 
@@ -27,7 +35,15 @@ export function ProductCard({ product, index }: ProductCardProps) {
           
           <div className="absolute bottom-4 left-1/2 -translate-x-1/2 w-[90%] opacity-0 group-hover:opacity-100 transition-opacity duration-300">
             <button 
-              onClick={(e) => { e.preventDefault(); e.stopPropagation(); addToCart(product); }}
+              onClick={(e) => { 
+                e.preventDefault(); 
+                e.stopPropagation(); 
+                if (hasSizes) {
+                  setIsDetailOpen(true);
+                } else {
+                  addToCart(product);
+                }
+              }}
               className="w-full bg-brand-navy/95 backdrop-blur-sm text-white py-3 text-[10px] uppercase tracking-widest font-bold hover:bg-brand-pink transition-colors"
             >
               Add to Bag
@@ -47,6 +63,12 @@ export function ProductCard({ product, index }: ProductCardProps) {
           </p>
         </div>
       </div>
+
+      <ProductDetailModal
+        isOpen={isDetailOpen}
+        onClose={() => setIsDetailOpen(false)}
+        product={product}
+      />
     </FadeUp>
   );
 }

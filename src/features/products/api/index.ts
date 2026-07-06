@@ -92,6 +92,7 @@ export async function fetchProducts(categorySlug?: string): Promise<Product[]> {
       stock_status: item.stock_status,
       condition: item.condition,
       brand: item.brand || 'KBDF',
+      sizes: item.sizes || [],
       created_at: item.created_at
     }));
   } catch (err) {
@@ -128,6 +129,7 @@ export async function fetchProductBySlug(slug: string): Promise<Product | null> 
       stock_status: data.stock_status,
       condition: data.condition,
       brand: data.brand || 'KBDF',
+      sizes: data.sizes || [],
       created_at: data.created_at
     };
   } catch (err) {

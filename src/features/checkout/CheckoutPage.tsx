@@ -326,7 +326,8 @@ export function CheckoutPage() {
         item_id: item.id,
         title: item.title,
         price: item.price,
-        quantity: item.quantity
+        quantity: item.quantity,
+        size: item.selectedSize || null
       }));
 
       const { error: itemsError } = await supabase
@@ -876,13 +877,18 @@ export function CheckoutPage() {
               
               <div className="divide-y divide-surface-light max-h-80 overflow-y-auto pr-1">
                 {items.map(item => (
-                  <div key={item.id} className="flex gap-3 py-3 items-center">
+                  <div key={`${item.id}-${item.selectedSize || ''}`} className="flex gap-3 py-3 items-center">
                     <div className="w-12 h-16 bg-surface-light flex-shrink-0 rounded overflow-hidden">
                       <img src={item.image_urls[0]} alt={item.title} className="w-full h-full object-cover" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-xs font-bold text-typography-primary truncate">{item.title}</p>
-                      <p className="text-[10px] text-typography-muted mt-0.5">Qty: {item.quantity}</p>
+                      <div className="flex flex-col gap-0.5 mt-0.5">
+                        <p className="text-[10px] text-typography-muted">Qty: {item.quantity}</p>
+                        {item.selectedSize && (
+                          <p className="text-[10px] font-semibold text-brand-pink">Size: {item.selectedSize}</p>
+                        )}
+                      </div>
                     </div>
                     <span className="text-xs font-bold text-typography-primary">{currencySymbol}{item.price.toLocaleString()}</span>
                   </div>

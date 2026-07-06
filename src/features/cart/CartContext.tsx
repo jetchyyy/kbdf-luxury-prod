@@ -3,6 +3,7 @@ import type { Product } from '../products/types';
 
 interface CartItem extends Product {
   quantity: number;
+  selectedSize?: string | null;
 }
 
 interface CartContextType {
@@ -10,8 +11,8 @@ interface CartContextType {
   openCart: () => void;
   closeCart: () => void;
   items: CartItem[];
-  addToCart: (product: Product) => void;
-  removeFromCart: (productId: string) => void;
+  addToCart: (product: Product & { selectedSize?: string | null }) => void;
+  removeFromCart: (productId: string, selectedSize?: string | null) => void;
   clearCart: () => void;
   cartTotal: number;
 }
@@ -25,19 +26,22 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const openCart = () => setIsCartOpen(true);
   const closeCart = () => setIsCartOpen(false);
 
-  const addToCart = (product: Product) => {
+  const addToCart = (product: Product & { selectedSize?: string | null }) => {
     setItems(prev => {
-      const existing = prev.find(item => item.id === product.id);
+      const existing = prev.find(item => item.id === product.id && item.selectedSize === product.selectedSize);
       if (existing) {
-        return prev.map(item => item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item);
+        return prev.map(item => (item.id === product.id && item.selectedSize === product.selectedSize) 
+          ? { ...item, quantity: item.quantity + 1 } 
+          : item
+        );
       }
       return [...prev, { ...product, quantity: 1 }];
     });
     openCart();
   };
 
-  const removeFromCart = (productId: string) => {
-    setItems(prev => prev.filter(item => item.id !== productId));
+  const removeFromCart = (productId: string, selectedSize?: string | null) => {
+    setItems(prev => prev.filter(item => !(item.id === productId && item.selectedSize === selectedSize)));
   };
 
   const clearCart = () => {

@@ -44,7 +44,7 @@ export function CartDrawer() {
                 </div>
               ) : (
                 items.map((item) => (
-                  <div key={item.id} className="flex gap-4 border-b border-surface-light pb-6">
+                  <div key={`${item.id}-${item.selectedSize || ''}`} className="flex gap-4 border-b border-surface-light pb-6">
                     <div className="w-24 h-32 bg-surface-offWhite flex-shrink-0">
                       <img src={item.image_urls[0]} alt={item.title} className="w-full h-full object-cover mix-blend-multiply" />
                     </div>
@@ -52,11 +52,18 @@ export function CartDrawer() {
                       <div>
                         <div className="flex justify-between items-start mb-1">
                           <h3 className="text-sm font-bold text-typography-primary leading-tight">{item.title}</h3>
-                          <button onClick={() => removeFromCart(item.id)} className="text-typography-muted hover:text-brand-pink">
+                          <button onClick={() => removeFromCart(item.id, item.selectedSize)} className="text-typography-muted hover:text-brand-pink">
                             <Trash2 className="w-4 h-4" strokeWidth={1.5} />
                           </button>
                         </div>
                         <p className="text-[10px] uppercase tracking-widest font-bold text-brand-peach">{item.brand}</p>
+                        {item.selectedSize && (
+                          <div className="mt-1">
+                            <span className="inline-block bg-surface-offWhite border border-surface-light text-typography-muted text-[10px] font-semibold px-2 py-0.5 rounded">
+                              Size: {item.selectedSize}
+                            </span>
+                          </div>
+                        )}
                       </div>
                       <div className="flex justify-between items-end">
                         <p className="text-xs text-typography-muted font-medium">Qty: {item.quantity}</p>

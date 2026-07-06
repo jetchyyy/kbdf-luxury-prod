@@ -12,6 +12,7 @@ interface OrderItem {
   title: string;
   price: number;
   quantity: number;
+  size?: string | null;
 }
 
 interface Order {
@@ -415,7 +416,14 @@ export function OrdersPage() {
                       <div key={item.id} className="flex justify-between items-center py-2 text-xs">
                         <div>
                           <p className="font-semibold text-white">{item.title}</p>
-                          <p className="text-white/40">Qty: {item.quantity}</p>
+                          <div className="flex items-center gap-2 mt-0.5">
+                            <span className="text-white/40">Qty: {item.quantity}</span>
+                            {item.size && (
+                              <span className="text-[#fb7a90] bg-[#fb7a90]/10 border border-[#fb7a90]/25 px-1.5 py-0.5 rounded text-[9px] font-semibold">
+                                Size: {item.size}
+                              </span>
+                            )}
+                          </div>
                         </div>
                         <span className="font-bold text-white">{currency}{(item.price * item.quantity).toLocaleString()}</span>
                       </div>
