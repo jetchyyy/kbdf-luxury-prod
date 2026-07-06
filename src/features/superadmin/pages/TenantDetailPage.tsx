@@ -271,7 +271,6 @@ export function TenantDetailPage() {
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
-            <EnvGenerator tenant={tenant} />
             <button
               onClick={handleToggleActive}
               className={`px-4 py-2 rounded-xl text-xs font-semibold border transition-all ${
@@ -295,44 +294,52 @@ export function TenantDetailPage() {
       {/* Grid: metadata and color theme configuration */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         
-        {/* Branding Configuration */}
-        <div className="bg-[#111827] border border-white/5 rounded-2xl p-5 space-y-4 md:col-span-1">
-          <h3 className="text-white font-semibold text-sm border-b border-white/5 pb-2">Branding Override</h3>
-          <form onSubmit={handleSaveBranding} className="space-y-4">
-            <div className="flex flex-col gap-2">
-              <label className="text-white/60 text-xs font-medium uppercase tracking-wider">Primary Theme</label>
-              <div className="flex gap-2 items-center">
-                <input
-                  type="color"
-                  value={primaryColor}
-                  onChange={e => setPrimaryColor(e.target.value)}
-                  className="w-10 h-10 rounded border border-white/10 bg-transparent cursor-pointer"
-                />
-                <span className="font-mono text-xs text-white/70">{primaryColor}</span>
+        {/* Left Column: Branding Configuration & Env Generator */}
+        <div className="space-y-6 md:col-span-1">
+          {/* Branding Configuration Card */}
+          <div className="bg-[#111827] border border-white/5 rounded-2xl p-5 space-y-4">
+            <h3 className="text-white font-semibold text-sm border-b border-white/5 pb-2">Branding Override</h3>
+            <form onSubmit={handleSaveBranding} className="space-y-4">
+              <div className="flex flex-col gap-2">
+                <label className="text-white/60 text-xs font-medium uppercase tracking-wider">Primary Theme</label>
+                <div className="flex gap-2 items-center">
+                  <input
+                    type="color"
+                    value={primaryColor}
+                    onChange={e => setPrimaryColor(e.target.value)}
+                    className="w-10 h-10 rounded border border-white/10 bg-transparent cursor-pointer"
+                  />
+                  <span className="font-mono text-xs text-white/70">{primaryColor}</span>
+                </div>
               </div>
-            </div>
 
-            <div className="flex flex-col gap-2">
-              <label className="text-white/60 text-xs font-medium uppercase tracking-wider">Accent Theme</label>
-              <div className="flex gap-2 items-center">
-                <input
-                  type="color"
-                  value={accentColor}
-                  onChange={e => setAccentColor(e.target.value)}
-                  className="w-10 h-10 rounded border border-white/10 bg-transparent cursor-pointer"
-                />
-                <span className="font-mono text-xs text-white/70">{accentColor}</span>
+              <div className="flex flex-col gap-2">
+                <label className="text-white/60 text-xs font-medium uppercase tracking-wider">Accent Theme</label>
+                <div className="flex gap-2 items-center">
+                  <input
+                    type="color"
+                    value={accentColor}
+                    onChange={e => setAccentColor(e.target.value)}
+                    className="w-10 h-10 rounded border border-white/10 bg-transparent cursor-pointer"
+                  />
+                  <span className="font-mono text-xs text-white/70">{accentColor}</span>
+                </div>
               </div>
-            </div>
 
-            <button
-              type="submit"
-              disabled={isSavingBranding}
-              className="w-full bg-[#fb7a90] hover:bg-[#f16881] text-white text-xs font-semibold py-2 rounded-xl transition-all"
-            >
-              {isSavingBranding ? 'Saving...' : 'Save Theme Override'}
-            </button>
-          </form>
+              <button
+                type="submit"
+                disabled={isSavingBranding}
+                className="w-full bg-[#fb7a90] hover:bg-[#f16881] text-white text-xs font-semibold py-2 rounded-xl transition-all"
+              >
+                {isSavingBranding ? 'Saving...' : 'Save Theme Override'}
+              </button>
+            </form>
+          </div>
+
+          {/* Env Configuration Card */}
+          <div className="bg-[#111827] border border-white/5 rounded-2xl p-5">
+            <EnvGenerator tenant={tenant} variant="inline" />
+          </div>
         </div>
 
         {/* Catalog overview */}

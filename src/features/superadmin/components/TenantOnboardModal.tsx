@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { X, Globe, ShieldAlert } from 'lucide-react';
 import { onboardTenant } from '../api/onboarding';
+import { ImageUploadInput } from '../../admin/components/ImageUploadInput';
 
 interface TenantOnboardModalProps {
   isOpen: boolean;
@@ -133,13 +134,12 @@ export function TenantOnboardModal({ isOpen, onClose, onSuccess }: TenantOnboard
               </div>
 
               <div className="flex flex-col gap-1.5">
-                <label className="text-white/60 text-xs font-medium">Logo URL</label>
-                <input
-                  type="url"
+                <label className="text-white/60 text-xs font-medium">Store Logo Image</label>
+                <ImageUploadInput
                   value={logoUrl}
-                  onChange={e => setLogoUrl(e.target.value)}
-                  placeholder="https://example.com/logo.png"
-                  className="bg-[#0f1117] border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder:text-white/20 outline-none focus:border-[#fb7a90]/50 transition-colors"
+                  onChange={setLogoUrl}
+                  tenantId="superadmin"
+                  placeholder="Upload logo photo..."
                 />
               </div>
             </div>

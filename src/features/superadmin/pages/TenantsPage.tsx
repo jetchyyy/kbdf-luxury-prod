@@ -60,7 +60,7 @@ export function TenantsPage() {
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
-            className="bg-emerald-500/10 border border-emerald-500/20 rounded-2xl p-6 relative flex flex-col sm:flex-row sm:items-center justify-between gap-6"
+            className="bg-emerald-500/10 border border-emerald-500/20 rounded-2xl p-6 relative flex flex-col gap-6"
           >
             <button
               onClick={() => setOnboardedResult(null)}
@@ -83,12 +83,12 @@ export function TenantsPage() {
                 )}
               </p>
               <p className="text-white/40 text-[10px]">
-                Download the configuration file below to set up deployment environment variables in Netlify.
+                Copy the configuration below to set up deployment environment variables in Netlify.
               </p>
             </div>
 
-            <div className="flex-shrink-0">
-              <EnvGenerator tenant={onboardedResult.tenant} />
+            <div className="w-full border-t border-white/5 pt-4">
+              <EnvGenerator tenant={onboardedResult.tenant} variant="inline" />
             </div>
           </motion.div>
         )}

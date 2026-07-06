@@ -27,3 +27,4 @@ dist-ssr
 .env.kbdf
 .env.ecomsaas
 
+.env.*
