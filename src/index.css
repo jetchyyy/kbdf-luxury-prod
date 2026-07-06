@@ -6,6 +6,14 @@
   :root {
     --background: #ffffff;
     --foreground: #111111;
+    --brand-navy: #2f4065;
+    --brand-pink: #fb7a90;
+    --brand-peach: #fac29f;
+    --brand-coral: #f79492;
+    --typography-muted: #666666;
+    --surface-white: #ffffff;
+    --surface-offWhite: #fcf1f1;
+    --surface-light: #fae6e6;
   }
   
   html {

@@ -3,10 +3,12 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Search, ShoppingBag, User } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useCart } from "../../features/cart/CartContext";
+import { useTenant } from "../context/TenantContext";
 
 export function LuxuryNavbar() {
   const [isOpen, setIsOpen] = useState(false);
   const { openCart, items } = useCart();
+  const { tenant } = useTenant();
 
   const navLinks = [
     { label: "Home", href: "/" },
@@ -17,11 +19,15 @@ export function LuxuryNavbar() {
     { label: "Track", href: "/track" },
   ];
 
+  const storeSettings = (tenant?.store_settings as any) || {};
+  const homepageSettings = storeSettings.homepage || {};
+  const announcementText = homepageSettings.announcement_text || "Free Shipping for Orders Over $500";
+
   return (
     <header className="fixed top-0 inset-x-0 z-50 bg-surface-white border-b border-surface-light">
       {/* Top Announcement Bar */}
       <div className="bg-gradient-to-r from-brand-peach via-brand-pink to-brand-coral text-brand-navy text-[10px] text-center py-2 uppercase tracking-widest font-bold shadow-sm">
-        Free Shipping for Orders Over $500
+        {announcementText}
       </div>
 
       {/* Main Navbar */}
@@ -29,8 +35,12 @@ export function LuxuryNavbar() {
         
         {/* Left: Logo */}
         <div className="flex-1 flex items-center">
-          <Link to="/" className="text-3xl font-sans tracking-[0.15em] uppercase font-bold text-typography-primary">
-            KBDF
+          <Link to="/" className="text-3xl font-sans tracking-[0.15em] uppercase font-bold text-typography-primary flex items-center gap-2">
+            {tenant?.logo_url ? (
+              <img src={tenant.logo_url} alt={tenant.name} className="h-8 max-w-[120px] object-contain" />
+            ) : (
+              tenant?.name || "KBDF"
+            )}
           </Link>
         </div>
 

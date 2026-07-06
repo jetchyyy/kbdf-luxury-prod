@@ -5,21 +5,26 @@ import { ProductCard } from "./ProductCard";
 
 interface ProductGridProps {
   hideHeader?: boolean;
+  category?: string;
 }
 
-export function ProductGrid({ hideHeader = false }: ProductGridProps = {}) {
+export function ProductGrid({ hideHeader = false, category = "all" }: ProductGridProps = {}) {
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    fetchProducts().then(data => {
+    setIsLoading(true);
+    fetchProducts(category).then(data => {
       setProducts(data);
       setIsLoading(false);
+    }).catch(err => {
+      console.error(err);
+      setIsLoading(false);
     });
-  }, []);
+  }, [category]);
 
   return (
-    <section className="py-24 px-4 md:px-12 max-w-7xl mx-auto">
+    <section className="py-12 px-4 md:px-12 max-w-7xl mx-auto">
       
       {!hideHeader && (
         <div className="mb-16 flex flex-col items-center text-center">
@@ -38,6 +43,10 @@ export function ProductGrid({ hideHeader = false }: ProductGridProps = {}) {
           {[1,2,3,4].map((i) => (
             <div key={i} className="animate-pulse bg-surface-light h-[28rem] w-full"></div>
           ))}
+        </div>
+      ) : products.length === 0 ? (
+        <div className="text-center py-12 text-typography-muted text-sm uppercase tracking-widest font-light">
+          No products found under this collection.
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">

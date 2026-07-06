@@ -1,6 +1,54 @@
+import { useState } from "react";
 import { FadeUp } from "../../ui/Motion/FadeUp";
+import { submitLead } from "../admin/api/leads";
+import { TENANT_ID } from "../../lib/supabase/supabaseClient";
 
 export function ContactPage() {
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [subject, setSubject] = useState("");
+  const [message, setMessage] = useState("");
+  
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [success, setSuccess] = useState(false);
+  const [error, setError] = useState("");
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setError("");
+    setSuccess(false);
+    setIsSubmitting(true);
+
+    if (!TENANT_ID) {
+      setError("System Configuration Error: Tenant ID is missing.");
+      setIsSubmitting(false);
+      return;
+    }
+
+    try {
+      await submitLead({
+        tenant_id: TENANT_ID,
+        name: name.trim(),
+        email: email.trim(),
+        phone: phone.trim() || undefined,
+        subject: subject.trim() || undefined,
+        message: message.trim() || undefined,
+      });
+
+      setSuccess(true);
+      setName("");
+      setEmail("");
+      setPhone("");
+      setSubject("");
+      setMessage("");
+    } catch (err: any) {
+      setError(err.message || "Failed to submit message. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
   return (
     <div className="pt-32 pb-24 min-h-screen bg-surface-white">
       <div className="max-w-7xl mx-auto px-6 md:px-12">
@@ -20,21 +68,74 @@ export function ContactPage() {
               <h2 className="text-xs uppercase tracking-[0.2em] mb-8 border-b border-surface-light pb-4 text-typography-primary">
                 Send a Message
               </h2>
-              <form className="flex flex-col gap-8">
+              
+              {success && (
+                <div className="mb-6 p-4 text-emerald-800 bg-emerald-50 text-xs rounded border border-emerald-100 font-medium">
+                  Thank you! Your message has been sent successfully. We will contact you soon.
+                </div>
+              )}
+
+              {error && (
+                <div className="mb-6 p-4 text-red-800 bg-red-50 text-xs rounded border border-red-100 font-medium">
+                  {error}
+                </div>
+              )}
+
+              <form onSubmit={handleSubmit} className="flex flex-col gap-6">
                 <div className="flex flex-col gap-2">
-                  <label className="text-[10px] uppercase tracking-widest text-typography-muted">Name</label>
-                  <input type="text" className="w-full border-b border-surface-light py-2 bg-transparent outline-none focus:border-typography-primary transition-colors text-sm text-typography-primary" />
+                  <label className="text-[10px] uppercase tracking-widest text-typography-muted">Name *</label>
+                  <input
+                    type="text"
+                    required
+                    value={name}
+                    onChange={e => setName(e.target.value)}
+                    className="w-full border-b border-surface-light py-2 bg-transparent outline-none focus:border-typography-primary transition-colors text-sm text-typography-primary"
+                  />
                 </div>
                 <div className="flex flex-col gap-2">
-                  <label className="text-[10px] uppercase tracking-widest text-typography-muted">Email</label>
-                  <input type="email" className="w-full border-b border-surface-light py-2 bg-transparent outline-none focus:border-typography-primary transition-colors text-sm text-typography-primary" />
+                  <label className="text-[10px] uppercase tracking-widest text-typography-muted">Email *</label>
+                  <input
+                    type="email"
+                    required
+                    value={email}
+                    onChange={e => setEmail(e.target.value)}
+                    className="w-full border-b border-surface-light py-2 bg-transparent outline-none focus:border-typography-primary transition-colors text-sm text-typography-primary"
+                  />
                 </div>
                 <div className="flex flex-col gap-2">
-                  <label className="text-[10px] uppercase tracking-widest text-typography-muted">Message</label>
-                  <textarea rows={4} className="w-full border-b border-surface-light py-2 bg-transparent outline-none focus:border-typography-primary transition-colors text-sm text-typography-primary resize-none"></textarea>
+                  <label className="text-[10px] uppercase tracking-widest text-typography-muted">Phone Number</label>
+                  <input
+                    type="tel"
+                    value={phone}
+                    onChange={e => setPhone(e.target.value)}
+                    className="w-full border-b border-surface-light py-2 bg-transparent outline-none focus:border-typography-primary transition-colors text-sm text-typography-primary"
+                  />
                 </div>
-                <button type="button" className="bg-typography-primary text-surface-white px-8 py-3 text-xs uppercase tracking-widest hover:bg-typography-muted transition-colors w-max mt-4">
-                  Submit
+                <div className="flex flex-col gap-2">
+                  <label className="text-[10px] uppercase tracking-widest text-typography-muted">Subject</label>
+                  <input
+                    type="text"
+                    value={subject}
+                    onChange={e => setSubject(e.target.value)}
+                    className="w-full border-b border-surface-light py-2 bg-transparent outline-none focus:border-typography-primary transition-colors text-sm text-typography-primary"
+                  />
+                </div>
+                <div className="flex flex-col gap-2">
+                  <label className="text-[10px] uppercase tracking-widest text-typography-muted">Message *</label>
+                  <textarea
+                    rows={4}
+                    required
+                    value={message}
+                    onChange={e => setMessage(e.target.value)}
+                    className="w-full border-b border-surface-light py-2 bg-transparent outline-none focus:border-typography-primary transition-colors text-sm text-typography-primary resize-none"
+                  ></textarea>
+                </div>
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="bg-typography-primary text-surface-white px-8 py-3 text-xs uppercase tracking-widest hover:bg-typography-muted transition-colors w-max mt-4 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isSubmitting ? "Submitting..." : "Submit"}
                 </button>
               </form>
             </div>
@@ -70,3 +171,4 @@ export function ContactPage() {
     </div>
   );
 }
+export default ContactPage;

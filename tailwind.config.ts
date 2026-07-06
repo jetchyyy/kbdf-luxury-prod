@@ -9,20 +9,20 @@ export default {
     extend: {
       colors: {
         brand: {
-          navy: '#2f4065',
-          pink: '#fb7a90',
-          peach: '#fac29f',
-          coral: '#f79492',
+          navy: 'var(--brand-navy, #2f4065)',
+          pink: 'var(--brand-pink, #fb7a90)',
+          peach: 'var(--brand-peach, #fac29f)',
+          coral: 'var(--brand-coral, #f79492)',
         },
         typography: {
-          primary: '#2f4065',
-          accent: '#f16881',
-          muted: '#666666',
+          primary: 'var(--brand-navy, #2f4065)',
+          accent: 'var(--brand-pink, #fb7a90)',
+          muted: 'var(--typography-muted, #666666)',
         },
         surface: {
-          white: '#ffffff',
-          offWhite: '#fcf1f1',
-          light: '#fae6e6',
+          white: 'var(--surface-white, #ffffff)',
+          offWhite: 'var(--surface-offWhite, #fcf1f1)',
+          light: 'var(--surface-light, #fae6e6)',
         }
       },
       fontFamily: {

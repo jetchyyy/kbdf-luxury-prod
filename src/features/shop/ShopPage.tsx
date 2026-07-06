@@ -1,20 +1,55 @@
+import { useEffect, useState } from "react";
 import { ProductGrid } from "../products/components/ProductGrid";
 import { Link, useLocation } from "react-router-dom";
+import { fetchCategories } from "../admin/api/categories";
+import { TENANT_ID } from "../../lib/supabase/supabaseClient";
 
 export function ShopPage() {
   const location = useLocation();
   const searchParams = new URLSearchParams(location.search);
   const currentCategory = searchParams.get("category") || "all";
+  
+  const [categories, setCategories] = useState<{ id: string; label: string }[]>([
+    { id: "all", label: "All Products" }
+  ]);
 
-  const categories = [
-    { id: "all", label: "All Products" },
-    { id: "handbags", label: "Handbags" },
-    { id: "footwear", label: "Footwear" },
-    { id: "wallets", label: "Wallets" },
-    { id: "watches", label: "Watches" },
-    { id: "accessories", label: "Accessories" },
-    { id: "preloved", label: "Preloved" }
-  ];
+  useEffect(() => {
+    // If tenant is set, fetch categories dynamically
+    if (TENANT_ID && TENANT_ID !== 'will-be-set-after-migration-seed') {
+      fetchCategories(TENANT_ID)
+        .then(data => {
+          const list = data.map((c: any) => ({
+            id: c.slug,
+            label: c.name
+          }));
+          setCategories([{ id: "all", label: "All Products" }, ...list]);
+        })
+        .catch(err => {
+          console.error("Failed to load categories dynamically:", err);
+          // Fallback to defaults
+          setCategories([
+            { id: "all", label: "All Products" },
+            { id: "handbags", label: "Handbags" },
+            { id: "footwear", label: "Footwear" },
+            { id: "wallets", label: "Wallets" },
+            { id: "watches", label: "Watches" },
+            { id: "accessories", label: "Accessories" },
+            { id: "preloved", label: "Preloved" }
+          ]);
+        });
+    } else {
+      // Offline fallback
+      setCategories([
+        { id: "all", label: "All Products" },
+        { id: "handbags", label: "Handbags" },
+        { id: "footwear", label: "Footwear" },
+        { id: "wallets", label: "Wallets" },
+        { id: "watches", label: "Watches" },
+        { id: "accessories", label: "Accessories" },
+        { id: "preloved", label: "Preloved" }
+      ]);
+    }
+  }, []);
 
   return (
     <div className="pt-32 pb-24 min-h-screen bg-surface-white">
@@ -57,7 +92,7 @@ export function ShopPage() {
 
           {/* Main Product Grid */}
           <main className="flex-1">
-             <ProductGrid hideHeader />
+             <ProductGrid hideHeader category={currentCategory} />
           </main>
 
         </div>
@@ -65,3 +100,4 @@ export function ShopPage() {
     </div>
   );
 }
+export default ShopPage;

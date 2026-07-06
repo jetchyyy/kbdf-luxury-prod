@@ -75,12 +75,13 @@ export function CartDrawer() {
                   <span className="text-xs uppercase tracking-widest font-bold text-typography-primary">Subtotal</span>
                   <span className="text-lg font-bold text-typography-primary">PHP {cartTotal.toLocaleString()}</span>
                 </div>
-                <button 
+                <Link 
+                  to="/checkout"
                   onClick={closeCart}
-                  className="w-full bg-brand-navy text-white py-4 text-[10px] uppercase tracking-widest font-bold hover:bg-brand-pink transition-colors text-center"
+                  className="w-full bg-brand-navy text-white py-4 text-[10px] uppercase tracking-widest font-bold hover:bg-brand-pink transition-colors text-center block"
                 >
                   Proceed to Checkout
-                </button>
+                </Link>
                 <div className="mt-4 text-center">
                   <Link to="/cart" onClick={closeCart} className="text-[10px] uppercase tracking-widest text-typography-muted hover:text-brand-navy border-b border-transparent hover:border-brand-navy pb-0.5 transition-all">
                     View full bag
