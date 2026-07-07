@@ -26,7 +26,7 @@ export default {
         }
       },
       fontFamily: {
-        sans: ['"Helvetica Neue"', '"Helvetica"', '"Arial"', 'sans-serif'],
+        sans: ['"DM Sans"', 'sans-serif'],
         serif: ['"Playfair Display"', '"Times New Roman"', 'serif'],
         mono: ['"Geist Mono"', 'monospace'],
       },
@@ -36,6 +36,15 @@ export default {
       },
       transitionTimingFunction: {
         'fluid': 'cubic-bezier(0.32, 0.72, 0, 1)',
+      },
+      animation: {
+        marquee: 'marquee 25s linear infinite',
+      },
+      keyframes: {
+        marquee: {
+          '0%': { transform: 'translateX(0%)' },
+          '100%': { transform: 'translateX(-50%)' },
+        }
       }
     },
   },

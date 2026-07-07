@@ -24,6 +24,7 @@ dist-ssr
 *.sw?
 
 # Environment files
+.env
 .env.kbdf
 .env.ecomsaas
 

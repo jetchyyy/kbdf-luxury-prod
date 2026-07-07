@@ -39,9 +39,9 @@ export function ProductGrid({ hideHeader = false, category = "all" }: ProductGri
       )}
 
       {isLoading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="flex gap-4 overflow-x-auto snap-x snap-mandatory no-scrollbar pb-8 px-4 -mx-4 md:px-0 md:mx-0">
           {[1,2,3,4].map((i) => (
-            <div key={i} className="animate-pulse bg-surface-light h-[28rem] w-full"></div>
+            <div key={i} className="animate-pulse bg-surface-light h-[28rem] shrink-0 w-[65vw] sm:w-[45vw] md:w-[300px] snap-center"></div>
           ))}
         </div>
       ) : products.length === 0 ? (
@@ -49,9 +49,11 @@ export function ProductGrid({ hideHeader = false, category = "all" }: ProductGri
           No products found under this collection.
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="flex overflow-x-auto snap-x snap-mandatory no-scrollbar pb-8 border-y border-surface-light md:border-l md:border-y-0 md:grid md:grid-cols-2 lg:grid-cols-4">
           {products.map((product, idx) => (
-            <ProductCard key={product.id} product={product} index={idx} />
+            <div key={product.id} className="shrink-0 w-[75vw] sm:w-[50vw] md:w-auto snap-center border-r border-surface-light">
+              <ProductCard product={product} index={idx} />
+            </div>
           ))}
         </div>
       )}

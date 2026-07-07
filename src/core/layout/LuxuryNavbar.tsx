@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, ShoppingBag, User, LogOut, ClipboardList } from "lucide-react";
+import { Search, ShoppingBag, User, LogOut, ClipboardList, Home, Menu } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useCart } from "../../features/cart/CartContext";
 import { useTenant } from "../context/TenantContext";
@@ -78,7 +78,7 @@ export function LuxuryNavbar() {
         </div>
 
         {/* Right: Actions */}
-        <div className="flex-1 flex items-center justify-end gap-6 relative">
+        <div className="hidden lg:flex flex-1 items-center justify-end gap-6 relative">
           <button className="text-typography-primary hover:text-brand-pink transition-colors">
             <Search className="w-5 h-5" strokeWidth={1.5} />
           </button>
@@ -208,6 +208,33 @@ export function LuxuryNavbar() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Mobile Bottom Navigation */}
+      <div className="lg:hidden fixed bottom-0 inset-x-0 bg-surface-white border-t border-surface-light px-6 py-3 flex justify-between items-center z-50 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+        <Link to="/" onClick={() => setIsOpen(false)} className="flex flex-col items-center gap-1 text-typography-primary hover:text-brand-pink transition-colors">
+          <Home className="w-5 h-5" strokeWidth={1.5} />
+          <span className="text-[10px] uppercase font-bold tracking-widest">Home</span>
+        </Link>
+        <Link to="/shop" onClick={() => setIsOpen(false)} className="flex flex-col items-center gap-1 text-typography-primary hover:text-brand-pink transition-colors">
+          <Search className="w-5 h-5" strokeWidth={1.5} />
+          <span className="text-[10px] uppercase font-bold tracking-widest">Shop</span>
+        </Link>
+        <button onClick={() => { setIsOpen(false); openCart(); }} className="flex flex-col items-center gap-1 text-typography-primary hover:text-brand-pink transition-colors relative">
+          <div className="relative">
+            <ShoppingBag className="w-5 h-5" strokeWidth={1.5} />
+            {items.length > 0 && (
+              <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-brand-pink text-white text-[8px] font-bold rounded-full flex items-center justify-center">
+                {items.length}
+              </span>
+            )}
+          </div>
+          <span className="text-[10px] uppercase font-bold tracking-widest">Cart</span>
+        </button>
+        <button onClick={() => setIsOpen(!isOpen)} className="flex flex-col items-center gap-1 text-typography-primary hover:text-brand-pink transition-colors">
+          <Menu className="w-5 h-5" strokeWidth={1.5} />
+          <span className="text-[10px] uppercase font-bold tracking-widest">Menu</span>
+        </button>
+      </div>
     </header>
   );
 }

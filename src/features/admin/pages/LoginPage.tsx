@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Navigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Eye, EyeOff, LogIn, Store } from 'lucide-react';
+import { Eye, EyeOff, LogIn, Lock } from 'lucide-react';
 import { adminSignIn } from '../api/auth';
 import { useAdminAuth } from '../context/AdminAuthContext';
 import { supabase, TENANT_ID } from '../../../lib/supabase/supabaseClient';
@@ -47,56 +47,62 @@ export function AdminLoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0f1117] flex items-center justify-center px-4">
-      {/* Background gradient orbs */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -right-40 w-[500px] h-[500px] rounded-full bg-[#fb7a90]/5 blur-[100px]" />
-        <div className="absolute -bottom-40 -left-40 w-[500px] h-[500px] rounded-full bg-[#2f4065]/10 blur-[100px]" />
+    <div className="min-h-screen bg-surface-white flex font-sans">
+      {/* Left Side Image */}
+      <div className="hidden lg:block w-1/2 relative bg-[#f4f2ed]">
+        <img 
+          src="https://images.unsplash.com/photo-1490481651871-ab68de25d43d?q=80&w=1200" 
+          alt="Luxury Office" 
+          className="absolute inset-0 w-full h-full object-cover mix-blend-multiply opacity-90"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
+        <div className="absolute bottom-16 left-16 right-16 text-white">
+          <h1 className="text-4xl font-serif mb-4 drop-shadow-md">
+            {tenant?.name || 'Store'} Workspace
+          </h1>
+          <p className="text-[10px] uppercase tracking-widest font-bold text-white/80">Secure Administration Portal</p>
+        </div>
       </div>
 
-      <motion.div
-        initial={{ opacity: 0, y: 24 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, ease: [0.32, 0.72, 0, 1] }}
-        className="relative w-full max-w-md"
-      >
-        {/* Card */}
-        <div className="bg-[#111827] border border-white/8 rounded-3xl p-8 shadow-2xl">
-          {/* Logo */}
-          <div className="flex items-center gap-3 mb-8">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#fb7a90] to-[#f16881] flex items-center justify-center overflow-hidden flex-shrink-0">
-              {tenant?.logo_url ? (
-                <img src={tenant.logo_url} alt={tenant.name} className="w-full h-full object-cover" />
-              ) : (
-                <Store className="w-5 h-5 text-white" strokeWidth={1.5} />
-              )}
+      {/* Right Side Form */}
+      <div className="w-full lg:w-1/2 flex items-center justify-center px-6 py-12 bg-surface-white">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, ease: [0.32, 0.72, 0, 1] }}
+          className="w-full max-w-md"
+        >
+          {/* Header */}
+          <div className="text-center mb-12">
+            <div className="w-12 h-12 border border-brand-navy flex items-center justify-center rounded-full mx-auto mb-6">
+              <Lock className="w-5 h-5 text-brand-navy" strokeWidth={1.5} />
             </div>
-            <div>
-              <p className="text-white font-bold text-sm truncate max-w-[200px]">
-                {tenant?.name || 'Store Admin'}
-              </p>
-              <p className="text-white/40 text-xs">Sign in to your dashboard</p>
-            </div>
+            <h2 className="text-3xl font-serif text-typography-primary mb-3">
+              Admin Access
+            </h2>
+            <p className="text-[10px] uppercase tracking-widest text-typography-muted font-bold">
+              Sign in to manage your storefront
+            </p>
           </div>
 
-          <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+          <form onSubmit={handleSubmit} className="flex flex-col gap-6">
             {/* Email */}
             <div className="flex flex-col gap-2">
-              <label className="text-white/60 text-xs font-medium uppercase tracking-wider">Email</label>
+              <label className="text-[10px] uppercase tracking-widest text-typography-primary font-bold">Email Address</label>
               <input
                 type="email"
                 value={email}
                 onChange={e => setEmail(e.target.value)}
                 required
                 autoComplete="email"
-                placeholder="you@example.com"
-                className="bg-[#0f1117] border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder:text-white/20 outline-none focus:border-[#fb7a90]/50 transition-colors"
+                placeholder="admin@example.com"
+                className="w-full border-b border-surface-light py-3 bg-transparent outline-none focus:border-brand-peach transition-colors text-xs text-typography-primary placeholder:text-typography-muted/50"
               />
             </div>
 
             {/* Password */}
             <div className="flex flex-col gap-2">
-              <label className="text-white/60 text-xs font-medium uppercase tracking-wider">Password</label>
+              <label className="text-[10px] uppercase tracking-widest text-typography-primary font-bold">Password</label>
               <div className="relative">
                 <input
                   type={showPw ? 'text' : 'password'}
@@ -105,12 +111,12 @@ export function AdminLoginPage() {
                   required
                   autoComplete="current-password"
                   placeholder="••••••••"
-                  className="w-full bg-[#0f1117] border border-white/10 rounded-xl px-4 py-3 pr-11 text-sm text-white placeholder:text-white/20 outline-none focus:border-[#fb7a90]/50 transition-colors"
+                  className="w-full border-b border-surface-light py-3 pr-10 bg-transparent outline-none focus:border-brand-peach transition-colors text-xs text-typography-primary placeholder:text-typography-muted/50"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPw(v => !v)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60 transition-colors"
+                  className="absolute right-0 top-1/2 -translate-y-1/2 text-typography-muted hover:text-typography-primary transition-colors p-2"
                 >
                   {showPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
@@ -119,33 +125,38 @@ export function AdminLoginPage() {
 
             {/* Error */}
             {error && (
-              <motion.p
+              <motion.div
                 initial={{ opacity: 0, y: -4 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="text-red-400 text-xs bg-red-400/10 border border-red-400/20 rounded-lg px-3 py-2"
+                className="text-red-500 bg-red-50 border border-red-200 p-4 text-[10px] uppercase tracking-widest font-bold text-center"
               >
                 {error}
-              </motion.p>
+              </motion.div>
             )}
 
             {/* Submit */}
             <button
               type="submit"
               disabled={submitting}
-              className="flex items-center justify-center gap-2 bg-gradient-to-r from-[#fb7a90] to-[#f16881] text-white rounded-xl px-6 py-3 font-semibold text-sm hover:opacity-90 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed mt-2"
+              className="mt-6 flex items-center justify-center gap-2 bg-brand-navy text-white px-8 py-4 text-[10px] uppercase tracking-widest font-bold hover:bg-brand-peach transition-colors w-full disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {submitting ? (
                 <span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
               ) : (
                 <LogIn className="w-4 h-4" />
               )}
-              {submitting ? 'Signing in...' : 'Sign In'}
+              {submitting ? 'Authenticating...' : 'Sign In'}
             </button>
           </form>
-        </div>
 
-
-      </motion.div>
+          {/* Footer Text */}
+          <div className="mt-12 text-center">
+             <p className="text-[10px] text-typography-muted">
+               Protected by advanced encryption. Unauthorized access is strictly prohibited.
+             </p>
+          </div>
+        </motion.div>
+      </div>
     </div>
   );
 }

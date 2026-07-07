@@ -5,15 +5,15 @@
 @layer base {
   :root {
     --background: #ffffff;
-    --foreground: #111111;
-    --brand-navy: #2f4065;
-    --brand-pink: #fb7a90;
-    --brand-peach: #fac29f;
-    --brand-coral: #f79492;
+    --foreground: #414C69;
+    --brand-navy: #414C69;
+    --brand-pink: #F97C91;
+    --brand-peach: #F9C5A3;
+    --brand-coral: #F69694;
     --typography-muted: #666666;
     --surface-white: #ffffff;
-    --surface-offWhite: #fcf1f1;
-    --surface-light: #fae6e6;
+    --surface-offWhite: #F8EAE7;
+    --surface-light: #F8EAE7;
   }
   
   html {
@@ -30,5 +30,14 @@
   h1, h2, h3, h4, h5, h6 {
     @apply tracking-tight font-sans;
   }
+}
+
+@keyframes marquee {
+  0% { transform: translateX(0%); }
+  100% { transform: translateX(-50%); }
+}
+
+.animate-marquee {
+  animation: marquee 25s linear infinite;
 }
 
