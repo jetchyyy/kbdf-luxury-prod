@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { FadeUp } from "../../ui/Motion/FadeUp";
-import { ArrowRight, Search, Check, RefreshCw, AlertCircle, ShoppingBag, MapPin, CreditCard, ExternalLink } from "lucide-react";
+import { ArrowRight, Search, Check, RefreshCw, AlertCircle, ShoppingBag, MapPin, CreditCard, ExternalLink, Info } from "lucide-react";
 import { supabase } from "../../lib/supabase/supabaseClient";
 import { ImageUploadInput } from "../admin/components/ImageUploadInput";
 import { useTenant } from "../../core/context/TenantContext";
@@ -34,6 +34,7 @@ interface Order {
   shipping_fee: number;
   total: number;
   status: 'pending_verification' | 'verified' | 'processing' | 'shipped' | 'completed' | 'cancelled';
+  notes: string | null;
   pickup_location: string | null;
   created_at: string;
   order_items: OrderItem[];
@@ -223,6 +224,18 @@ export function TrackPage() {
                   </div>
                 )}
               </div>
+
+              {/* Store Notes */}
+              {order.notes && (
+                <div className="bg-brand-pink/5 border border-brand-pink/20 rounded-3xl p-6 text-xs text-typography-primary flex flex-col gap-2">
+                  <span className="text-[10px] uppercase font-bold text-brand-pink tracking-widest flex items-center gap-1.5">
+                    <Info className="w-4 h-4" /> Message from Store
+                  </span>
+                  <p className="font-medium text-typography-primary leading-relaxed whitespace-pre-wrap">
+                    {order.notes}
+                  </p>
+                </div>
+              )}
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 

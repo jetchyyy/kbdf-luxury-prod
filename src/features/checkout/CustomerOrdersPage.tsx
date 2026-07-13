@@ -6,7 +6,7 @@ import { supabase } from "../../lib/supabase/supabaseClient";
 import { 
   Check, Calendar, ShoppingBag, MapPin, CreditCard, ChevronDown, 
   ChevronUp, AlertCircle, Loader2, Coins, ArrowUpRight, Upload, X, CheckCircle,
-  Heart, Trash2
+  Heart, Trash2, Info
 } from "lucide-react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useCart } from "../cart/CartContext";
@@ -41,6 +41,7 @@ interface Order {
   total: number;
   status: 'pending_verification' | 'verified' | 'processing' | 'shipped' | 'completed' | 'cancelled';
   notes: string | null;
+  pickup_location: string | null;
   created_at: string;
   order_items: OrderItem[];
 }
@@ -471,17 +472,21 @@ export function CustomerOrdersPage() {
   };
 
   // Timeline helpers
-  const steps = [
-    { key: 'pending_verification', label: 'Ordered' },
-    { key: 'verified', label: 'Paid' },
-    { key: 'processing', label: 'Processing' },
-    { key: 'shipped', label: 'Shipped' },
-    { key: 'completed', label: 'Completed' }
-  ];
+  const getStepsForOrder = (order: Order) => {
+    const isPickup = order.delivery_method === 'pickup';
+    return [
+      { key: 'pending_verification', label: 'Ordered' },
+      { key: 'verified', label: 'Paid' },
+      { key: 'processing', label: 'Processing' },
+      { key: 'shipped', label: isPickup ? 'Ready for Pick Up' : 'Shipped' },
+      { key: 'completed', label: isPickup ? 'Picked Up' : 'Completed' }
+    ];
+  };
 
-  const getStepIndex = (status: string) => {
-    if (status === 'cancelled') return -1;
-    return steps.findIndex(s => s.key === status);
+  const getStepIndex = (order: Order) => {
+    if (order.status === 'cancelled') return -1;
+    const orderSteps = getStepsForOrder(order);
+    return orderSteps.findIndex(s => s.key === order.status);
   };
 
   const getBadgeStyle = (status: string) => {
@@ -598,7 +603,7 @@ export function CustomerOrdersPage() {
               <div className="space-y-4">
                 {orders.map(order => {
                   const isExpanded = expandedOrderId === order.id;
-                  const activeIndex = getStepIndex(order.status);
+                  const activeIndex = getStepIndex(order);
 
                   return (
                     <div key={order.id} className="border border-surface-light rounded-2xl overflow-hidden bg-surface-offWhite transition-all">
@@ -624,7 +629,11 @@ export function CustomerOrdersPage() {
                           <div className="text-right">
                             <span className="font-bold text-sm text-typography-primary block">{currencySymbol}{order.total.toLocaleString()}</span>
                             <span className={`px-2 py-0.5 text-[10px] rounded-full border uppercase font-bold tracking-wider ${getBadgeStyle(order.status)}`}>
-                              {order.status.replace('_', ' ')}
+                              {order.delivery_method === 'pickup' && order.status === 'shipped' 
+                                ? 'Ready for Pick Up' 
+                                : order.delivery_method === 'pickup' && order.status === 'completed'
+                                ? 'Picked Up'
+                                : order.status.replace('_', ' ')}
                             </span>
                           </div>
                           {isExpanded ? <ChevronUp className="w-5 h-5 text-typography-muted" /> : <ChevronDown className="w-5 h-5 text-typography-muted" />}
@@ -642,7 +651,7 @@ export function CustomerOrdersPage() {
                           ) : (
                             <div className="flex flex-col md:flex-row justify-between items-center relative gap-6 py-2 border-b border-surface-light pb-6">
                               <div className="absolute top-1/2 left-0 right-0 h-0.5 bg-surface-light -translate-y-1/2 hidden md:block z-0" />
-                              {steps.map((step, idx) => {
+                              {getStepsForOrder(order).map((step, idx) => {
                                 const isCompleted = idx <= activeIndex;
                                 const isCurrent = idx === activeIndex;
 
@@ -666,6 +675,15 @@ export function CustomerOrdersPage() {
                             </div>
                           )}
 
+                          {order.notes && (
+                            <div className="bg-brand-pink/5 border border-brand-pink/20 rounded-2xl p-4 text-xs text-typography-primary flex flex-col gap-1.5">
+                              <span className="text-[9px] uppercase font-bold text-brand-pink tracking-widest flex items-center gap-1">
+                                <Info className="w-3.5 h-3.5" /> Store Update Notes
+                              </span>
+                              <p className="font-medium text-typography-primary leading-relaxed whitespace-pre-wrap">{order.notes}</p>
+                            </div>
+                          )}
+
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-xs text-typography-primary">
                             
                             {/* Address details */}
@@ -674,8 +692,18 @@ export function CustomerOrdersPage() {
                                 <MapPin className="w-4 h-4 text-brand-pink" /> Delivery Details
                               </h4>
                               <div>
-                                <p className="font-semibold capitalize">{order.delivery_method} Delivery</p>
-                                {order.delivery_method !== 'pickup' && (
+                                <p className="font-semibold capitalize font-serif">
+                                  {order.delivery_method === 'pickup' ? 'Store Pick Up' : `${order.delivery_method} Delivery`}
+                                </p>
+                                {order.delivery_method === 'pickup' ? (
+                                  <div className="text-typography-muted space-y-1 mt-2 bg-surface-offWhite p-3 rounded-2xl border border-surface-light">
+                                    <strong className="block text-[9px] uppercase tracking-wider text-typography-muted">Pick Up Location Address:</strong>
+                                    <p className="font-sans text-typography-primary">
+                                      {order.pickup_location || (tenant?.store_settings as any)?.address || "123 Store Street, City"}
+                                    </p>
+                                    <p className="text-[10px] text-brand-pink font-semibold mt-1">Please present your tracking ID to the store staff when claiming.</p>
+                                  </div>
+                                ) : (
                                   <div className="text-typography-muted space-y-0.5 mt-1">
                                     <p>{order.shipping_street}</p>
                                     <p>{order.shipping_barangay}, {order.shipping_city}</p>
