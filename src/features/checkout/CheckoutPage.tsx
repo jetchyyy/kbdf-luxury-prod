@@ -6,7 +6,7 @@ import { LOCATION_PRESETS } from '../cart/locationData';
 import { ImageUploadInput } from '../admin/components/ImageUploadInput';
 import { useUserAuth } from '../../core/context/UserAuthContext';
 import { useNotification } from '../../core/context/NotificationContext';
-import { Check, X, Clipboard, CreditCard, ShoppingBag, MapPin, Truck, ChevronRight, Download, Loader2, User, LogIn, Clock, AlertTriangle, Store } from 'lucide-react';
+import { Check, X, Clipboard, CreditCard, ShoppingBag, MapPin, Truck, ChevronRight, Download, Loader2, User, LogIn, Clock, AlertTriangle, Store, ChevronDown } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 interface PaymentMethod {
@@ -41,6 +41,7 @@ export function CheckoutPage() {
   const [isPlacing, setIsPlacing] = useState(false);
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
   const [trackingCode, setTrackingCode] = useState('');
+  const [showMobileSummary, setShowMobileSummary] = useState(false);
 
   // Promo code states
   const [promoCodeInput, setPromoCodeInput] = useState('');
@@ -871,23 +872,77 @@ export function CheckoutPage() {
   }
 
   return (
-    <div className="pt-32 pb-24 min-h-screen bg-surface-white">
+    <div className="pt-32 pb-36 lg:pb-24 min-h-screen bg-surface-white">
       <div className="max-w-5xl mx-auto px-4 md:px-8">
         
         {/* Wizard Progress Stepper */}
         {step < 4 && (
-          <div className="flex items-center justify-center gap-2 md:gap-4 mb-12 border-b border-surface-light pb-6 overflow-x-auto no-scrollbar">
+          <div className="flex items-center justify-center gap-2 md:gap-4 mb-8 border-b border-surface-light pb-6 overflow-x-auto no-scrollbar">
             <button onClick={() => setStep(1)} className={`flex items-center gap-1.5 text-[10px] uppercase font-bold tracking-wider whitespace-nowrap ${step >= 1 ? 'text-brand-pink' : 'text-typography-muted'}`}>
-              <span className="w-5 h-5 rounded-full border border-current flex items-center justify-center">1</span> Contact & Address
+              <span className="w-5 h-5 rounded-full border border-current flex items-center justify-center text-[10px]">1</span> 
+              <span>
+                <span className="hidden sm:inline">Contact & Address</span>
+                <span className="sm:hidden">Details</span>
+              </span>
             </button>
             <ChevronRight className="w-3.5 h-3.5 text-typography-muted flex-shrink-0" />
             <button onClick={() => isStep1Valid() && setStep(2)} disabled={!isStep1Valid()} className={`flex items-center gap-1.5 text-[10px] uppercase font-bold tracking-wider whitespace-nowrap ${step >= 2 ? 'text-brand-pink' : 'text-typography-muted'} disabled:opacity-50`}>
-              <span className="w-5 h-5 rounded-full border border-current flex items-center justify-center">2</span> Payment
+              <span className="w-5 h-5 rounded-full border border-current flex items-center justify-center text-[10px]">2</span> Payment
             </button>
             <ChevronRight className="w-3.5 h-3.5 text-typography-muted flex-shrink-0" />
             <button onClick={() => isStep1Valid() && isStep3Valid() && setStep(3)} disabled={!isStep1Valid() || !isStep3Valid()} className={`flex items-center gap-1.5 text-[10px] uppercase font-bold tracking-wider whitespace-nowrap ${step >= 3 ? 'text-brand-pink' : 'text-typography-muted'} disabled:opacity-50`}>
-              <span className="w-5 h-5 rounded-full border border-current flex items-center justify-center">3</span> Review
+              <span className="w-5 h-5 rounded-full border border-current flex items-center justify-center text-[10px]">3</span> Review
             </button>
+          </div>
+        )}
+
+        {/* Mobile Order Summary Toggle (Show/Hide) */}
+        {step < 4 && (
+          <div className="lg:hidden mb-6 bg-surface-offWhite border border-surface-light rounded-2xl overflow-hidden">
+            <button
+              onClick={() => setShowMobileSummary(!showMobileSummary)}
+              className="w-full flex items-center justify-between px-6 py-4 text-xs font-bold text-typography-primary hover:bg-surface-light/35 transition-all"
+            >
+              <span className="flex items-center gap-2 text-brand-pink">
+                <ShoppingBag className="w-4 h-4" />
+                {showMobileSummary ? "Hide Order Summary" : "Show Order Summary"}
+                <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${showMobileSummary ? 'rotate-180' : ''}`} />
+              </span>
+              <span>{currencySymbol}{Math.max(0, cartTotal - discountAmt).toLocaleString()}</span>
+            </button>
+            
+            {showMobileSummary && (
+              <div className="px-6 pb-6 border-t border-surface-light divide-y divide-surface-light animate-fadeIn">
+                {items.map(item => (
+                  <div key={`${item.id}-${item.selectedSize || ''}`} className="flex gap-3 py-3 items-center">
+                    <div className="w-10 h-14 bg-surface-light flex-shrink-0 rounded overflow-hidden">
+                      <img src={item.image_urls[0]} alt={item.title} className="w-full h-full object-cover" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-bold text-typography-primary truncate">{item.title}</p>
+                      <p className="text-[10px] text-typography-muted">Qty: {item.quantity} {item.selectedSize ? `| Size: ${item.selectedSize}` : ''}</p>
+                    </div>
+                    <span className="text-xs font-bold text-typography-primary">{currencySymbol}{item.price.toLocaleString()}</span>
+                  </div>
+                ))}
+                <div className="pt-4 space-y-2.5 text-xs">
+                  <div className="flex justify-between text-typography-muted">
+                    <span>Subtotal</span>
+                    <span>{currencySymbol}{cartTotal.toLocaleString()}</span>
+                  </div>
+                  {appliedPromo && (
+                    <div className="flex justify-between text-emerald-600">
+                      <span>Promo ({appliedPromo.code})</span>
+                      <span>-{currencySymbol}{discountAmt.toLocaleString()}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between text-typography-muted">
+                    <span>Delivery</span>
+                    <span className="text-brand-pink uppercase font-semibold">Free</span>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -1484,7 +1539,7 @@ export function CheckoutPage() {
                 </div>
 
                 {/* Steps Action Buttons (placed below item summary) */}
-                <div className="pt-4 border-t border-surface-light mt-4">
+                <div className="hidden lg:block pt-4 border-t border-surface-light mt-4">
                   {step === 1 && (
                     <button 
                       type="button" 
@@ -1555,6 +1610,57 @@ export function CheckoutPage() {
           )}
 
         </div>
+
+        {/* Mobile Sticky Bottom Action Bar */}
+        {step < 4 && (
+          <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-surface-light p-4 z-40 flex flex-col gap-2 safe-bottom shadow-[0_-8px_30px_rgba(0,0,0,0.08)]">
+            <div className="flex items-center justify-between text-xs font-bold px-1 mb-1">
+              <span className="text-typography-muted uppercase tracking-wider text-[9px]">Total Order Amount:</span>
+              <span className="text-sm font-black text-brand-pink">{currencySymbol}{Math.max(0, cartTotal - discountAmt).toLocaleString()}</span>
+            </div>
+            <div className="flex gap-3">
+              {step > 1 && (
+                <button
+                  type="button"
+                  onClick={() => setStep((step - 1) as any)}
+                  className="flex-1 py-3.5 border border-surface-light text-typography-primary rounded-xl text-xs font-bold uppercase tracking-wider hover:bg-surface-offWhite active:scale-[0.98] transition-all"
+                >
+                  Back
+                </button>
+              )}
+              {step === 1 && (
+                <button
+                  type="button"
+                  onClick={handleAdvanceFromStep1}
+                  disabled={!isStep1Valid() || isReserving}
+                  className="flex-[2] flex items-center justify-center gap-2 bg-brand-navy hover:bg-brand-pink text-white rounded-xl py-3.5 font-bold text-xs uppercase tracking-widest transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-sm"
+                >
+                  {isReserving ? <Loader2 className="w-4 h-4 animate-spin text-white" /> : <>Next Step <ChevronRight className="w-4 h-4" /></>}
+                </button>
+              )}
+              {step === 2 && (
+                <button
+                  type="button"
+                  onClick={() => isStep3Valid() && setStep(3)}
+                  disabled={!isStep3Valid()}
+                  className="flex-[2] flex items-center justify-center gap-2 bg-brand-navy hover:bg-brand-pink text-white rounded-xl py-3.5 font-bold text-xs uppercase tracking-widest transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-sm"
+                >
+                  Next Step <ChevronRight className="w-4 h-4" />
+                </button>
+              )}
+              {step === 3 && (
+                <button
+                  type="button"
+                  onClick={handlePlaceOrder}
+                  disabled={isPlacing}
+                  className="flex-[2] flex items-center justify-center gap-2 bg-gradient-to-r from-[#fb7a90] to-[#f16881] text-white rounded-xl py-3.5 font-bold text-xs uppercase tracking-widest active:scale-[0.98] transition-all disabled:opacity-50 shadow-sm"
+                >
+                  {isPlacing ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Confirm & Place'}
+                </button>
+              )}
+            </div>
+          </div>
+        )}
 
       </div>
     </div>
