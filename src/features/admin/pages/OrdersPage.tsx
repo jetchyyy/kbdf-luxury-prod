@@ -37,6 +37,7 @@ interface Order {
   total: number;
   status: 'pending_verification' | 'verified' | 'processing' | 'shipped' | 'completed' | 'cancelled';
   notes: string | null;
+  pickup_location: string | null;
   created_at: string;
   order_items: OrderItem[];
 }
@@ -51,6 +52,7 @@ export function OrdersPage() {
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [notes, setNotes] = useState('');
+  const [pickupLocation, setPickupLocation] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [dateFilter, setDateFilter] = useState<'all' | 'today' | 'week'>('all');
 
@@ -84,6 +86,7 @@ export function OrdersPage() {
   function handleViewOrder(order: Order) {
     setSelectedOrder(order);
     setNotes(order.notes || '');
+    setPickupLocation(order.pickup_location || '');
     setIsModalOpen(true);
   }
 
@@ -92,14 +95,28 @@ export function OrdersPage() {
     try {
       const { error } = await supabase
         .from('orders')
-        .update({ status: newStatus, notes: notes.trim() || null })
+        .update({ 
+          status: newStatus, 
+          notes: notes.trim() || null,
+          pickup_location: selectedOrder?.delivery_method === 'pickup' ? pickupLocation.trim() || null : null
+        })
         .eq('id', orderId);
 
       if (error) throw error;
       
       // Update local state
-      setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: newStatus, notes: notes.trim() || null } : o));
-      setSelectedOrder(prev => prev ? { ...prev, status: newStatus, notes: notes.trim() || null } : null);
+      setOrders(prev => prev.map(o => o.id === orderId ? { 
+        ...o, 
+        status: newStatus, 
+        notes: notes.trim() || null,
+        pickup_location: o.delivery_method === 'pickup' ? pickupLocation.trim() || null : null
+      } : o));
+      setSelectedOrder(prev => prev ? { 
+        ...prev, 
+        status: newStatus, 
+        notes: notes.trim() || null,
+        pickup_location: prev.delivery_method === 'pickup' ? pickupLocation.trim() || null : null
+      } : null);
       showSuccess(`Order status updated to: ${newStatus.replace('_', ' ')}`);
     } catch (err: any) {
       showError('Failed to update status: ' + (err.message || err));
@@ -392,7 +409,7 @@ export function OrdersPage() {
                   <div>
                     <strong className="block text-[10px] uppercase text-white/40 mb-0.5">Address</strong>
                     <p className="capitalize">Method: {selectedOrder.delivery_method}</p>
-                    {selectedOrder.delivery_method !== 'pickup' && (
+                    {selectedOrder.delivery_method !== 'pickup' ? (
                       <>
                         <p className="text-xs">{selectedOrder.shipping_street}</p>
                         <p className="text-xs">{selectedOrder.shipping_barangay}, {selectedOrder.shipping_city}</p>
@@ -401,6 +418,13 @@ export function OrdersPage() {
                           <p className="text-xs italic text-white/40 mt-1">Landmark: {selectedOrder.shipping_landmark}</p>
                         )}
                       </>
+                    ) : (
+                      <div className="mt-2 pt-2 border-t border-white/5">
+                        <strong className="block text-[10px] uppercase text-white/40 mb-0.5">Pick Up Location</strong>
+                        <p className="text-xs text-white bg-white/5 px-2.5 py-1.5 rounded-lg border border-white/5 mt-1 font-mono">
+                          {selectedOrder.pickup_location || 'Default Store Location'}
+                        </p>
+                      </div>
                     )}
                   </div>
                 </div>
@@ -476,6 +500,20 @@ export function OrdersPage() {
 
                   return canEdit ? (
                     <div className="pt-6 border-t border-white/5 space-y-3">
+                      {selectedOrder.delivery_method === 'pickup' && (
+                        <div className="flex flex-col gap-1.5">
+                          <label className="text-[10px] uppercase font-bold text-white/40">Custom Pick Up Location (Optional)</label>
+                          <input
+                            type="text"
+                            value={pickupLocation}
+                            onChange={e => setPickupLocation(e.target.value)}
+                            placeholder="e.g. Building 5, North Lobby / Store Counter 2"
+                            className="bg-[#0f1117] border border-white/10 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-[#fb7a90]/50"
+                          />
+                          <p className="text-[9px] text-white/30">If left blank, it defaults to the store's primary address.</p>
+                        </div>
+                      )}
+
                       <div className="flex flex-col gap-1.5">
                         <label className="text-[10px] uppercase font-bold text-white/40">Order Verification Notes</label>
                         <textarea

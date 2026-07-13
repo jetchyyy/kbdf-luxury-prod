@@ -34,6 +34,7 @@ interface Order {
   shipping_fee: number;
   total: number;
   status: 'pending_verification' | 'verified' | 'processing' | 'shipped' | 'completed' | 'cancelled';
+  pickup_location: string | null;
   created_at: string;
   order_items: OrderItem[];
 }
@@ -93,13 +94,15 @@ export function TrackPage() {
     }
   };
 
+  const isPickup = order?.delivery_method === 'pickup';
+
   // Timeline Helper
   const steps = [
     { key: 'pending_verification', label: 'Ordered' },
     { key: 'verified', label: 'Payment Verified' },
     { key: 'processing', label: 'Processing' },
-    { key: 'shipped', label: 'Shipped' },
-    { key: 'completed', label: 'Completed' }
+    { key: 'shipped', label: isPickup ? 'Ready for Pick Up' : 'Shipped' },
+    { key: 'completed', label: isPickup ? 'Picked Up' : 'Completed' }
   ];
 
   const getStepIndex = (status: string) => {
@@ -179,7 +182,11 @@ export function TrackPage() {
                       ? 'bg-emerald-50 border-emerald-200 text-emerald-500'
                       : 'bg-brand-pink/5 border-brand-pink/20 text-brand-pink'
                   }`}>
-                    {order.status.replace('_', ' ')}
+                    {isPickup && order.status === 'shipped' 
+                      ? 'Ready for Pick Up' 
+                      : isPickup && order.status === 'completed'
+                      ? 'Picked Up'
+                      : order.status.replace('_', ' ')}
                   </span>
                 </div>
 
@@ -236,9 +243,21 @@ export function TrackPage() {
                     )}
                   </div>
                   <div>
-                    <strong className="block text-[10px] uppercase text-typography-muted mb-0.5">Shipping Route</strong>
-                    <p className="font-semibold capitalize">{order.delivery_method} Delivery</p>
-                    {order.delivery_method !== 'pickup' && (
+                    <strong className="block text-[10px] uppercase text-typography-muted mb-0.5">
+                      {order.delivery_method === 'pickup' ? 'Pick Up Location' : 'Shipping Route'}
+                    </strong>
+                    <p className="font-semibold capitalize">
+                      {order.delivery_method === 'pickup' ? 'Store Pick Up' : `${order.delivery_method} Delivery`}
+                    </p>
+                    {order.delivery_method === 'pickup' ? (
+                      <div className="mt-2 text-xs text-typography-muted bg-surface-offWhite p-3 rounded-2xl border border-surface-light space-y-1">
+                        <strong className="block text-[9px] uppercase tracking-wider text-typography-muted">Address:</strong>
+                        <p className="font-sans text-typography-primary">
+                          {order.pickup_location || (tenant?.store_settings as any)?.address || "123 Store Street, City"}
+                        </p>
+                        <p className="text-[10px] text-brand-pink font-semibold mt-1">Please show your tracking ID to the counter staff when claiming.</p>
+                      </div>
+                    ) : (
                       <>
                         <p className="text-xs text-typography-muted">{order.shipping_street}</p>
                         <p className="text-xs text-typography-muted">{order.shipping_barangay}, {order.shipping_city}</p>
