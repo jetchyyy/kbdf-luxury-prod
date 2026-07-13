@@ -85,7 +85,7 @@ export function CustomerOrdersPage() {
   const { showSuccess, showError } = useNotification();
   const navigate = useNavigate();
   const { setCartItems } = useCart();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const [activeTab, setActiveTab] = useState<'orders' | 'leeway' | 'favorites'>('orders');
   const [orders, setOrders] = useState<Order[]>([]);
@@ -543,7 +543,10 @@ export function CustomerOrdersPage() {
 
           <div className="flex flex-wrap gap-2 self-start md:self-auto bg-surface-offWhite p-1 border border-surface-light rounded-2xl">
             <button
-              onClick={() => setActiveTab('orders')}
+              onClick={() => {
+                setActiveTab('orders');
+                setSearchParams({});
+              }}
               className={`px-5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
                 activeTab === 'orders' ? 'bg-brand-navy text-white shadow-md' : 'text-typography-muted hover:text-typography-primary'
               }`}
@@ -551,7 +554,10 @@ export function CustomerOrdersPage() {
               <ShoppingBag className="w-4 h-4" /> Order History
             </button>
             <button
-              onClick={() => setActiveTab('leeway')}
+              onClick={() => {
+                setActiveTab('leeway');
+                setSearchParams({ tab: 'leeway' });
+              }}
               className={`px-5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
                 activeTab === 'leeway' ? 'bg-brand-navy text-white shadow-md' : 'text-typography-muted hover:text-typography-primary'
               }`}
@@ -559,7 +565,10 @@ export function CustomerOrdersPage() {
               <Coins className="w-4 h-4" /> Leeway Installments
             </button>
             <button
-              onClick={() => setActiveTab('favorites')}
+              onClick={() => {
+                setActiveTab('favorites');
+                setSearchParams({ tab: 'favorites' });
+              }}
               className={`px-5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
                 activeTab === 'favorites' ? 'bg-brand-navy text-white shadow-md' : 'text-typography-muted hover:text-typography-primary'
               }`}
@@ -1055,15 +1064,6 @@ export function CustomerOrdersPage() {
                     />
                     Select All In-Stock
                   </label>
-                  
-                  <button
-                    onClick={handleCheckoutSelected}
-                    disabled={selectedFavIds.length === 0 || isCheckingOutBulk}
-                    className="px-6 py-2.5 bg-brand-navy hover:bg-brand-pink text-white disabled:bg-typography-muted/20 disabled:text-typography-muted/40 disabled:cursor-not-allowed rounded-xl text-xs uppercase font-bold tracking-widest transition-all flex items-center gap-2 shadow-sm"
-                  >
-                    {isCheckingOutBulk ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ShoppingBag className="w-3.5 h-3.5" />}
-                    {isCheckingOutBulk ? 'Preparing Checkout...' : `Checkout Selected (${selectedFavIds.length})`}
-                  </button>
                 </div>
 
                 {/* Items List */}
@@ -1171,6 +1171,22 @@ export function CustomerOrdersPage() {
                       </div>
                     );
                   })}
+                </div>
+
+                {/* Bulk Actions Footer */}
+                <div className="px-6 py-4 bg-surface-offWhite border-t border-surface-light flex items-center justify-between flex-wrap gap-4">
+                  <span className="text-xs font-semibold text-typography-muted">
+                    {selectedFavIds.length} of {favorites.length} items selected
+                  </span>
+                  
+                  <button
+                    onClick={handleCheckoutSelected}
+                    disabled={selectedFavIds.length === 0 || isCheckingOutBulk}
+                    className="px-6 py-2.5 bg-brand-navy hover:bg-brand-pink text-white disabled:bg-typography-muted/20 disabled:text-typography-muted/40 disabled:cursor-not-allowed rounded-xl text-xs uppercase font-bold tracking-widest transition-all flex items-center gap-2 shadow-sm"
+                  >
+                    {isCheckingOutBulk ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ShoppingBag className="w-3.5 h-3.5" />}
+                    {isCheckingOutBulk ? 'Preparing Checkout...' : `Checkout Selected (${selectedFavIds.length})`}
+                  </button>
                 </div>
               </div>
             )}
