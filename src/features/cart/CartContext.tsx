@@ -13,6 +13,7 @@ interface CartContextType {
   items: CartItem[];
   addToCart: (product: Product & { selectedSize?: string | null }) => void;
   removeFromCart: (productId: string, selectedSize?: string | null) => void;
+  setCartItems: (items: CartItem[]) => void;
   clearCart: () => void;
   cartTotal: number;
 }
@@ -48,10 +49,14 @@ export function CartProvider({ children }: { children: ReactNode }) {
     setItems([]);
   };
 
+  const setCartItems = (newItems: CartItem[]) => {
+    setItems(newItems);
+  };
+
   const cartTotal = items.reduce((total, item) => total + (item.price * item.quantity), 0);
 
   return (
-    <CartContext.Provider value={{ isCartOpen, openCart, closeCart, items, addToCart, removeFromCart, clearCart, cartTotal }}>
+    <CartContext.Provider value={{ isCartOpen, openCart, closeCart, items, addToCart, removeFromCart, setCartItems, clearCart, cartTotal }}>
       {children}
     </CartContext.Provider>
   );

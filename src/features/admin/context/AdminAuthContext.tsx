@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, useRef, type ReactNode } from 'react';
 import { supabase } from '../../../lib/supabase/supabaseClient';
 import type { AdminUser, Role, Tenant, RolePermissions, PermissionModule, PermissionAction } from '../../../lib/supabase/database.types';
 
@@ -20,6 +20,7 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
   const [tenant, setTenant] = useState<Tenant | null>(null);
   const [role, setRole] = useState<Role | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const loadedAuthIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     // Check current session
@@ -32,10 +33,13 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
     });
 
     // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event: any, session: any) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event: any, session: any) => {
       if (session?.user) {
-        loadAdminUser(session.user.id);
+        const isSameUser = loadedAuthIdRef.current === session.user.id;
+        const silent = event === 'TOKEN_REFRESHED' || isSameUser;
+        loadAdminUser(session.user.id, !!silent);
       } else {
+        loadedAuthIdRef.current = null;
         setAdminUser(null);
         setTenant(null);
         setRole(null);
@@ -46,8 +50,11 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
     return () => subscription.unsubscribe();
   }, []);
 
-  async function loadAdminUser(authId: string) {
-    setIsLoading(true);
+  async function loadAdminUser(authId: string, silent = false) {
+    loadedAuthIdRef.current = authId;
+    if (!silent) {
+      setIsLoading(true);
+    }
     try {
       const { data: user, error } = await supabase
         .from('admin_users')

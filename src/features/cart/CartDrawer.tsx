@@ -6,6 +6,17 @@ import { Link } from "react-router-dom";
 export function CartDrawer() {
   const { isCartOpen, closeCart, items, removeFromCart, cartTotal } = useCart();
 
+  const checkItemOutOfStock = (item: any) => {
+    const hasSizes = item.sizes && item.sizes.length > 0;
+    if (hasSizes) {
+      const sizeObj = item.sizes.find((s: any) => s.size === item.selectedSize);
+      return !sizeObj || sizeObj.quantity <= 0;
+    }
+    return item.stock_status === 'out_of_stock' || (item.stock_quantity !== undefined && item.stock_quantity <= 0);
+  };
+
+  const hasOutOfStockItems = items.some(checkItemOutOfStock);
+
   return (
     <AnimatePresence>
       {isCartOpen && (
@@ -43,53 +54,84 @@ export function CartDrawer() {
                   <p className="text-[10px] uppercase tracking-widest font-bold">Discover our new arrivals</p>
                 </div>
               ) : (
-                items.map((item) => (
-                  <div key={`${item.id}-${item.selectedSize || ''}`} className="flex gap-4 border-b border-surface-light pb-6">
-                    <div className="w-24 h-32 bg-surface-offWhite flex-shrink-0">
-                      <img src={item.image_urls[0]} alt={item.title} className="w-full h-full object-cover mix-blend-multiply" />
-                    </div>
-                    <div className="flex flex-col flex-1 justify-between py-2">
-                      <div>
-                        <div className="flex justify-between items-start mb-1">
-                          <h3 className="text-sm font-bold text-typography-primary leading-tight">{item.title}</h3>
-                          <button onClick={() => removeFromCart(item.id, item.selectedSize)} className="text-typography-muted hover:text-brand-pink">
-                            <Trash2 className="w-4 h-4" strokeWidth={1.5} />
-                          </button>
-                        </div>
-                        <p className="text-[10px] uppercase tracking-widest font-bold text-brand-peach">{item.brand}</p>
-                        {item.selectedSize && (
-                          <div className="mt-1">
-                            <span className="inline-block bg-surface-offWhite border border-surface-light text-typography-muted text-[10px] font-semibold px-2 py-0.5 rounded">
-                              Size: {item.selectedSize}
+                items.map((item) => {
+                  const isOutOfStock = checkItemOutOfStock(item);
+                  return (
+                    <div key={`${item.id}-${item.selectedSize || ''}`} className={`flex gap-4 border-b border-surface-light pb-6 ${isOutOfStock ? 'opacity-70' : ''}`}>
+                      <div className="w-24 h-32 bg-surface-offWhite flex-shrink-0 relative">
+                        <img src={item.image_urls[0]} alt={item.title} className="w-full h-full object-cover mix-blend-multiply" />
+                        {isOutOfStock && (
+                          <div className="absolute inset-0 bg-red-900/10 flex items-center justify-center">
+                            <span className="bg-red-600 text-white font-bold text-[8px] uppercase tracking-wider px-1.5 py-0.5 rounded">
+                              Unavailable
                             </span>
                           </div>
                         )}
                       </div>
-                      <div className="flex justify-between items-end">
-                        <p className="text-xs text-typography-muted font-medium">Qty: {item.quantity}</p>
-                        <p className="text-sm font-bold text-typography-primary">PHP {(item.price * item.quantity).toLocaleString()}</p>
+                      <div className="flex flex-col flex-1 justify-between py-2">
+                        <div>
+                          <div className="flex justify-between items-start mb-1">
+                            <h3 className="text-sm font-bold text-typography-primary leading-tight">{item.title}</h3>
+                            <button onClick={() => removeFromCart(item.id, item.selectedSize)} className="text-typography-muted hover:text-brand-pink">
+                              <Trash2 className="w-4 h-4" strokeWidth={1.5} />
+                            </button>
+                          </div>
+                          <p className="text-[10px] uppercase tracking-widest font-bold text-brand-peach">{item.brand}</p>
+                          <div className="flex flex-wrap gap-1.5 mt-1">
+                            {item.selectedSize && (
+                              <span className="inline-block bg-surface-offWhite border border-surface-light text-typography-muted text-[10px] font-semibold px-2 py-0.5 rounded">
+                                Size: {item.selectedSize}
+                              </span>
+                            )}
+                            {isOutOfStock && (
+                              <span className="inline-block bg-red-50 border border-red-200 text-red-600 text-[10px] font-bold px-2 py-0.5 rounded">
+                                Out of Stock
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex justify-between items-end">
+                          <p className="text-xs text-typography-muted font-medium">Qty: {item.quantity}</p>
+                          <p className="text-sm font-bold text-typography-primary">PHP {(item.price * item.quantity).toLocaleString()}</p>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))
+                  );
+                })
               )}
             </div>
 
             {/* Footer */}
             {items.length > 0 && (
-              <div className="p-6 border-t border-surface-light bg-surface-offWhite">
-                <div className="flex justify-between items-center mb-6">
+              <div className="p-6 border-t border-surface-light bg-surface-offWhite space-y-4">
+                {hasOutOfStockItems && (
+                  <div className="bg-red-50 border border-red-200 rounded-xl p-3.5 text-red-700 text-xs font-semibold">
+                    ⚠️ Your bag contains unavailable items. Please remove them to proceed to checkout.
+                  </div>
+                )}
+                
+                <div className="flex justify-between items-center">
                   <span className="text-xs uppercase tracking-widest font-bold text-typography-primary">Subtotal</span>
                   <span className="text-lg font-bold text-typography-primary">PHP {cartTotal.toLocaleString()}</span>
                 </div>
-                <Link 
-                  to="/checkout"
-                  onClick={closeCart}
-                  className="w-full bg-brand-navy text-white py-4 text-[10px] uppercase tracking-widest font-bold hover:bg-brand-pink transition-colors text-center block"
-                >
-                  Proceed to Checkout
-                </Link>
-                <div className="mt-4 text-center">
+                
+                {hasOutOfStockItems ? (
+                  <button 
+                    disabled
+                    className="w-full bg-surface-light text-typography-muted py-4 text-[10px] uppercase tracking-widest font-bold cursor-not-allowed text-center block border border-surface-light"
+                  >
+                    Proceed to Checkout
+                  </button>
+                ) : (
+                  <Link 
+                    to="/checkout"
+                    onClick={closeCart}
+                    className="w-full bg-brand-navy text-white py-4 text-[10px] uppercase tracking-widest font-bold hover:bg-brand-pink transition-colors text-center block"
+                  >
+                    Proceed to Checkout
+                  </Link>
+                )}
+                <div className="mt-2 text-center">
                   <Link to="/cart" onClick={closeCart} className="text-[10px] uppercase tracking-widest text-typography-muted hover:text-brand-navy border-b border-transparent hover:border-brand-navy pb-0.5 transition-all">
                     View full bag
                   </Link>

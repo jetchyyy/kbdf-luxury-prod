@@ -11,14 +11,18 @@ interface ProductCardProps {
 export function ProductCard({ product, index }: ProductCardProps) {
   const navigate = useNavigate();
 
+  const hasSizes = product.sizes && product.sizes.length > 0;
+  const isOutOfStock = 
+    product.stock_status === 'out_of_stock' || 
+    product.stock_quantity === 0 || 
+    (hasSizes && (!product.sizes || product.sizes.every(s => s.quantity <= 0)));
+
   return (
     <FadeUp delay={index * 0.1}>
       <div 
         onClick={() => navigate(`/product/${product.slug}`)}
-        className="group cursor-pointer flex flex-col bg-surface-white h-[420px] relative"
+        className={`group cursor-pointer flex flex-col bg-surface-white h-[420px] relative transition-opacity duration-300 ${isOutOfStock ? 'opacity-65' : ''}`}
       >
-
-
         {/* Wishlist Heart */}
         <button 
           className="absolute top-4 right-4 z-10 text-typography-primary hover:text-brand-pink transition-colors"
@@ -26,6 +30,12 @@ export function ProductCard({ product, index }: ProductCardProps) {
         >
           <Heart className="w-5 h-5" strokeWidth={1} />
         </button>
+
+        {isOutOfStock && (
+          <span className="absolute top-4 left-4 bg-red-500 text-white px-2 py-0.5 text-[9px] uppercase tracking-[0.2em] font-semibold rounded z-10">
+            Out of Stock
+          </span>
+        )}
 
         {/* Image Area */}
         <div className="w-full flex-1 overflow-hidden bg-transparent">

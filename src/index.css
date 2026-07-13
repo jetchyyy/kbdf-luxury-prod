@@ -41,3 +41,89 @@
   animation: marquee 25s linear infinite;
 }
 
+/* ==========================================
+   Admin Panel Light Mode CSS Overrides
+   ========================================== */
+.admin-light-mode {
+  background-color: #f9fafb !important;
+  color: #1f2937 !important;
+}
+
+.admin-light-mode .bg-\[\#0f1117\],
+.admin-light-mode main.bg-\[\#0f1117\] {
+  background-color: #f9fafb !important;
+}
+
+.admin-light-mode .bg-\[\#111827\] {
+  background-color: #ffffff !important;
+}
+
+.admin-light-mode .bg-\[\#1f2937\] {
+  background-color: #f3f4f6 !important;
+}
+
+.admin-light-mode .bg-\[\#0f1117\]\/80 {
+  background-color: rgba(249, 250, 251, 0.8) !important;
+}
+
+.admin-light-mode .bg-white\/5 {
+  background-color: rgba(0, 0, 0, 0.05) !important;
+}
+
+.admin-light-mode .bg-white\/10 {
+  background-color: rgba(0, 0, 0, 0.08) !important;
+}
+
+.admin-light-mode .border-white\/5 {
+  border-color: rgba(0, 0, 0, 0.08) !important;
+}
+
+.admin-light-mode .border-white\/10 {
+  border-color: rgba(0, 0, 0, 0.12) !important;
+}
+
+.admin-light-mode .text-white {
+  color: #111827 !important;
+}
+
+.admin-light-mode .text-white\/80 {
+  color: #1f2937 !important;
+}
+
+.admin-light-mode .text-white\/60 {
+  color: #4b5563 !important;
+}
+
+.admin-light-mode .text-white\/50 {
+  color: #6b7280 !important;
+}
+
+.admin-light-mode .text-white\/40 {
+  color: #8892a0 !important;
+}
+
+.admin-light-mode .text-white\/30 {
+  color: #a0aec0 !important;
+}
+
+.admin-light-mode .divide-white\/5 > * + * {
+  border-color: rgba(0, 0, 0, 0.08) !important;
+}
+
+.admin-light-mode .divide-white\/10 > * + * {
+  border-color: rgba(0, 0, 0, 0.12) !important;
+}
+
+/* Input/Form field styling in light mode */
+.admin-light-mode input,
+.admin-light-mode select,
+.admin-light-mode textarea {
+  color: #111827 !important;
+  border-color: rgba(0, 0, 0, 0.15) !important;
+}
+.admin-light-mode input::placeholder,
+.admin-light-mode textarea::placeholder {
+  color: rgba(0, 0, 0, 0.3) !important;
+}
+
+

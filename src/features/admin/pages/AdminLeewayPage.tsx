@@ -244,31 +244,33 @@ export function AdminLeewayPage() {
 
         const updatedRequests = await Promise.all(
           (data || []).map(async (req: any) => {
-            let name = 'Unknown';
-            let email = 'Unknown';
+            let name = req.customer_name || 'Unknown';
+            let email = req.customer_email || 'Unknown';
             
-            // Try fetching from admin_users (which maps user metadata profiles)
-            const { data: userData } = await supabase
-              .from('admin_users')
-              .select('email, full_name')
-              .eq('auth_id', req.customer_id)
-              .maybeSingle();
-
-            if (userData) {
-              name = userData.full_name || 'Customer Profile';
-              email = userData.email;
-            } else {
-              // Fallback to query customer name inside orders history
-              const { data: orderData } = await supabase
-                .from('orders')
-                .select('customer_email, customer_first_name, customer_last_name')
-                .eq('customer_id', req.customer_id)
-                .limit(1)
+            if (name === 'Unknown' || email === 'Unknown') {
+              // Try fetching from admin_users (which maps user metadata profiles)
+              const { data: userData } = await supabase
+                .from('admin_users')
+                .select('email, full_name')
+                .eq('auth_id', req.customer_id)
                 .maybeSingle();
 
-              if (orderData) {
-                name = `${orderData.customer_first_name} ${orderData.customer_last_name}`;
-                email = orderData.customer_email;
+              if (userData) {
+                name = userData.full_name || 'Customer Profile';
+                email = userData.email;
+              } else {
+                // Fallback to query customer name inside orders history
+                const { data: orderData } = await supabase
+                  .from('orders')
+                  .select('customer_email, customer_first_name, customer_last_name')
+                  .eq('customer_id', req.customer_id)
+                  .limit(1)
+                  .maybeSingle();
+
+                if (orderData) {
+                  name = `${orderData.customer_first_name} ${orderData.customer_last_name}`;
+                  email = orderData.customer_email;
+                }
               }
             }
 

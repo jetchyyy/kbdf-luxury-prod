@@ -457,6 +457,8 @@ export interface Database {
           status: 'pending' | 'approved' | 'rejected';
           admin_notes: string | null;
           requested_items: any;
+          customer_name: string | null;
+          customer_email: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -467,6 +469,8 @@ export interface Database {
           status?: 'pending' | 'approved' | 'rejected';
           admin_notes?: string | null;
           requested_items?: any;
+          customer_name?: string | null;
+          customer_email?: string | null;
           created_at?: string;
           updated_at?: string;
         };

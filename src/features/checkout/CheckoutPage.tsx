@@ -293,7 +293,9 @@ export function CheckoutPage() {
           tenant_id: tenantId,
           customer_id: user.id,
           status: 'pending',
-          requested_items: requestedItemsPayload
+          requested_items: requestedItemsPayload,
+          customer_name: user.user_metadata?.full_name || `${firstName} ${lastName}`.trim() || email || 'Unknown',
+          customer_email: user.email || email
         });
 
       if (error) throw error;
@@ -415,8 +417,20 @@ export function CheckoutPage() {
   const selectedPaymentMethod = paymentMethods.find(m => m.id === selectedMethodId);
   const selectedDownPaymentMethod = paymentMethods.find(m => m.id === leewayPaymentMethodId);
 
+  const checkItemOutOfStock = (item: any) => {
+    const hasSizes = item.sizes && item.sizes.length > 0;
+    if (hasSizes) {
+      const sizeObj = item.sizes.find((s: any) => s.size === item.selectedSize);
+      return !sizeObj || sizeObj.quantity <= 0;
+    }
+    return item.stock_status === 'out_of_stock' || (item.stock_quantity !== undefined && item.stock_quantity <= 0);
+  };
+
+  const hasOutOfStockItems = items.some(checkItemOutOfStock);
+
   // Validate fields for Step 1
   const isStep1Valid = () => {
+    if (hasOutOfStockItems) return false;
     const isContactValid = firstName.trim() && lastName.trim() && email.trim() && phone.trim();
     const isAddressPresetValid = province && province !== 'Other' && city && barangay && streetAddress.trim();
     const isAddressCustomValid = province === 'Other' && customProvince.trim() && customCity.trim() && customBarangay.trim() && streetAddress.trim();
@@ -784,6 +798,11 @@ export function CheckoutPage() {
             {/* STEP 1: CONTACT DETAILS & SHIPPING */}
             {step === 1 && (
               <div className="space-y-6">
+                {hasOutOfStockItems && (
+                  <div className="bg-red-50 border border-red-200 rounded-2xl p-4 text-red-700 text-xs font-semibold">
+                    ⚠️ Your shopping bag contains out-of-stock or unavailable items. Please update your bag to proceed.
+                  </div>
+                )}
                 <div>
                   <h2 className="text-xl font-serif text-typography-primary flex items-center gap-2">
                     <MapPin className="w-5 h-5 text-brand-pink" strokeWidth={1.5} /> Contact & Shipping Details

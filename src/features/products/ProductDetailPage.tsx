@@ -91,7 +91,12 @@ export function ProductDetailPage() {
 
   const hasSizes = product.sizes && product.sizes.length > 0;
   const matchedSizeObj = product.sizes?.find(s => s.size === selectedSize);
-  const maxAvailable = matchedSizeObj ? matchedSizeObj.quantity : product.sizes?.[0] ? 0 : 99;
+  const allSizesOutOfStock = hasSizes && (!product.sizes || product.sizes.every(s => s.quantity <= 0));
+  const maxAvailable = allSizesOutOfStock
+    ? 0
+    : hasSizes
+    ? (matchedSizeObj ? matchedSizeObj.quantity : 1)
+    : (product.stock_status === 'out_of_stock' ? 0 : (product.stock_quantity ?? 99));
 
   const handleAddToBag = () => {
     setErrorMsg('');

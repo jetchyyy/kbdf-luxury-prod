@@ -22,6 +22,9 @@ const PAGE_TITLES: Record<string, string> = {
 
 export function AdminLayout({ children }: { children: React.ReactNode }) {
   const [collapsed, setCollapsed] = useState(false);
+  const [theme, setTheme] = useState<'dark' | 'light'>(() => {
+    return (localStorage.getItem('admin-theme') as 'dark' | 'light') || 'dark';
+  });
   const location = useLocation();
   const { tenant } = useAdminAuth();
 
@@ -32,8 +35,17 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
     document.title = `${title} — ${tenantName}`;
   }, [title, tenant]);
 
+  useEffect(() => {
+    const handleThemeChange = (e: Event) => {
+      const customEvent = e as CustomEvent;
+      setTheme(customEvent.detail);
+    };
+    window.addEventListener('admin-theme-change', handleThemeChange);
+    return () => window.removeEventListener('admin-theme-change', handleThemeChange);
+  }, []);
+
   return (
-    <div className="flex h-screen bg-[#0f1117] overflow-hidden">
+    <div className={`flex h-screen bg-[#0f1117] overflow-hidden ${theme === 'light' ? 'admin-light-mode' : ''}`}>
       <AdminSidebar collapsed={collapsed} onToggle={() => setCollapsed(v => !v)} />
       <div className="flex flex-col flex-1 overflow-hidden">
         <AdminHeader title={title} />

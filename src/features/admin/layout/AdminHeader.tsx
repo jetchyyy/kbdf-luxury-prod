@@ -1,4 +1,4 @@
-import { LogOut, Bell, ChevronDown } from 'lucide-react';
+import { LogOut, Bell, ChevronDown, Sun, Moon } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useAdminAuth } from '../context/AdminAuthContext';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -21,6 +21,26 @@ export function AdminHeader({ title }: AdminHeaderProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
+
+  const [theme, setTheme] = useState<'dark' | 'light'>(() => {
+    return (localStorage.getItem('admin-theme') as 'dark' | 'light') || 'dark';
+  });
+
+  const toggleTheme = () => {
+    const nextTheme = theme === 'dark' ? 'light' : 'dark';
+    setTheme(nextTheme);
+    localStorage.setItem('admin-theme', nextTheme);
+    window.dispatchEvent(new CustomEvent('admin-theme-change', { detail: nextTheme }));
+  };
+
+  useEffect(() => {
+    const handleThemeChange = (e: Event) => {
+      const customEvent = e as CustomEvent;
+      setTheme(customEvent.detail);
+    };
+    window.addEventListener('admin-theme-change', handleThemeChange);
+    return () => window.removeEventListener('admin-theme-change', handleThemeChange);
+  }, []);
 
   // Subscribe to real-time orders inserts
   useEffect(() => {
@@ -127,6 +147,19 @@ export function AdminHeader({ title }: AdminHeaderProps) {
       {/* Right: actions */}
       <div className="flex items-center gap-3">
         
+        {/* Theme Toggle */}
+        <button
+          onClick={toggleTheme}
+          className="w-9 h-9 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center text-white/50 hover:text-white transition-colors"
+          title={theme === 'dark' ? "Switch to Light Mode" : "Switch to Dark Mode"}
+        >
+          {theme === 'dark' ? (
+            <Sun className="w-4 h-4" strokeWidth={1.5} />
+          ) : (
+            <Moon className="w-4 h-4" strokeWidth={1.5} />
+          )}
+        </button>
+
         {/* Notification bell and dropdown */}
         <div className="relative">
           <button

@@ -17,6 +17,7 @@ export interface Product {
   category_id: string;
   image_urls: string[];
   stock_status: 'in_stock' | 'low_stock' | 'out_of_stock';
+  stock_quantity?: number;
   condition: 'new' | 'preloved_excellent' | 'preloved_good' | 'preloved_fair';
   brand: string;
   sizes?: { size: string; quantity: number }[];

@@ -32,6 +32,8 @@ export function ItemFormModal({ isOpen, onClose, onSave, item, tenantId }: ItemF
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
 
+  const [hasMultipleSizes, setHasMultipleSizes] = useState(false);
+
   // Leeway states
   const [leewayEnabled, setLeewayEnabled] = useState(false);
   const [leewayDownPaymentRequired, setLeewayDownPaymentRequired] = useState(false);
@@ -56,6 +58,7 @@ export function ItemFormModal({ isOpen, onClose, onSave, item, tenantId }: ItemF
         setCategoryId(item.category_id || '');
         setImageUrls(item.image_urls && item.image_urls.length > 0 ? item.image_urls : ['']);
         setSizes(item.sizes || []);
+        setHasMultipleSizes(!!item.sizes && item.sizes.length > 0);
         setLeewayEnabled((item as any).leeway_enabled || false);
         setLeewayDownPaymentRequired((item as any).leeway_down_payment_required || false);
         setLeewayDownPaymentAmount(Number((item as any).leeway_down_payment_amount || 0));
@@ -72,6 +75,7 @@ export function ItemFormModal({ isOpen, onClose, onSave, item, tenantId }: ItemF
         setCategoryId('');
         setImageUrls(['']);
         setSizes([]);
+        setHasMultipleSizes(false);
         setLeewayEnabled(false);
         setLeewayDownPaymentRequired(false);
         setLeewayDownPaymentAmount(0);
@@ -82,13 +86,13 @@ export function ItemFormModal({ isOpen, onClose, onSave, item, tenantId }: ItemF
     }
   }, [isOpen, item, tenantId]);
 
-  // Auto-calculate global quantity if sizes are defined
+  // Auto-calculate global quantity if sizes are defined and enabled
   useEffect(() => {
-    if (sizes.length > 0) {
+    if (hasMultipleSizes && sizes.length > 0) {
       const sum = sizes.reduce((acc, curr) => acc + curr.quantity, 0);
       setQuantity(sum);
     }
-  }, [sizes]);
+  }, [sizes, hasMultipleSizes]);
 
   // Auto-adjust stock status when quantity changes
   useEffect(() => {
@@ -134,6 +138,12 @@ export function ItemFormModal({ isOpen, onClose, onSave, item, tenantId }: ItemF
       return;
     }
 
+    if (hasMultipleSizes && sizes.length === 0) {
+      setError('Please add at least one size option or disable "multiple sizes" option.');
+      setIsSubmitting(false);
+      return;
+    }
+
     try {
       const slug = generateSlug(title);
       const payload = {
@@ -150,7 +160,7 @@ export function ItemFormModal({ isOpen, onClose, onSave, item, tenantId }: ItemF
         condition,
         stock_status: stockStatus,
         image_urls: filteredImages,
-        sizes: sizes.length > 0 ? sizes : null,
+        sizes: hasMultipleSizes ? sizes : null,
         leeway_enabled: leewayEnabled,
         leeway_down_payment_required: leewayDownPaymentRequired,
         leeway_down_payment_amount: leewayEnabled && leewayDownPaymentRequired ? leewayDownPaymentAmount : 0,
@@ -296,11 +306,11 @@ export function ItemFormModal({ isOpen, onClose, onSave, item, tenantId }: ItemF
                 onChange={e => setQuantity(Math.max(0, parseInt(e.target.value) || 0))}
                 required
                 min="0"
-                disabled={sizes.length > 0}
+                disabled={hasMultipleSizes}
                 placeholder="10"
                 className="bg-[#0f1117] border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white outline-none focus:border-[#fb7a90]/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               />
-              {sizes.length > 0 && (
+              {hasMultipleSizes && (
                 <span className="text-[#fb7a90] text-[9px] font-semibold">Total quantity calculated from size inventory below.</span>
               )}
             </div>
@@ -318,6 +328,25 @@ export function ItemFormModal({ isOpen, onClose, onSave, item, tenantId }: ItemF
                 <option value="preloved_good">Preloved (Good)</option>
                 <option value="preloved_fair">Preloved (Fair)</option>
               </select>
+            </div>
+
+            {/* Multiple Sizes Toggle */}
+            <div className="md:col-span-2 flex items-center gap-3 py-2 border-b border-white/5 pb-4">
+              <label className="flex items-center gap-3 text-sm text-white/80 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={hasMultipleSizes}
+                  onChange={e => {
+                    setHasMultipleSizes(e.target.checked);
+                    if (e.target.checked && sizes.length > 0) {
+                      const sum = sizes.reduce((acc, curr) => acc + curr.quantity, 0);
+                      setQuantity(sum);
+                    }
+                  }}
+                  className="w-4 h-4 rounded border-white/10 text-[#fb7a90] bg-transparent outline-none focus:ring-0 focus:ring-offset-0 cursor-pointer"
+                />
+                This product has multiple sizes / measurement options (e.g. S, M, L, US 9)
+              </label>
             </div>
           </div>
 
@@ -386,92 +415,94 @@ export function ItemFormModal({ isOpen, onClose, onSave, item, tenantId }: ItemF
           </div>
 
           {/* Size Options Section */}
-          <div className="flex flex-col gap-2 border-t border-white/5 pt-4">
-            <label className="text-white/60 text-xs font-medium uppercase tracking-wider">Sizes / Measurement Options</label>
-            <p className="text-white/40 text-[10px] -mt-1">Add selectable sizes with their respective quantities for this product.</p>
-            
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={sizeInput}
-                onChange={e => setSizeInput(e.target.value)}
-                onKeyDown={e => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault();
-                    handleAddSize();
-                  }
-                }}
-                placeholder="e.g. S, US 9, Chest 38"
-                className="bg-[#0f1117] border border-white/10 rounded-xl px-4 py-2 text-xs text-white placeholder:text-white/20 outline-none focus:border-[#fb7a90]/50 transition-colors flex-1"
-              />
-              <input
-                type="number"
-                value={sizeQuantityInput}
-                onChange={e => setSizeQuantityInput(Math.max(1, parseInt(e.target.value) || 1))}
-                min="1"
-                placeholder="Qty"
-                className="bg-[#0f1117] border border-white/10 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-[#fb7a90]/50 transition-colors w-20 text-center"
-              />
-              <button
-                type="button"
-                onClick={handleAddSize}
-                className="bg-white/5 hover:bg-white/10 border border-white/10 text-white text-xs px-4 rounded-xl font-semibold transition-all"
-              >
-                Add Size
-              </button>
-            </div>
-
-            {/* Presets */}
-            <div className="flex flex-wrap gap-2 items-center mt-1">
-              <span className="text-white/30 text-[9px] uppercase font-bold mr-1">Presets (Qty: 5):</span>
-              <button
-                type="button"
-                onClick={() => setSizes(['S', 'M', 'L', 'XL', 'XXL'].map(s => ({ size: s, quantity: 5 })))}
-                className="bg-white/5 hover:bg-white/10 text-white/60 text-[9px] px-2 py-1 rounded border border-white/5 hover:text-white transition-all"
-              >
-                Clothes (S-XXL)
-              </button>
-              <button
-                type="button"
-                onClick={() => setSizes(['US 7', 'US 8', 'US 9', 'US 10', 'US 11'].map(s => ({ size: s, quantity: 5 })))}
-                className="bg-white/5 hover:bg-white/10 text-white/60 text-[9px] px-2 py-1 rounded border border-white/5 hover:text-white transition-all"
-              >
-                Shoes (US 7-11)
-              </button>
-              <button
-                type="button"
-                onClick={() => setSizes([{ size: 'One Size', quantity: 5 }])}
-                className="bg-white/5 hover:bg-white/10 text-white/60 text-[9px] px-2 py-1 rounded border border-white/5 hover:text-white transition-all"
-              >
-                One Size
-              </button>
-              {sizes.length > 0 && (
+          {hasMultipleSizes && (
+            <div className="flex flex-col gap-2 border-t border-white/5 pt-4">
+              <label className="text-white/60 text-xs font-medium uppercase tracking-wider">Sizes / Measurement Options</label>
+              <p className="text-white/40 text-[10px] -mt-1">Add selectable sizes with their respective quantities for this product.</p>
+              
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={sizeInput}
+                  onChange={e => setSizeInput(e.target.value)}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleAddSize();
+                    }
+                  }}
+                  placeholder="e.g. S, US 9, Chest 38"
+                  className="bg-[#0f1117] border border-white/10 rounded-xl px-4 py-2 text-xs text-white placeholder:text-white/20 outline-none focus:border-[#fb7a90]/50 transition-colors flex-1"
+                />
+                <input
+                  type="number"
+                  value={sizeQuantityInput}
+                  onChange={e => setSizeQuantityInput(Math.max(1, parseInt(e.target.value) || 1))}
+                  min="1"
+                  placeholder="Qty"
+                  className="bg-[#0f1117] border border-white/10 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-[#fb7a90]/50 transition-colors w-20 text-center"
+                />
                 <button
                   type="button"
-                  onClick={() => setSizes([])}
-                  className="text-red-400 hover:text-red-300 text-[9px] font-bold ml-auto"
+                  onClick={handleAddSize}
+                  className="bg-white/5 hover:bg-white/10 border border-white/10 text-white text-xs px-4 rounded-xl font-semibold transition-all"
                 >
-                  Clear All
+                  Add Size
                 </button>
+              </div>
+
+              {/* Presets */}
+              <div className="flex flex-wrap gap-2 items-center mt-1">
+                <span className="text-white/30 text-[9px] uppercase font-bold mr-1">Presets (Qty: 5):</span>
+                <button
+                  type="button"
+                  onClick={() => setSizes(['S', 'M', 'L', 'XL', 'XXL'].map(s => ({ size: s, quantity: 5 })))}
+                  className="bg-white/5 hover:bg-white/10 text-white/60 text-[9px] px-2 py-1 rounded border border-white/5 hover:text-white transition-all"
+                >
+                  Clothes (S-XXL)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSizes(['US 7', 'US 8', 'US 9', 'US 10', 'US 11'].map(s => ({ size: s, quantity: 5 })))}
+                  className="bg-white/5 hover:bg-white/10 text-white/60 text-[9px] px-2 py-1 rounded border border-white/5 hover:text-white transition-all"
+                >
+                  Shoes (US 7-11)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSizes([{ size: 'One Size', quantity: 5 }])}
+                  className="bg-white/5 hover:bg-white/10 text-white/60 text-[9px] px-2 py-1 rounded border border-white/5 hover:text-white transition-all"
+                >
+                  One Size
+                </button>
+                {sizes.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setSizes([])}
+                    className="text-red-400 hover:text-red-300 text-[9px] font-bold ml-auto"
+                  >
+                    Clear All
+                  </button>
+                )}
+              </div>
+
+              {/* Size Tags Display */}
+              {sizes.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 mt-2 bg-[#0f1117] border border-white/5 p-3 rounded-xl">
+                  {sizes.map((s) => (
+                    <span
+                      key={s.size}
+                      onClick={() => handleRemoveSize(s.size)}
+                      className="flex items-center gap-1.5 bg-[#fb7a90]/10 hover:bg-red-500/10 text-[#fb7a90] hover:text-red-400 border border-[#fb7a90]/20 hover:border-red-500/20 px-2.5 py-1 rounded-lg text-xs font-semibold cursor-pointer transition-all"
+                      title="Click to remove"
+                    >
+                      {s.size} <span className="text-white/40 text-[10px] font-normal">({s.quantity} left)</span> <X className="w-3 h-3 opacity-60" />
+                    </span>
+                  ))}
+                </div>
               )}
             </div>
-
-            {/* Size Tags Display */}
-            {sizes.length > 0 && (
-              <div className="flex flex-wrap gap-1.5 mt-2 bg-[#0f1117] border border-white/5 p-3 rounded-xl">
-                {sizes.map((s) => (
-                  <span
-                    key={s.size}
-                    onClick={() => handleRemoveSize(s.size)}
-                    className="flex items-center gap-1.5 bg-[#fb7a90]/10 hover:bg-red-500/10 text-[#fb7a90] hover:text-red-400 border border-[#fb7a90]/20 hover:border-red-500/20 px-2.5 py-1 rounded-lg text-xs font-semibold cursor-pointer transition-all"
-                    title="Click to remove"
-                  >
-                    {s.size} <span className="text-white/40 text-[10px] font-normal">({s.quantity} left)</span> <X className="w-3 h-3 opacity-60" />
-                  </span>
-                ))}
-              </div>
-            )}
-          </div>
+          )}
 
           {/* Image URLs */}
           <div className="space-y-3">

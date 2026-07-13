@@ -18,11 +18,20 @@ export function ProductDetailModal({ isOpen, onClose, product }: ProductDetailMo
   if (!isOpen) return null;
 
   const hasSizes = product.sizes && product.sizes.length > 0;
+  const matchedSizeObj = product.sizes?.find(s => s.size === selectedSize);
+  const allSizesOutOfStock = hasSizes && (!product.sizes || product.sizes.every(s => s.quantity <= 0));
+  const isOutOfStock = allSizesOutOfStock || 
+    (!hasSizes && (product.stock_status === 'out_of_stock' || (product.stock_quantity !== undefined && product.stock_quantity <= 0)));
 
   const handleAddToBag = () => {
     setErrorMsg('');
     if (hasSizes && !selectedSize) {
       setErrorMsg('Please select a size before adding to your bag.');
+      return;
+    }
+
+    if (isOutOfStock || (matchedSizeObj && matchedSizeObj.quantity <= 0)) {
+      setErrorMsg('This item is out of stock.');
       return;
     }
 
@@ -166,9 +175,10 @@ export function ProductDetailModal({ isOpen, onClose, product }: ProductDetailMo
           <div className="pt-6 border-t border-surface-light mt-6">
             <button
               onClick={handleAddToBag}
-              className="w-full flex items-center justify-center gap-2 bg-brand-navy hover:bg-brand-pink text-white py-4 text-xs uppercase tracking-widest font-bold transition-colors rounded-xl shadow-lg"
+              disabled={isOutOfStock}
+              className="w-full flex items-center justify-center gap-2 bg-brand-navy hover:bg-brand-pink text-white py-4 text-xs uppercase tracking-widest font-bold transition-colors rounded-xl shadow-lg disabled:bg-surface-light disabled:text-typography-muted disabled:cursor-not-allowed disabled:shadow-none"
             >
-              <ShoppingBag className="w-4 h-4" /> Add to Bag
+              <ShoppingBag className="w-4 h-4" /> {isOutOfStock ? 'Out of Stock' : 'Add to Bag'}
             </button>
           </div>
         </div>

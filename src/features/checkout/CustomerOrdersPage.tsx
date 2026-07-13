@@ -5,9 +5,10 @@ import { useNotification } from "../../core/context/NotificationContext";
 import { supabase } from "../../lib/supabase/supabaseClient";
 import { 
   Check, Calendar, ShoppingBag, MapPin, CreditCard, ChevronDown, 
-  ChevronUp, AlertCircle, Loader2, Coins, ArrowUpRight, Upload, X 
+  ChevronUp, AlertCircle, Loader2, Coins, ArrowUpRight, Upload, X, CheckCircle 
 } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useCart } from "../cart/CartContext";
 import { ImageUploadInput } from "../admin/components/ImageUploadInput";
 
 interface OrderItem {
@@ -80,6 +81,8 @@ export function CustomerOrdersPage() {
   const { user, isLoading: authLoading } = useUserAuth();
   const { tenant } = useTenant();
   const { showSuccess, showError } = useNotification();
+  const navigate = useNavigate();
+  const { setCartItems } = useCart();
 
   const [activeTab, setActiveTab] = useState<'orders' | 'leeway'>('orders');
   const [orders, setOrders] = useState<Order[]>([]);
@@ -215,7 +218,9 @@ export function CustomerOrdersPage() {
         .insert({
           tenant_id: tenant.id,
           customer_id: user.id,
-          status: 'pending'
+          status: 'pending',
+          customer_name: user.user_metadata?.full_name || user.email || 'Unknown',
+          customer_email: user.email
         });
 
       if (error) throw error;
@@ -226,6 +231,56 @@ export function CustomerOrdersPage() {
       showError("Failed to submit leeway request: " + (err.message || err));
     } finally {
       setIsRequestingLeeway(false);
+    }
+  };
+
+  const [isCheckingOutLeeway, setIsCheckingOutLeeway] = useState(false);
+
+  const handleCheckoutApprovedItems = async () => {
+    setIsCheckingOutLeeway(true);
+    try {
+      const itemIds = leewayRequestedItems.map((i: any) => i.id);
+      
+      const { data: products, error } = await supabase
+        .from('items')
+        .select('*')
+        .in('id', itemIds);
+
+      if (error) throw error;
+      if (!products || products.length === 0) {
+        throw new Error("Approved items could not be loaded from store catalog. They may have been deleted or deactivated.");
+      }
+
+      const cartItemsToSet = leewayRequestedItems.map((reqItem: any) => {
+        const product = products.find((p: any) => p.id === reqItem.id);
+        if (!product) {
+          return {
+            id: reqItem.id,
+            title: reqItem.title,
+            price: reqItem.price,
+            quantity: reqItem.quantity,
+            selectedSize: reqItem.size,
+            image_urls: [],
+            slug: '',
+            is_active: false
+          } as any;
+        }
+
+        return {
+          ...product,
+          quantity: reqItem.quantity,
+          selectedSize: reqItem.size
+        };
+      });
+
+      setCartItems(cartItemsToSet);
+      showSuccess("Approved items loaded into your shopping bag!");
+      navigate('/checkout');
+    } catch (err: any) {
+      console.error(err);
+      showError("Failed to prepare leeway checkout: " + (err.message || err));
+    } finally {
+      setIsCheckingOutLeeway(false);
     }
   };
 
@@ -674,11 +729,39 @@ export function CustomerOrdersPage() {
                 ))}
               </div>
             ) : leewayAccounts.length === 0 && leewayRequestStatus === 'approved' ? (
-              <div className="border border-surface-light bg-surface-offWhite rounded-3xl p-12 text-center">
-                <Coins className="w-12 h-12 text-typography-muted/40 mx-auto mb-4" strokeWidth={1} />
-                <h3 className="text-lg font-serif text-typography-primary">No Leeway Accounts</h3>
-                <p className="text-xs text-typography-muted mt-1 uppercase tracking-wider mb-6">Choose the Leeway payment option when checking out to pay in installments.</p>
-                <Link to="/shop" className="bg-brand-navy hover:bg-brand-pink text-white px-8 py-3.5 text-[10px] uppercase tracking-widest font-bold transition-all">Shop Collections</Link>
+              <div className="border border-emerald-200 bg-emerald-50/10 rounded-3xl p-12 text-center space-y-6">
+                <div className="w-12 h-12 rounded-full bg-emerald-500/10 flex items-center justify-center mx-auto text-emerald-500">
+                  <CheckCircle className="w-6 h-6" />
+                </div>
+                <div className="space-y-2">
+                  <h3 className="text-lg font-serif text-emerald-800">Leeway Access Approved!</h3>
+                  <p className="text-xs text-typography-muted max-w-md mx-auto leading-relaxed">
+                    Good news! Your request for leeway installment options has been approved. You can now checkout your approved items below directly using our Leeway installment plan.
+                  </p>
+                </div>
+                
+                {leewayRequestedItems.length > 0 && (
+                  <div className="max-w-md mx-auto border-t border-emerald-200/50 pt-4 text-left">
+                    <span className="text-[10px] font-bold text-emerald-600 uppercase block mb-2 tracking-wider">Approved Items:</span>
+                    <div className="space-y-2.5 mb-6">
+                      {leewayRequestedItems.map((item: any, idx: number) => (
+                        <div key={idx} className="flex justify-between items-center text-xs text-typography-primary font-medium">
+                          <span>{item.title} {item.size ? `(${item.size})` : ''} <strong className="text-typography-muted">x{item.quantity}</strong></span>
+                          <span className="font-bold">{currencySymbol}{(item.price * item.quantity).toLocaleString()}</span>
+                        </div>
+                      ))}
+                    </div>
+                    
+                    <button
+                      onClick={handleCheckoutApprovedItems}
+                      disabled={isCheckingOutLeeway}
+                      className="w-full bg-brand-navy hover:bg-brand-pink text-white rounded-xl py-3.5 text-[10px] uppercase tracking-widest font-bold transition-all disabled:opacity-50 inline-flex items-center justify-center gap-2"
+                    >
+                      {isCheckingOutLeeway && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                      Proceed to Checkout
+                    </button>
+                  </div>
+                )}
               </div>
             ) : leewayAccounts.length > 0 ? (
               <div className="space-y-6">
