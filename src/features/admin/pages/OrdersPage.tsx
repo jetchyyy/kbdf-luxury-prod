@@ -4,7 +4,7 @@ import { usePermissions } from '../hooks/usePermissions';
 import { supabase, TENANT_ID } from '../../../lib/supabase/supabaseClient';
 import { DataTable } from '../components/DataTable';
 import type { Column } from '../components/DataTable';
-import { ShoppingBag, Eye, CheckCircle, Truck, FileCheck, XCircle, Info, Calendar, Trash2 } from 'lucide-react';
+import { ShoppingBag, Eye, CheckCircle, Truck, FileCheck, XCircle, Info, Calendar, Trash2, Store } from 'lucide-react';
 import { useNotification } from '../../../core/context/NotificationContext';
 
 interface OrderItem {
@@ -92,6 +92,16 @@ export function OrdersPage() {
 
   async function updateOrderStatus(orderId: string, newStatus: Order['status']) {
     if (!canEdit) return;
+
+    const statusLabel = selectedOrder?.delivery_method === 'pickup' && newStatus === 'shipped' 
+      ? 'ready for pick up' 
+      : selectedOrder?.delivery_method === 'pickup' && newStatus === 'completed'
+      ? 'picked up / completed'
+      : newStatus.replace('_', ' ');
+
+    const confirmed = await showConfirm(`Are you sure you want to change the status of this order to: "${statusLabel.toUpperCase()}"?`);
+    if (!confirmed) return;
+
     try {
       const { error } = await supabase
         .from('orders')
@@ -545,14 +555,22 @@ export function OrdersPage() {
                           disabled={!canShip}
                           className="flex items-center justify-center gap-1 bg-[#fb7a90] hover:bg-[#fb7a90]/90 disabled:opacity-20 disabled:hover:bg-[#fb7a90] disabled:cursor-not-allowed text-white rounded-xl py-2 text-xs font-semibold tracking-wider active:scale-[0.98] disabled:active:scale-100 transition-all"
                         >
-                          <Truck className="w-3.5 h-3.5" /> Ship Order
+                          {selectedOrder.delivery_method === 'pickup' ? (
+                            <>
+                              <Store className="w-3.5 h-3.5" /> Ready for Pick Up
+                            </>
+                          ) : (
+                            <>
+                              <Truck className="w-3.5 h-3.5" /> Ship Order
+                            </>
+                          )}
                         </button>
                         <button
                           onClick={() => updateOrderStatus(selectedOrder.id, 'completed')}
                           disabled={!canComplete}
                           className="flex items-center justify-center gap-1 bg-emerald-500 hover:bg-emerald-600 disabled:opacity-20 disabled:hover:bg-emerald-500 disabled:cursor-not-allowed text-white rounded-xl py-2 text-xs font-semibold tracking-wider active:scale-[0.98] disabled:active:scale-100 transition-all"
                         >
-                          <CheckCircle className="w-3.5 h-3.5" /> Complete
+                          <CheckCircle className="w-3.5 h-3.5" /> {selectedOrder.delivery_method === 'pickup' ? 'Mark Picked Up' : 'Complete'}
                         </button>
                         <button
                           onClick={() => updateOrderStatus(selectedOrder.id, 'cancelled')}

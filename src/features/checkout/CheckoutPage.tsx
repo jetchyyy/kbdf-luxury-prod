@@ -894,12 +894,6 @@ export function CheckoutPage() {
                     </div>
                   </div>
                 </div>
-
-                <div className="pt-6 flex justify-end">
-                  <button type="button" onClick={() => setStep(2)} disabled={!isStep1Valid()} className="flex items-center gap-2 bg-brand-navy hover:bg-brand-pink text-white rounded-xl px-6 py-3 font-semibold text-xs uppercase tracking-widest transition-all disabled:opacity-50">
-                    Next Step <ChevronRight className="w-4 h-4" />
-                  </button>
-                </div>
               </div>
             )}
 
@@ -925,15 +919,6 @@ export function CheckoutPage() {
                     <span className="text-xs text-typography-muted block mt-1">Pick up directly at our physical branch.</span>
                     <span className="text-xs font-semibold text-[#fb7a90] block mt-4 uppercase">Ready in 24 Hours</span>
                   </button>
-                </div>
-
-                <div className="flex justify-between items-center pt-6 border-t border-surface-light">
-                  <button type="button" onClick={() => setStep(1)} disabled={isReserving} className="text-xs font-semibold uppercase tracking-wider text-typography-muted hover:text-brand-navy disabled:opacity-50">Back</button>
-                  {isReserving && (
-                    <span className="flex items-center gap-2 text-xs text-typography-muted">
-                      <Loader2 className="w-4 h-4 animate-spin" /> Checking availability...
-                    </span>
-                  )}
                 </div>
               </div>
             )}
@@ -1204,13 +1189,6 @@ export function CheckoutPage() {
                     </div>
                   </div>
                 )}
-
-                <div className="flex justify-between items-center pt-6 border-t border-surface-light">
-                  <button type="button" onClick={() => setStep(2)} className="text-xs font-semibold uppercase tracking-wider text-typography-muted hover:text-brand-navy">Back</button>
-                  <button type="button" onClick={() => isStep3Valid() && setStep(4)} disabled={!isStep3Valid()} className="flex items-center gap-2 bg-brand-navy hover:bg-brand-pink text-white rounded-xl px-6 py-3 font-semibold text-xs uppercase tracking-widest transition-all disabled:opacity-50">
-                    Next Step <ChevronRight className="w-4 h-4" />
-                  </button>
-                </div>
               </div>
             )}
 
@@ -1284,24 +1262,6 @@ export function CheckoutPage() {
                       ) : null}
                     </div>
                   </div>
-                </div>
-
-                <div className="flex justify-between items-center pt-6 border-t border-surface-light">
-                  <button type="button" onClick={() => setStep(3)} className="text-xs font-semibold uppercase tracking-wider text-typography-muted hover:text-brand-navy">Back</button>
-                  <button 
-                    type="button" 
-                    onClick={handlePlaceOrder}
-                    disabled={isPlacing} 
-                    className="flex items-center justify-center gap-2 bg-gradient-to-r from-[#fb7a90] to-[#f16881] text-white rounded-xl px-8 py-3.5 font-bold text-xs uppercase tracking-widest hover:opacity-90 active:scale-[0.98] transition-all disabled:opacity-50"
-                  >
-                    {isPlacing ? (
-                      <>
-                        <Loader2 className="w-4 h-4 animate-spin" /> Placing Order...
-                      </>
-                    ) : (
-                      'Confirm & Place Order'
-                    )}
-                  </button>
                 </div>
               </div>
             )}
@@ -1421,6 +1381,84 @@ export function CheckoutPage() {
                 <div className="flex justify-between text-sm font-bold pt-4 border-t border-surface-light">
                   <span>Total</span>
                   <span className="text-typography-primary">{currencySymbol}{Math.max(0, cartTotal - discountAmt).toLocaleString()}</span>
+                </div>
+
+                {/* Steps Action Buttons (placed below item summary) */}
+                <div className="pt-4 border-t border-surface-light mt-4">
+                  {step === 1 && (
+                    <button 
+                      type="button" 
+                      onClick={() => setStep(2)} 
+                      disabled={!isStep1Valid()} 
+                      className="w-full flex items-center justify-center gap-2 bg-brand-navy hover:bg-brand-pink text-white rounded-xl py-3.5 font-bold text-xs uppercase tracking-widest transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-sm"
+                    >
+                      Next Step <ChevronRight className="w-4 h-4" />
+                    </button>
+                  )}
+
+                  {step === 2 && (
+                    <div className="flex flex-col gap-3">
+                      {isReserving && (
+                        <div className="flex items-center justify-center gap-2 text-xs text-typography-muted">
+                          <Loader2 className="w-4 h-4 animate-spin text-brand-pink" /> Reserving items...
+                        </div>
+                      )}
+                      <button 
+                        type="button" 
+                        onClick={() => setStep(1)} 
+                        disabled={isReserving}
+                        className="w-full text-center text-xs font-semibold uppercase tracking-wider text-typography-muted hover:text-brand-navy py-1.5 transition-colors"
+                      >
+                        Back
+                      </button>
+                    </div>
+                  )}
+
+                  {step === 3 && (
+                    <div className="flex flex-col gap-3">
+                      <button 
+                        type="button" 
+                        onClick={() => isStep3Valid() && setStep(4)} 
+                        disabled={!isStep3Valid()} 
+                        className="w-full flex items-center justify-center gap-2 bg-brand-navy hover:bg-brand-pink text-white rounded-xl py-3.5 font-bold text-xs uppercase tracking-widest transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-sm"
+                      >
+                        Next Step <ChevronRight className="w-4 h-4" />
+                      </button>
+                      <button 
+                        type="button" 
+                        onClick={() => setStep(2)} 
+                        className="w-full text-center text-xs font-semibold uppercase tracking-wider text-typography-muted hover:text-brand-navy py-1.5 transition-colors"
+                      >
+                        Back
+                      </button>
+                    </div>
+                  )}
+
+                  {step === 4 && (
+                    <div className="flex flex-col gap-3">
+                      <button 
+                        type="button" 
+                        onClick={handlePlaceOrder}
+                        disabled={isPlacing} 
+                        className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-[#fb7a90] to-[#f16881] text-white rounded-xl py-3.5 font-bold text-xs uppercase tracking-widest hover:opacity-90 active:scale-[0.98] transition-all disabled:opacity-50 shadow-sm"
+                      >
+                        {isPlacing ? (
+                          <>
+                            <Loader2 className="w-4 h-4 animate-spin" /> Placing Order...
+                          </>
+                        ) : (
+                          'Confirm & Place Order'
+                        )}
+                      </button>
+                      <button 
+                        type="button" 
+                        onClick={() => setStep(3)} 
+                        className="w-full text-center text-xs font-semibold uppercase tracking-wider text-typography-muted hover:text-brand-navy py-1.5 transition-colors"
+                      >
+                        Back
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
