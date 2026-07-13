@@ -260,7 +260,7 @@ export function CheckoutPage() {
         .eq('tenant_id', tenantId)
         .eq('customer_id', user.id)
         .maybeSingle()
-        .then(({ data }) => {
+        .then(({ data }: any) => {
           if (data) {
             setLeewayRequestStatus(data.status);
             setLeewayRequestedItems(data.requested_items || []);

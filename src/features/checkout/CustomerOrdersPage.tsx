@@ -126,7 +126,7 @@ export function CustomerOrdersPage() {
         .eq("tenant_id", tenant.id)
         .eq("is_active", true)
         .order("sort_order", { ascending: true })
-        .then(({ data }) => {
+        .then(({ data }: any) => {
           if (data) setPaymentMethods(data);
         });
     }
@@ -187,7 +187,7 @@ export function CustomerOrdersPage() {
       setLeewayAccounts(accountsData || []);
 
       if (accountsData && accountsData.length > 0) {
-        const accIds = accountsData.map(a => a.id);
+        const accIds = accountsData.map((a: any) => a.id);
         const { data: paymentsData, error: payError } = await supabase
           .from("leeway_payments")
           .select("*, leeway_account:leeway_accounts(order:orders(tracking_number))")

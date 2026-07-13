@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, ShoppingBag, User, LogOut, ClipboardList, Home, Menu } from "lucide-react";
+import { Search, ShoppingBag, User, LogOut, ClipboardList } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useCart } from "../../features/cart/CartContext";
 import { useTenant } from "../context/TenantContext";

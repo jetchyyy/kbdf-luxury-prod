@@ -4,7 +4,7 @@ import { usePermissions } from '../hooks/usePermissions';
 import { supabase, TENANT_ID } from '../../../lib/supabase/supabaseClient';
 import { DataTable } from '../components/DataTable';
 import type { Column } from '../components/DataTable';
-import { Coins, Eye, CheckCircle, XCircle, Info, Calendar, Search, ArrowUpRight, DollarSign, UserCheck } from 'lucide-react';
+import { Coins, Eye, CheckCircle, XCircle, Calendar } from 'lucide-react';
 import { useNotification } from '../../../core/context/NotificationContext';
 
 interface LeewayAccount {
@@ -60,6 +60,7 @@ interface LeewayRequest {
   updated_at: string;
   customer_name?: string;
   customer_email?: string;
+  requested_items?: any[];
 }
 
 export function AdminLeewayPage() {
@@ -105,7 +106,7 @@ export function AdminLeewayPage() {
 
         // Fetch customer profile metadata since they reference auth.users
         const updatedAccounts = await Promise.all(
-          (data || []).map(async (acc) => {
+          (data || []).map(async (acc: any) => {
             const { data: userData } = await supabase
               .from('admin_users')
               .select('email, full_name')
@@ -151,7 +152,7 @@ export function AdminLeewayPage() {
         if (error) throw error;
 
         const updatedPayments = await Promise.all(
-          (data || []).map(async (pay) => {
+          (data || []).map(async (pay: any) => {
             const customerId = pay.leeway_account?.customer_id;
             let name = 'Unknown';
             let email = 'Unknown';
@@ -197,7 +198,7 @@ export function AdminLeewayPage() {
         if (error) throw error;
 
         const updatedLogs = await Promise.all(
-          (data || []).map(async (pay) => {
+          (data || []).map(async (pay: any) => {
             const customerId = pay.leeway_account?.customer_id;
             let name = 'Unknown';
             let email = 'Unknown';
@@ -242,7 +243,7 @@ export function AdminLeewayPage() {
         if (error) throw error;
 
         const updatedRequests = await Promise.all(
-          (data || []).map(async (req) => {
+          (data || []).map(async (req: any) => {
             let name = 'Unknown';
             let email = 'Unknown';
             
