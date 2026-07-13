@@ -6,12 +6,13 @@ import { supabase } from "../../lib/supabase/supabaseClient";
 import { 
   Check, Calendar, ShoppingBag, MapPin, CreditCard, ChevronDown, 
   ChevronUp, AlertCircle, Loader2, Coins, ArrowUpRight, Upload, X, CheckCircle,
-  Heart, Trash2, Info
+  Heart, Trash2, Info, User
 } from "lucide-react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useCart } from "../cart/CartContext";
 import { ImageUploadInput } from "../admin/components/ImageUploadInput";
 import { useFavorites } from "../favorites/FavoritesContext";
+import { LOCATION_PRESETS } from "../cart/locationData";
 
 interface OrderItem {
   id: string;
@@ -88,11 +89,27 @@ export function CustomerOrdersPage() {
   const { setCartItems } = useCart();
   const [searchParams, setSearchParams] = useSearchParams();
 
-  const [activeTab, setActiveTab] = useState<'orders' | 'leeway' | 'favorites'>('orders');
+  const [activeTab, setActiveTab] = useState<'orders' | 'leeway' | 'favorites' | 'profile'>('orders');
   const [orders, setOrders] = useState<Order[]>([]);
   const [loadingOrders, setLoadingOrders] = useState(true);
   const [expandedOrderId, setExpandedOrderId] = useState<string | null>(null);
   const [receiptUrlMap, setReceiptUrlMap] = useState<{ [orderId: string]: string }>({});
+
+  // Profile state
+  const [profileFirstName, setProfileFirstName] = useState('');
+  const [profileLastName, setProfileLastName] = useState('');
+  const [profilePhone, setProfilePhone] = useState('');
+  const [profileFbLink, setProfileFbLink] = useState('');
+  const [profileProvince, setProfileProvince] = useState('');
+  const [profileCity, setProfileCity] = useState('');
+  const [profileBarangay, setProfileBarangay] = useState('');
+  const [profileStreetAddress, setProfileStreetAddress] = useState('');
+  const [profileLandmark, setProfileLandmark] = useState('');
+  const [profileCustomProvince, setProfileCustomProvince] = useState('');
+  const [profileCustomCity, setProfileCustomCity] = useState('');
+  const [profileCustomBarangay, setProfileCustomBarangay] = useState('');
+  const [loadingProfile, setLoadingProfile] = useState(false);
+  const [savingProfile, setSavingProfile] = useState(false);
 
   useEffect(() => {
     const tab = searchParams.get('tab');
@@ -100,8 +117,95 @@ export function CustomerOrdersPage() {
       setActiveTab('favorites');
     } else if (tab === 'leeway') {
       setActiveTab('leeway');
+    } else if (tab === 'profile') {
+      setActiveTab('profile');
     }
   }, [searchParams]);
+
+  useEffect(() => {
+    if (user?.id) {
+      setLoadingProfile(true);
+      supabase
+        .from('customer_profiles')
+        .select('*')
+        .eq('id', user.id)
+        .maybeSingle()
+        .then(({ data, error }: { data: any; error: any }) => {
+          if (error) {
+            console.error("Error loading profile:", error);
+          } else if (data) {
+            if (data.first_name) setProfileFirstName(data.first_name);
+            if (data.last_name) setProfileLastName(data.last_name);
+            if (data.phone) setProfilePhone(data.phone);
+            if (data.fb_link) setProfileFbLink(data.fb_link);
+            if (data.province) setProfileProvince(data.province);
+            if (data.city) setProfileCity(data.city);
+            if (data.barangay) setProfileBarangay(data.barangay);
+            if (data.street_address) setProfileStreetAddress(data.street_address);
+            if (data.landmark) setProfileLandmark(data.landmark);
+            if (data.custom_province) setProfileCustomProvince(data.custom_province);
+            if (data.custom_city) setProfileCustomCity(data.custom_city);
+            if (data.custom_barangay) setProfileCustomBarangay(data.custom_barangay);
+          }
+          setLoadingProfile(false);
+        });
+    }
+  }, [user]);
+
+  const profileCities = profileProvince && LOCATION_PRESETS[profileProvince]
+    ? Object.keys(LOCATION_PRESETS[profileProvince].cities)
+    : [];
+
+  const profileBarangays = profileProvince && profileCity && LOCATION_PRESETS[profileProvince]?.cities[profileCity]
+    ? LOCATION_PRESETS[profileProvince].cities[profileCity]
+    : [];
+
+  const handleProfileProvinceChange = (val: string) => {
+    setProfileProvince(val);
+    setProfileCity('');
+    setProfileBarangay('');
+  };
+
+  const handleProfileCityChange = (val: string) => {
+    setProfileCity(val);
+    setProfileBarangay('');
+  };
+
+  const handleSaveProfile = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user?.id) return;
+    setSavingProfile(true);
+    try {
+      const { error } = await supabase
+        .from('customer_profiles')
+        .upsert({
+          id: user.id,
+          tenant_id: tenant?.id || '',
+          first_name: profileFirstName.trim(),
+          last_name: profileLastName.trim(),
+          email: user.email || '',
+          phone: profilePhone.trim(),
+          fb_link: profileFbLink.trim() || null,
+          province: profileProvince,
+          city: profileCity,
+          barangay: profileBarangay,
+          street_address: profileStreetAddress.trim(),
+          landmark: profileLandmark.trim() || null,
+          custom_province: profileCustomProvince.trim(),
+          custom_city: profileCustomCity.trim(),
+          custom_barangay: profileCustomBarangay.trim(),
+          updated_at: new Date().toISOString()
+        });
+
+      if (error) throw error;
+      showSuccess("Profile updated successfully!");
+    } catch (err: any) {
+      console.error(err);
+      showError("Failed to update profile: " + (err.message || err));
+    } finally {
+      setSavingProfile(false);
+    }
+  };
 
   // Leeway states
   const [leewayAccounts, setLeewayAccounts] = useState<LeewayAccount[]>([]);
@@ -579,6 +683,17 @@ export function CustomerOrdersPage() {
               }`}
             >
               <Heart className="w-4 h-4" /> Favorites List
+            </button>
+            <button
+              onClick={() => {
+                setActiveTab('profile');
+                setSearchParams({ tab: 'profile' });
+              }}
+              className={`px-5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
+                activeTab === 'profile' ? 'bg-brand-navy text-white shadow-md' : 'text-typography-muted hover:text-typography-primary'
+              }`}
+            >
+              <User className="w-4 h-4" /> Profile Details
             </button>
           </div>
         </div>
@@ -1217,6 +1332,195 @@ export function CustomerOrdersPage() {
                   </button>
                 </div>
               </div>
+            )}
+          </div>
+        )}
+
+        {/* Tab 4: Profile Details */}
+        {activeTab === 'profile' && (
+          <div className="bg-white border border-surface-light rounded-3xl p-6 md:p-8 shadow-sm max-w-2xl">
+            <div className="border-b border-surface-light pb-4 mb-6">
+              <h2 className="text-xl font-serif text-typography-primary flex items-center gap-2">
+                <User className="w-5 h-5 text-brand-pink" strokeWidth={1.5} /> Profile Details
+              </h2>
+              <p className="text-[10px] tracking-wider text-typography-muted uppercase mt-1">Pre-fill your shipping address and contact details</p>
+            </div>
+
+            {loadingProfile ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="w-6 h-6 animate-spin text-brand-pink" />
+              </div>
+            ) : (
+              <form onSubmit={handleSaveProfile} className="space-y-6">
+                
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[10px] font-bold uppercase text-typography-primary">First Name *</label>
+                    <input 
+                      type="text" 
+                      required 
+                      value={profileFirstName} 
+                      onChange={e => setProfileFirstName(e.target.value)} 
+                      placeholder="Jane" 
+                      className="bg-surface-offWhite border border-surface-light rounded-xl px-4 py-3 text-sm text-typography-primary placeholder:text-typography-muted/40 outline-none focus:border-brand-pink" 
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[10px] font-bold uppercase text-typography-primary">Last Name *</label>
+                    <input 
+                      type="text" 
+                      required 
+                      value={profileLastName} 
+                      onChange={e => setProfileLastName(e.target.value)} 
+                      placeholder="Doe" 
+                      className="bg-surface-offWhite border border-surface-light rounded-xl px-4 py-3 text-sm text-typography-primary placeholder:text-typography-muted/40 outline-none focus:border-brand-pink" 
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[10px] font-bold uppercase text-typography-primary">Contact Number *</label>
+                    <input 
+                      type="tel" 
+                      required 
+                      value={profilePhone} 
+                      onChange={e => setProfilePhone(e.target.value)} 
+                      placeholder="+63 917 123 4567" 
+                      className="bg-surface-offWhite border border-surface-light rounded-xl px-4 py-3 text-sm text-typography-primary placeholder:text-typography-muted/40 outline-none focus:border-brand-pink" 
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1.5 sm:col-span-2">
+                    <label className="text-[10px] font-bold uppercase text-typography-primary">Facebook Profile Link (Optional)</label>
+                    <input 
+                      type="url" 
+                      value={profileFbLink} 
+                      onChange={e => setProfileFbLink(e.target.value)} 
+                      placeholder="https://facebook.com/janedoe" 
+                      className="bg-surface-offWhite border border-surface-light rounded-xl px-4 py-3 text-sm text-typography-primary placeholder:text-typography-muted/40 outline-none focus:border-brand-pink" 
+                    />
+                  </div>
+                </div>
+
+                <div className="pt-4 border-t border-surface-light space-y-4">
+                  <h3 className="text-xs uppercase tracking-widest font-bold text-typography-primary">Default Shipping Address</h3>
+                  
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    
+                    {/* Province Selector */}
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-[10px] font-bold uppercase text-typography-primary">Province *</label>
+                      <select 
+                        value={profileProvince} 
+                        onChange={e => handleProfileProvinceChange(e.target.value)} 
+                        className="bg-surface-offWhite border border-surface-light rounded-xl px-4 py-3 text-sm text-typography-primary outline-none focus:border-brand-pink"
+                      >
+                        <option value="">Select Province</option>
+                        <option value="Metro Manila">Metro Manila</option>
+                        <option value="Cebu">Cebu</option>
+                        <option value="Davao">Davao</option>
+                        <option value="Other">Other (Custom)</option>
+                      </select>
+                    </div>
+
+                    {/* City Selector */}
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-[10px] font-bold uppercase text-typography-primary">City / Municipality *</label>
+                      {profileProvince === 'Other' ? (
+                        <input 
+                          type="text" 
+                          value={profileCustomCity} 
+                          onChange={e => setProfileCustomCity(e.target.value)} 
+                          placeholder="Cagayan de Oro" 
+                          className="bg-surface-offWhite border border-surface-light rounded-xl px-4 py-3 text-sm text-typography-primary outline-none focus:border-brand-pink" 
+                        />
+                      ) : (
+                        <select 
+                          value={profileCity} 
+                          onChange={e => handleProfileCityChange(e.target.value)} 
+                          disabled={!profileProvince} 
+                          className="bg-surface-offWhite border border-surface-light rounded-xl px-4 py-3 text-sm text-typography-primary outline-none focus:border-brand-pink disabled:opacity-50"
+                        >
+                          <option value="">Select City</option>
+                          {profileCities.map(c => <option key={c} value={c}>{c}</option>)}
+                        </select>
+                      )}
+                    </div>
+
+                    {/* Barangay Selector */}
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-[10px] font-bold uppercase text-typography-primary">Barangay *</label>
+                      {profileProvince === 'Other' ? (
+                        <input 
+                          type="text" 
+                          value={profileCustomBarangay} 
+                          onChange={e => setProfileCustomBarangay(e.target.value)} 
+                          placeholder="Nazareth" 
+                          className="bg-surface-offWhite border border-surface-light rounded-xl px-4 py-3 text-sm text-typography-primary outline-none focus:border-brand-pink" 
+                        />
+                      ) : (
+                        <select 
+                          value={profileBarangay} 
+                          onChange={e => setProfileBarangay(e.target.value)} 
+                          disabled={!profileCity} 
+                          className="bg-surface-offWhite border border-surface-light rounded-xl px-4 py-3 text-sm text-typography-primary outline-none focus:border-brand-pink disabled:opacity-50"
+                        >
+                          <option value="">Select Barangay</option>
+                          {profileBarangays.map(b => <option key={b} value={b}>{b}</option>)}
+                        </select>
+                      )}
+                    </div>
+
+                    {profileProvince === 'Other' && (
+                      <div className="flex flex-col gap-1.5 sm:col-span-3">
+                        <label className="text-[10px] font-bold uppercase text-typography-primary">Custom Province Name *</label>
+                        <input 
+                          type="text" 
+                          value={profileCustomProvince} 
+                          onChange={e => setProfileCustomProvince(e.target.value)} 
+                          placeholder="Misamis Oriental" 
+                          className="bg-surface-offWhite border border-surface-light rounded-xl px-4 py-3 text-sm text-typography-primary outline-none focus:border-brand-pink" 
+                        />
+                      </div>
+                    )}
+
+                    <div className="flex flex-col gap-1.5 sm:col-span-3">
+                      <label className="text-[10px] font-bold uppercase text-typography-primary">Street Address / House No. *</label>
+                      <textarea 
+                        value={profileStreetAddress} 
+                        onChange={e => setProfileStreetAddress(e.target.value)} 
+                        rows={2} 
+                        placeholder="Unit 4B, Emerald Condominium, St. Jude Street" 
+                        className="bg-surface-offWhite border border-surface-light rounded-xl px-4 py-3 text-sm text-typography-primary placeholder:text-typography-muted/40 outline-none focus:border-brand-pink resize-none" 
+                      />
+                    </div>
+
+                    <div className="flex flex-col gap-1.5 sm:col-span-3">
+                      <label className="text-[10px] font-bold uppercase text-typography-primary">Famous Landmark (Optional)</label>
+                      <input 
+                        type="text" 
+                        value={profileLandmark} 
+                        onChange={e => setProfileLandmark(e.target.value)} 
+                        placeholder="Near Emerald Public Market / Behind Jollibee" 
+                        className="bg-surface-offWhite border border-surface-light rounded-xl px-4 py-3 text-sm text-typography-primary placeholder:text-typography-muted/40 outline-none focus:border-brand-pink" 
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="pt-4 border-t border-surface-light flex justify-end">
+                  <button 
+                    type="submit" 
+                    disabled={savingProfile} 
+                    className="bg-brand-navy hover:bg-brand-pink text-white rounded-xl px-6 py-3 font-bold text-xs uppercase tracking-widest transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-sm flex items-center gap-2"
+                  >
+                    {savingProfile ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin text-white" /> Saving...
+                      </>
+                    ) : (
+                      'Save Profile Details'
+                    )}
+                  </button>
+                </div>
+              </form>
             )}
           </div>
         )}

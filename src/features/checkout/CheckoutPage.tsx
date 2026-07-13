@@ -6,7 +6,7 @@ import { LOCATION_PRESETS } from '../cart/locationData';
 import { ImageUploadInput } from '../admin/components/ImageUploadInput';
 import { useUserAuth } from '../../core/context/UserAuthContext';
 import { useNotification } from '../../core/context/NotificationContext';
-import { Check, X, Clipboard, CreditCard, ShoppingBag, MapPin, Truck, ChevronRight, Download, Loader2, User, LogIn, Clock, AlertTriangle } from 'lucide-react';
+import { Check, X, Clipboard, CreditCard, ShoppingBag, MapPin, Truck, ChevronRight, Download, Loader2, User, LogIn, Clock, AlertTriangle, Store } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 interface PaymentMethod {
@@ -190,8 +190,109 @@ export function CheckoutPage() {
     };
   }, [reservationExpiresAt, tenantId, sessionId]);
 
-  const handleReserveAndAdvance = useCallback(async (method: 'standard' | 'pickup') => {
-    setDeliveryMethod(method);
+  // Load draft from localStorage on mount/user change
+  useEffect(() => {
+    if (user?.id) {
+      let draftLoaded = false;
+      try {
+        const savedDraft = localStorage.getItem(`checkout_draft_${user.id}`);
+        if (savedDraft) {
+          const draft = JSON.parse(savedDraft);
+          if (draft.firstName) setFirstName(draft.firstName);
+          if (draft.lastName) setLastName(draft.lastName);
+          if (draft.email) setEmail(draft.email);
+          if (draft.phone) setPhone(draft.phone);
+          if (draft.fbLink) setFbLink(draft.fbLink);
+          if (draft.province) setProvince(draft.province);
+          if (draft.city) setCity(draft.city);
+          if (draft.barangay) setBarangay(draft.barangay);
+          if (draft.streetAddress) setStreetAddress(draft.streetAddress);
+          if (draft.landmark) setLandmark(draft.landmark);
+          if (draft.customProvince) setCustomProvince(draft.customProvince);
+          if (draft.customCity) setCustomCity(draft.customCity);
+          if (draft.customBarangay) setCustomBarangay(draft.customBarangay);
+          if (draft.deliveryMethod) setDeliveryMethod(draft.deliveryMethod);
+          if (draft.selectedMethodId) setSelectedMethodId(draft.selectedMethodId);
+          if (draft.proofOfPaymentUrl) setProofOfPaymentUrl(draft.proofOfPaymentUrl);
+          if (draft.step) setStep(draft.step);
+          draftLoaded = true;
+        }
+      } catch (e) {
+        console.error("Failed to load checkout draft", e);
+      }
+
+      // If no draft was loaded, retrieve default profile details
+      if (!draftLoaded) {
+        supabase
+          .from('customer_profiles')
+          .select('*')
+          .eq('id', user.id)
+          .maybeSingle()
+          .then(({ data, error }: { data: any; error: any }) => {
+            if (error) {
+              console.error("Error loading profile default details:", error);
+            } else if (data) {
+              if (data.first_name) setFirstName(data.first_name);
+              if (data.last_name) setLastName(data.last_name);
+              if (data.email) setEmail(data.email);
+              if (data.phone) setPhone(data.phone);
+              if (data.fb_link) setFbLink(data.fb_link);
+              if (data.province) setProvince(data.province);
+              if (data.city) setCity(data.city);
+              if (data.barangay) setBarangay(data.barangay);
+              if (data.street_address) setStreetAddress(data.street_address);
+              if (data.landmark) setLandmark(data.landmark);
+              if (data.custom_province) setCustomProvince(data.custom_province);
+              if (data.custom_city) setCustomCity(data.custom_city);
+              if (data.custom_barangay) setCustomBarangay(data.custom_barangay);
+            } else {
+              // Standard fallback: pre-fill email from auth user info
+              if (user.email) setEmail(user.email);
+            }
+          });
+      }
+    }
+  }, [user]);
+
+  // Save draft to localStorage whenever fields change
+  useEffect(() => {
+    if (user?.id && step < 4) { // Only save while actively in the checkout wizard process (not completed)
+      const draft = {
+        firstName,
+        lastName,
+        email,
+        phone,
+        fbLink,
+        province,
+        city,
+        barangay,
+        streetAddress,
+        landmark,
+        customProvince,
+        customCity,
+        customBarangay,
+        deliveryMethod,
+        selectedMethodId,
+        proofOfPaymentUrl,
+        step
+      };
+      localStorage.setItem(`checkout_draft_${user.id}`, JSON.stringify(draft));
+    }
+  }, [
+    user, step, firstName, lastName, email, phone, fbLink,
+    province, city, barangay, streetAddress, landmark,
+    customProvince, customCity, customBarangay,
+    deliveryMethod, selectedMethodId, proofOfPaymentUrl
+  ]);
+
+  // Clear draft on order success screen
+  const clearDraft = useCallback(() => {
+    if (user?.id) {
+      localStorage.removeItem(`checkout_draft_${user.id}`);
+    }
+  }, [user]);
+
+  const handleAdvanceFromStep1 = useCallback(async () => {
     setIsReserving(true);
     try {
       const itemsPayload = items.map(i => ({
@@ -212,14 +313,14 @@ export function CheckoutPage() {
         const unavailable = (data.unavailable_items || []) as any[];
         const names = unavailable.map((u: any) => u.title || 'Item').join(', ');
         showError(`Sorry, these items no longer have sufficient stock: ${names}`);
-        return; // stay on step 2
+        return;
       }
 
       if (data.reserved && data.expires_at) {
         setReservationExpiresAt(new Date(data.expires_at));
       }
 
-      setStep(3);
+      setStep(2);
     } catch (err: any) {
       console.error(err);
       showError('Failed to check availability. Please try again.');
@@ -409,9 +510,9 @@ export function CheckoutPage() {
     ? LOCATION_PRESETS[province].cities[city]
     : [];
 
-  const finalProvince = province === 'Other' ? customProvince : province;
-  const finalCity = province === 'Other' ? customCity : city;
-  const finalBarangay = province === 'Other' ? customBarangay : barangay;
+  const finalProvince = deliveryMethod === 'pickup' ? 'Store Pick-up' : (province === 'Other' ? customProvince : province);
+  const finalCity = deliveryMethod === 'pickup' ? 'Store Pick-up' : (province === 'Other' ? customCity : city);
+  const finalBarangay = deliveryMethod === 'pickup' ? 'Store Pick-up' : (province === 'Other' ? customBarangay : barangay);
 
   // Selected Payment Method Objects
   const selectedPaymentMethod = paymentMethods.find(m => m.id === selectedMethodId);
@@ -432,6 +533,9 @@ export function CheckoutPage() {
   const isStep1Valid = () => {
     if (hasOutOfStockItems) return false;
     const isContactValid = firstName.trim() && lastName.trim() && email.trim() && phone.trim();
+    if (deliveryMethod === 'pickup') {
+      return isContactValid;
+    }
     const isAddressPresetValid = province && province !== 'Other' && city && barangay && streetAddress.trim();
     const isAddressCustomValid = province === 'Other' && customProvince.trim() && customCity.trim() && customBarangay.trim() && streetAddress.trim();
     return isContactValid && (isAddressPresetValid || isAddressCustomValid);
@@ -498,8 +602,8 @@ export function CheckoutPage() {
         shipping_province: finalProvince.trim(),
         shipping_city: finalCity.trim(),
         shipping_barangay: finalBarangay.trim(),
-        shipping_street: streetAddress.trim(),
-        shipping_landmark: landmark.trim() || null,
+        shipping_street: deliveryMethod === 'pickup' ? 'Store Pick-up' : streetAddress.trim(),
+        shipping_landmark: deliveryMethod === 'pickup' ? null : (landmark.trim() || null),
         delivery_method: deliveryMethod,
         payment_method_id: selectedMethodId === 'leeway'
           ? (leewayPaymentMethodId === 'walk_in' ? null : leewayPaymentMethodId)
@@ -589,7 +693,8 @@ export function CheckoutPage() {
       // 4. Cleanup & Proceed
       setTrackingCode(code);
       clearCart();
-      setStep(5);
+      clearDraft();
+      setStep(4);
     } catch (err: any) {
       console.error('Failed to create order:', err);
       showError('Order Placement Failed: ' + (err.message || err));
@@ -770,22 +875,18 @@ export function CheckoutPage() {
       <div className="max-w-5xl mx-auto px-4 md:px-8">
         
         {/* Wizard Progress Stepper */}
-        {step < 5 && (
+        {step < 4 && (
           <div className="flex items-center justify-center gap-2 md:gap-4 mb-12 border-b border-surface-light pb-6 overflow-x-auto no-scrollbar">
             <button onClick={() => setStep(1)} className={`flex items-center gap-1.5 text-[10px] uppercase font-bold tracking-wider whitespace-nowrap ${step >= 1 ? 'text-brand-pink' : 'text-typography-muted'}`}>
               <span className="w-5 h-5 rounded-full border border-current flex items-center justify-center">1</span> Contact & Address
             </button>
             <ChevronRight className="w-3.5 h-3.5 text-typography-muted flex-shrink-0" />
             <button onClick={() => isStep1Valid() && setStep(2)} disabled={!isStep1Valid()} className={`flex items-center gap-1.5 text-[10px] uppercase font-bold tracking-wider whitespace-nowrap ${step >= 2 ? 'text-brand-pink' : 'text-typography-muted'} disabled:opacity-50`}>
-              <span className="w-5 h-5 rounded-full border border-current flex items-center justify-center">2</span> Delivery
+              <span className="w-5 h-5 rounded-full border border-current flex items-center justify-center">2</span> Payment
             </button>
             <ChevronRight className="w-3.5 h-3.5 text-typography-muted flex-shrink-0" />
-            <button onClick={() => isStep1Valid() && setStep(3)} disabled={!isStep1Valid()} className={`flex items-center gap-1.5 text-[10px] uppercase font-bold tracking-wider whitespace-nowrap ${step >= 3 ? 'text-brand-pink' : 'text-typography-muted'} disabled:opacity-50`}>
-              <span className="w-5 h-5 rounded-full border border-current flex items-center justify-center">3</span> Payment
-            </button>
-            <ChevronRight className="w-3.5 h-3.5 text-typography-muted flex-shrink-0" />
-            <button onClick={() => isStep1Valid() && isStep3Valid() && setStep(4)} disabled={!isStep1Valid() || !isStep3Valid()} className={`flex items-center gap-1.5 text-[10px] uppercase font-bold tracking-wider whitespace-nowrap ${step >= 4 ? 'text-brand-pink' : 'text-typography-muted'} disabled:opacity-50`}>
-              <span className="w-5 h-5 rounded-full border border-current flex items-center justify-center">4</span> Review
+            <button onClick={() => isStep1Valid() && isStep3Valid() && setStep(3)} disabled={!isStep1Valid() || !isStep3Valid()} className={`flex items-center gap-1.5 text-[10px] uppercase font-bold tracking-wider whitespace-nowrap ${step >= 3 ? 'text-brand-pink' : 'text-typography-muted'} disabled:opacity-50`}>
+              <span className="w-5 h-5 rounded-full border border-current flex items-center justify-center">3</span> Review
             </button>
           </div>
         )}
@@ -833,98 +934,74 @@ export function CheckoutPage() {
                   </div>
                 </div>
 
-                <div className="pt-4 border-t border-surface-light space-y-4">
-                  <h3 className="text-xs uppercase tracking-widest font-bold text-typography-primary">Shipping Address</h3>
-                  
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                {deliveryMethod !== 'pickup' && (
+                  <div className="pt-4 border-t border-surface-light space-y-4">
+                    <h3 className="text-xs uppercase tracking-widest font-bold text-typography-primary">Shipping Address</h3>
                     
-                    {/* Province Selector */}
-                    <div className="flex flex-col gap-1.5">
-                      <label className="text-[10px] font-bold uppercase text-typography-primary">Province *</label>
-                      <select value={province} onChange={e => handleProvinceChange(e.target.value)} className="bg-surface-offWhite border border-surface-light rounded-xl px-4 py-3 text-sm text-typography-primary outline-none focus:border-brand-pink">
-                        <option value="">Select Province</option>
-                        <option value="Metro Manila">Metro Manila</option>
-                        <option value="Cebu">Cebu</option>
-                        <option value="Davao">Davao</option>
-                        <option value="Other">Other (Custom)</option>
-                      </select>
-                    </div>
-
-                    {/* City Selector */}
-                    <div className="flex flex-col gap-1.5">
-                      <label className="text-[10px] font-bold uppercase text-typography-primary">City / Municipality *</label>
-                      {province === 'Other' ? (
-                        <input type="text" value={customCity} onChange={e => setCustomCity(e.target.value)} placeholder="Cagayan de Oro" className="bg-surface-offWhite border border-surface-light rounded-xl px-4 py-3 text-sm text-typography-primary outline-none focus:border-brand-pink" />
-                      ) : (
-                        <select value={city} onChange={e => handleCityChange(e.target.value)} disabled={!province} className="bg-surface-offWhite border border-surface-light rounded-xl px-4 py-3 text-sm text-typography-primary outline-none focus:border-brand-pink disabled:opacity-50">
-                          <option value="">Select City</option>
-                          {activeCities.map(c => <option key={c} value={c}>{c}</option>)}
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                      
+                      {/* Province Selector */}
+                      <div className="flex flex-col gap-1.5">
+                        <label className="text-[10px] font-bold uppercase text-typography-primary">Province *</label>
+                        <select value={province} onChange={e => handleProvinceChange(e.target.value)} className="bg-surface-offWhite border border-surface-light rounded-xl px-4 py-3 text-sm text-typography-primary outline-none focus:border-brand-pink">
+                          <option value="">Select Province</option>
+                          <option value="Metro Manila">Metro Manila</option>
+                          <option value="Cebu">Cebu</option>
+                          <option value="Davao">Davao</option>
+                          <option value="Other">Other (Custom)</option>
                         </select>
-                      )}
-                    </div>
-
-                    {/* Barangay Selector */}
-                    <div className="flex flex-col gap-1.5">
-                      <label className="text-[10px] font-bold uppercase text-typography-primary">Barangay *</label>
-                      {province === 'Other' ? (
-                        <input type="text" value={customBarangay} onChange={e => setCustomBarangay(e.target.value)} placeholder="Nazareth" className="bg-surface-offWhite border border-surface-light rounded-xl px-4 py-3 text-sm text-typography-primary outline-none focus:border-brand-pink" />
-                      ) : (
-                        <select value={barangay} onChange={e => setBarangay(e.target.value)} disabled={!city} className="bg-surface-offWhite border border-surface-light rounded-xl px-4 py-3 text-sm text-typography-primary outline-none focus:border-brand-pink disabled:opacity-50">
-                          <option value="">Select Barangay</option>
-                          {activeBarangays.map(b => <option key={b} value={b}>{b}</option>)}
-                        </select>
-                      )}
-                    </div>
-
-                    {province === 'Other' && (
-                      <div className="flex flex-col gap-1.5 sm:col-span-3">
-                        <label className="text-[10px] font-bold uppercase text-typography-primary">Custom Province Name *</label>
-                        <input type="text" value={customProvince} onChange={e => setCustomProvince(e.target.value)} placeholder="Misamis Oriental" className="bg-surface-offWhite border border-surface-light rounded-xl px-4 py-3 text-sm text-typography-primary outline-none focus:border-brand-pink" />
                       </div>
-                    )}
 
-                    <div className="flex flex-col gap-1.5 sm:col-span-3">
-                      <label className="text-[10px] font-bold uppercase text-typography-primary">Street Address / House No. *</label>
-                      <textarea value={streetAddress} onChange={e => setStreetAddress(e.target.value)} rows={2} placeholder="Unit 4B, Emerald Condominium, St. Jude Street" className="bg-surface-offWhite border border-surface-light rounded-xl px-4 py-3 text-sm text-typography-primary placeholder:text-typography-muted/40 outline-none focus:border-brand-pink resize-none" />
-                    </div>
+                      {/* City Selector */}
+                      <div className="flex flex-col gap-1.5">
+                        <label className="text-[10px] font-bold uppercase text-typography-primary">City / Municipality *</label>
+                        {province === 'Other' ? (
+                          <input type="text" value={customCity} onChange={e => setCustomCity(e.target.value)} placeholder="Cagayan de Oro" className="bg-surface-offWhite border border-surface-light rounded-xl px-4 py-3 text-sm text-typography-primary outline-none focus:border-brand-pink" />
+                        ) : (
+                          <select value={city} onChange={e => handleCityChange(e.target.value)} disabled={!province} className="bg-surface-offWhite border border-surface-light rounded-xl px-4 py-3 text-sm text-typography-primary outline-none focus:border-brand-pink disabled:opacity-50">
+                            <option value="">Select City</option>
+                            {activeCities.map(c => <option key={c} value={c}>{c}</option>)}
+                          </select>
+                        )}
+                      </div>
 
-                    <div className="flex flex-col gap-1.5 sm:col-span-3">
-                      <label className="text-[10px] font-bold uppercase text-typography-primary">Famous Landmark (Optional)</label>
-                      <input type="text" value={landmark} onChange={e => setLandmark(e.target.value)} placeholder="Near Emerald Public Market / Behind Jollibee" className="bg-surface-offWhite border border-surface-light rounded-xl px-4 py-3 text-sm text-typography-primary placeholder:text-typography-muted/40 outline-none focus:border-brand-pink" />
+                      {/* Barangay Selector */}
+                      <div className="flex flex-col gap-1.5">
+                        <label className="text-[10px] font-bold uppercase text-typography-primary">Barangay *</label>
+                        {province === 'Other' ? (
+                          <input type="text" value={customBarangay} onChange={e => setCustomBarangay(e.target.value)} placeholder="Nazareth" className="bg-surface-offWhite border border-surface-light rounded-xl px-4 py-3 text-sm text-typography-primary outline-none focus:border-brand-pink" />
+                        ) : (
+                          <select value={barangay} onChange={e => setBarangay(e.target.value)} disabled={!city} className="bg-surface-offWhite border border-surface-light rounded-xl px-4 py-3 text-sm text-typography-primary outline-none focus:border-brand-pink disabled:opacity-50">
+                            <option value="">Select Barangay</option>
+                            {activeBarangays.map(b => <option key={b} value={b}>{b}</option>)}
+                          </select>
+                        )}
+                      </div>
+
+                      {province === 'Other' && (
+                        <div className="flex flex-col gap-1.5 sm:col-span-3">
+                          <label className="text-[10px] font-bold uppercase text-typography-primary">Custom Province Name *</label>
+                          <input type="text" value={customProvince} onChange={e => setCustomProvince(e.target.value)} placeholder="Misamis Oriental" className="bg-surface-offWhite border border-surface-light rounded-xl px-4 py-3 text-sm text-typography-primary outline-none focus:border-brand-pink" />
+                        </div>
+                      )}
+
+                      <div className="flex flex-col gap-1.5 sm:col-span-3">
+                        <label className="text-[10px] font-bold uppercase text-typography-primary">Street Address / House No. *</label>
+                        <textarea value={streetAddress} onChange={e => setStreetAddress(e.target.value)} rows={2} placeholder="Unit 4B, Emerald Condominium, St. Jude Street" className="bg-surface-offWhite border border-surface-light rounded-xl px-4 py-3 text-sm text-typography-primary placeholder:text-typography-muted/40 outline-none focus:border-brand-pink resize-none" />
+                      </div>
+
+                      <div className="flex flex-col gap-1.5 sm:col-span-3">
+                        <label className="text-[10px] font-bold uppercase text-typography-primary">Famous Landmark (Optional)</label>
+                        <input type="text" value={landmark} onChange={e => setLandmark(e.target.value)} placeholder="Near Emerald Public Market / Behind Jollibee" className="bg-surface-offWhite border border-surface-light rounded-xl px-4 py-3 text-sm text-typography-primary placeholder:text-typography-muted/40 outline-none focus:border-brand-pink" />
+                      </div>
                     </div>
                   </div>
-                </div>
+                )}
               </div>
             )}
 
-            {/* STEP 2: DELIVERY OPTIONS */}
+            {/* STEP 2: PAYMENT METHOD */}
             {step === 2 && (
-              <div className="space-y-6">
-                <div>
-                  <h2 className="text-xl font-serif text-typography-primary flex items-center gap-2">
-                    <Truck className="w-5 h-5 text-brand-pink" strokeWidth={1.5} /> Choose Delivery Option
-                  </h2>
-                  <p className="text-[10px] tracking-wider text-typography-muted uppercase mt-1">Select your preferred delivery route</p>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <button type="button" onClick={() => handleReserveAndAdvance('standard')} disabled={isReserving} className={`border rounded-2xl p-6 text-left transition-all disabled:opacity-60 ${deliveryMethod === 'standard' ? 'border-brand-pink bg-brand-pink/5' : 'border-surface-light hover:border-brand-navy'}`}>
-                    <span className="font-bold text-sm text-typography-primary block">Standard Delivery</span>
-                    <span className="text-xs text-typography-muted block mt-1">Shipped straight to your doorstep.</span>
-                    <span className="text-xs font-semibold text-brand-pink block mt-4 uppercase">Free Shipping</span>
-                  </button>
-
-                  <button type="button" onClick={() => handleReserveAndAdvance('pickup')} disabled={isReserving} className={`border rounded-2xl p-6 text-left transition-all disabled:opacity-60 ${deliveryMethod === 'pickup' ? 'border-brand-pink bg-brand-pink/5' : 'border-surface-light hover:border-brand-navy'}`}>
-                    <span className="font-bold text-sm text-typography-primary block">Store Pick-up</span>
-                    <span className="text-xs text-typography-muted block mt-1">Pick up directly at our physical branch.</span>
-                    <span className="text-xs font-semibold text-[#fb7a90] block mt-4 uppercase">Ready in 24 Hours</span>
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* STEP 3: PAYMENT METHOD */}
-            {step === 3 && (
               <div className="space-y-6">
 
                 {/* Reservation Timer Banner */}
@@ -1192,8 +1269,8 @@ export function CheckoutPage() {
               </div>
             )}
 
-            {/* STEP 4: ORDER REVIEW */}
-            {step === 4 && (
+            {/* STEP 3: ORDER REVIEW */}
+            {step === 3 && (
               <div className="space-y-6">
 
                 {/* Reservation Timer Banner */}
@@ -1266,8 +1343,8 @@ export function CheckoutPage() {
               </div>
             )}
 
-            {/* STEP 5: ORDER SUCCESS SCREEN */}
-            {step === 5 && (
+            {/* STEP 4: ORDER SUCCESS SCREEN */}
+            {step === 4 && (
               <div className="border border-surface-light rounded-3xl p-8 md:p-12 text-center bg-surface-offWhite flex flex-col items-center space-y-6">
                 <div className="w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-500">
                   <Check className="w-8 h-8" strokeWidth={2.5} />
@@ -1374,6 +1451,29 @@ export function CheckoutPage() {
                   </div>
                 )}
 
+                {/* Delivery Option Selector inside Summary card */}
+                <div className="space-y-2 pt-2 border-t border-surface-light">
+                  <span className="text-[10px] uppercase font-bold text-typography-muted tracking-wider block">Delivery Option</span>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button 
+                      type="button" 
+                      onClick={() => setDeliveryMethod('standard')} 
+                      className={`flex flex-col items-center justify-center py-2 px-3 rounded-xl border text-center transition-all ${deliveryMethod === 'standard' ? 'border-brand-pink bg-brand-pink/5 text-brand-pink font-semibold shadow-sm' : 'border-surface-light text-typography-muted hover:border-brand-navy'}`}
+                    >
+                      <Truck className="w-4 h-4 mb-1" />
+                      <span className="text-[9px] uppercase tracking-wider">Standard</span>
+                    </button>
+                    <button 
+                      type="button" 
+                      onClick={() => setDeliveryMethod('pickup')} 
+                      className={`flex flex-col items-center justify-center py-2 px-3 rounded-xl border text-center transition-all ${deliveryMethod === 'pickup' ? 'border-[#fb7a90] bg-[#fb7a90]/5 text-[#fb7a90] font-semibold shadow-sm' : 'border-surface-light text-typography-muted hover:border-brand-navy'}`}
+                    >
+                      <Store className="w-4 h-4 mb-1" />
+                      <span className="text-[9px] uppercase tracking-wider">Pick Up</span>
+                    </button>
+                  </div>
+                </div>
+
                 <div className="flex justify-between">
                   <span className="text-typography-muted">Delivery</span>
                   <span className="font-semibold text-brand-pink uppercase">Free</span>
@@ -1388,25 +1488,35 @@ export function CheckoutPage() {
                   {step === 1 && (
                     <button 
                       type="button" 
-                      onClick={() => setStep(2)} 
-                      disabled={!isStep1Valid()} 
+                      onClick={handleAdvanceFromStep1} 
+                      disabled={!isStep1Valid() || isReserving} 
                       className="w-full flex items-center justify-center gap-2 bg-brand-navy hover:bg-brand-pink text-white rounded-xl py-3.5 font-bold text-xs uppercase tracking-widest transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-sm"
                     >
-                      Next Step <ChevronRight className="w-4 h-4" />
+                      {isReserving ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin text-white" /> Checking availability...
+                        </>
+                      ) : (
+                        <>
+                          Next Step <ChevronRight className="w-4 h-4" />
+                        </>
+                      )}
                     </button>
                   )}
 
                   {step === 2 && (
                     <div className="flex flex-col gap-3">
-                      {isReserving && (
-                        <div className="flex items-center justify-center gap-2 text-xs text-typography-muted">
-                          <Loader2 className="w-4 h-4 animate-spin text-brand-pink" /> Reserving items...
-                        </div>
-                      )}
+                      <button 
+                        type="button" 
+                        onClick={() => isStep3Valid() && setStep(3)} 
+                        disabled={!isStep3Valid()} 
+                        className="w-full flex items-center justify-center gap-2 bg-brand-navy hover:bg-brand-pink text-white rounded-xl py-3.5 font-bold text-xs uppercase tracking-widest transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-sm"
+                      >
+                        Next Step <ChevronRight className="w-4 h-4" />
+                      </button>
                       <button 
                         type="button" 
                         onClick={() => setStep(1)} 
-                        disabled={isReserving}
                         className="w-full text-center text-xs font-semibold uppercase tracking-wider text-typography-muted hover:text-brand-navy py-1.5 transition-colors"
                       >
                         Back
@@ -1415,26 +1525,6 @@ export function CheckoutPage() {
                   )}
 
                   {step === 3 && (
-                    <div className="flex flex-col gap-3">
-                      <button 
-                        type="button" 
-                        onClick={() => isStep3Valid() && setStep(4)} 
-                        disabled={!isStep3Valid()} 
-                        className="w-full flex items-center justify-center gap-2 bg-brand-navy hover:bg-brand-pink text-white rounded-xl py-3.5 font-bold text-xs uppercase tracking-widest transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-sm"
-                      >
-                        Next Step <ChevronRight className="w-4 h-4" />
-                      </button>
-                      <button 
-                        type="button" 
-                        onClick={() => setStep(2)} 
-                        className="w-full text-center text-xs font-semibold uppercase tracking-wider text-typography-muted hover:text-brand-navy py-1.5 transition-colors"
-                      >
-                        Back
-                      </button>
-                    </div>
-                  )}
-
-                  {step === 4 && (
                     <div className="flex flex-col gap-3">
                       <button 
                         type="button" 
@@ -1452,7 +1542,7 @@ export function CheckoutPage() {
                       </button>
                       <button 
                         type="button" 
-                        onClick={() => setStep(3)} 
+                        onClick={() => setStep(2)} 
                         className="w-full text-center text-xs font-semibold uppercase tracking-wider text-typography-muted hover:text-brand-navy py-1.5 transition-colors"
                       >
                         Back

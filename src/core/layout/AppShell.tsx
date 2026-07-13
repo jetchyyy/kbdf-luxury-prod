@@ -9,9 +9,7 @@ interface AppShellProps {
 
 export function AppShell({ children }: AppShellProps) {
   const location = useLocation();
-  const searchParams = new URLSearchParams(location.search);
-  const isFavoritesTab = location.pathname === "/orders" && searchParams.get("tab") === "favorites";
-  const showFooter = location.pathname !== "/checkout" && !isFavoritesTab;
+  const showFooter = location.pathname !== "/checkout" && location.pathname !== "/orders";
 
   return (
     <div className="min-h-[100dvh] flex flex-col relative bg-surface-white">

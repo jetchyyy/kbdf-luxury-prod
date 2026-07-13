@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, ShoppingBag, User, LogOut, ClipboardList, Heart } from "lucide-react";
+import { Search, ShoppingBag, User, LogOut, ClipboardList, Heart, Coins } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useCart } from "../../features/cart/CartContext";
 import { useTenant } from "../context/TenantContext";
@@ -116,6 +116,28 @@ export function LuxuryNavbar() {
                     >
                       <ClipboardList className="w-4 h-4 text-typography-muted" /> Order History
                     </Link>
+                    <Link 
+                      to="/orders?tab=leeway" 
+                      onClick={() => setShowUserDropdown(false)}
+                      className="flex items-center gap-2 px-4 py-2.5 text-xs text-typography-primary hover:bg-surface-offWhite font-semibold transition-colors"
+                    >
+                      <Coins className="w-4 h-4 text-typography-muted" /> Installments
+                    </Link>
+                    <Link 
+                      to="/orders?tab=favorites" 
+                      onClick={() => setShowUserDropdown(false)}
+                      className="flex items-center gap-2 px-4 py-2.5 text-xs text-typography-primary hover:bg-surface-offWhite font-semibold transition-colors"
+                    >
+                      <Heart className="w-4 h-4 text-typography-muted" /> Favorites List
+                    </Link>
+                    <Link 
+                      to="/orders?tab=profile" 
+                      onClick={() => setShowUserDropdown(false)}
+                      className="flex items-center gap-2 px-4 py-2.5 text-xs text-typography-primary hover:bg-surface-offWhite font-semibold transition-colors"
+                    >
+                      <User className="w-4 h-4 text-typography-muted" /> Profile Settings
+                    </Link>
+                    <div className="border-t border-surface-light my-1" />
                     <button 
                       onClick={handleSignOut}
                       className="w-full flex items-center gap-2 px-4 py-2.5 text-xs text-red-500 hover:bg-red-50 font-semibold transition-colors text-left"
