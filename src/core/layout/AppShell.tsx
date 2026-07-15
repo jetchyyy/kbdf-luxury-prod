@@ -9,7 +9,8 @@ interface AppShellProps {
 
 export function AppShell({ children }: AppShellProps) {
   const location = useLocation();
-  const showFooter = location.pathname !== "/checkout" && location.pathname !== "/orders";
+  const hiddenFooterPaths = ["/checkout", "/orders", "/auth", "/contact", "/track"];
+  const showFooter = !hiddenFooterPaths.includes(location.pathname) && !location.pathname.startsWith("/product/");
 
   return (
     <div className="min-h-[100dvh] flex flex-col relative bg-surface-white">

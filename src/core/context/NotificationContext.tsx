@@ -145,39 +145,39 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => handleConfirmResponse(false)}
-              className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
             />
 
             {/* Modal Card */}
             <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 15 }}
+              initial={{ opacity: 0, scale: 0.95, y: 10 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 10 }}
               transition={{ type: 'spring', damping: 25, stiffness: 350 }}
-              className="relative w-full max-w-sm bg-[#111827] border border-white/10 rounded-2xl p-6 shadow-2xl z-10 flex flex-col items-center text-center"
+              className="relative w-full max-w-sm bg-[#f8f5f2] border border-surface-light rounded-sm p-10 shadow-diffusion z-10 text-center flex flex-col items-center"
             >
               {/* Question Icon */}
-              <div className="mb-4">
-                <div className="w-12 h-12 rounded-full bg-amber-500/10 flex items-center justify-center text-amber-400 border border-amber-500/20">
-                  <AlertTriangle className="w-6 h-6" strokeWidth={2} />
+              <div className="mb-6">
+                <div className="w-12 h-12 flex items-center justify-center text-brand-navy mb-2">
+                  <AlertTriangle className="w-10 h-10" strokeWidth={1} />
                 </div>
               </div>
 
               {/* Title & Message */}
-              <h3 className="text-white font-bold text-sm uppercase tracking-wider mb-2">{confirmConfig.title}</h3>
-              <p className="text-white/70 text-xs leading-relaxed max-w-[260px]">{confirmConfig.message}</p>
+              <h3 className="text-brand-navy font-serif font-bold text-lg uppercase tracking-[0.2em] mb-3">{confirmConfig.title}</h3>
+              <p className="text-typography-muted font-light text-sm tracking-wide leading-relaxed max-w-[260px] mb-8">{confirmConfig.message}</p>
 
               {/* Confirm / Cancel Buttons */}
-              <div className="flex items-center gap-3 w-full mt-6">
+              <div className="flex items-center gap-4 w-full">
                 <button 
                   onClick={() => handleConfirmResponse(false)}
-                  className="flex-1 py-2.5 bg-white/5 hover:bg-white/10 text-white text-[11px] uppercase font-bold tracking-wider rounded-xl border border-white/5 transition-colors"
+                  className="flex-1 py-3.5 border border-brand-navy text-brand-navy hover:bg-surface-light text-[10px] uppercase font-bold tracking-[0.25em] transition-all duration-300"
                 >
                   Cancel
                 </button>
                 <button 
                   onClick={() => handleConfirmResponse(true)}
-                  className="flex-1 py-2.5 bg-gradient-to-r from-[#fb7a90] to-[#f16881] text-white text-[11px] uppercase font-bold tracking-wider rounded-xl hover:opacity-90 active:scale-[0.98] transition-all"
+                  className="flex-1 py-3.5 border border-brand-navy bg-brand-navy text-white hover:bg-brand-navy/90 text-[10px] uppercase font-bold tracking-[0.25em] transition-all duration-300"
                 >
                   Confirm
                 </button>

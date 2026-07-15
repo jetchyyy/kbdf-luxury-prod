@@ -21,7 +21,10 @@ export interface Product {
   condition: 'new' | 'preloved_excellent' | 'preloved_good' | 'preloved_fair';
   brand: string;
   weight?: number;
-  sizes?: { size: string; quantity: number }[];
+  sizes?: { size: string; quantity: number }[] | null;
+  colors?: { name: string; hex: string }[] | null;
+  features?: string[] | null;
+  delivery_info?: string | null;
   leeway_enabled?: boolean;
   leeway_down_payment_required?: boolean;
   leeway_down_payment_amount?: number;

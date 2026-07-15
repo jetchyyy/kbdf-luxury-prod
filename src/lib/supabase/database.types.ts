@@ -164,6 +164,9 @@ export interface Database {
           stock_status: 'in_stock' | 'low_stock' | 'out_of_stock';
           image_urls: string[];
            sizes: { size: string; quantity: number }[] | null;
+           colors: { name: string; hex: string }[] | null;
+           features: string[] | null;
+           delivery_info: string | null;
           is_active: boolean;
           leeway_enabled: boolean;
           leeway_down_payment_required: boolean;
@@ -188,6 +191,9 @@ export interface Database {
           stock_status?: 'in_stock' | 'low_stock' | 'out_of_stock';
           image_urls?: string[];
           sizes?: { size: string; quantity: number }[] | null;
+          colors?: { name: string; hex: string }[] | null;
+          features?: string[] | null;
+          delivery_info?: string | null;
           is_active?: boolean;
           leeway_enabled?: boolean;
           leeway_down_payment_required?: boolean;

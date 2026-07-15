@@ -28,12 +28,19 @@ export function ItemFormModal({ isOpen, onClose, onSave, item, tenantId }: ItemF
   const [sizes, setSizes] = useState<{ size: string; quantity: number }[]>([]);
   const [sizeInput, setSizeInput] = useState('');
   const [sizeQuantityInput, setSizeQuantityInput] = useState<number>(1);
+  const [colors, setColors] = useState<{ name: string; hex: string }[]>([]);
+  const [colorNameInput, setColorNameInput] = useState('');
+  const [colorHexInput, setColorHexInput] = useState('#000000');
+  const [features, setFeatures] = useState<string[]>([]);
+  const [featureInput, setFeatureInput] = useState('');
+  const [deliveryInfo, setDeliveryInfo] = useState('');
   const [categories, setCategories] = useState<Category[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [weight, setWeight] = useState(0.0);
 
   const [hasMultipleSizes, setHasMultipleSizes] = useState(false);
+  const [hasMultipleColors, setHasMultipleColors] = useState(false);
 
   // Leeway states
   const [leewayEnabled, setLeewayEnabled] = useState(false);
@@ -60,6 +67,10 @@ export function ItemFormModal({ isOpen, onClose, onSave, item, tenantId }: ItemF
         setImageUrls(item.image_urls && item.image_urls.length > 0 ? item.image_urls : ['']);
         setSizes(item.sizes || []);
         setHasMultipleSizes(!!item.sizes && item.sizes.length > 0);
+        setColors(item.colors || []);
+        setHasMultipleColors(!!item.colors && item.colors.length > 0);
+        setFeatures(item.features || []);
+        setDeliveryInfo(item.delivery_info || '');
         setLeewayEnabled((item as any).leeway_enabled || false);
         setLeewayDownPaymentRequired((item as any).leeway_down_payment_required || false);
         setLeewayDownPaymentAmount(Number((item as any).leeway_down_payment_amount || 0));
@@ -78,6 +89,10 @@ export function ItemFormModal({ isOpen, onClose, onSave, item, tenantId }: ItemF
         setImageUrls(['']);
         setSizes([]);
         setHasMultipleSizes(false);
+        setColors([]);
+        setHasMultipleColors(false);
+        setFeatures([]);
+        setDeliveryInfo('');
         setLeewayEnabled(false);
         setLeewayDownPaymentRequired(false);
         setLeewayDownPaymentAmount(0);
@@ -85,6 +100,9 @@ export function ItemFormModal({ isOpen, onClose, onSave, item, tenantId }: ItemF
       }
       setSizeInput('');
       setSizeQuantityInput(1);
+      setColorNameInput('');
+      setColorHexInput('#000000');
+      setFeatureInput('');
       setError('');
     }
   }, [isOpen, item, tenantId]);
@@ -123,6 +141,31 @@ export function ItemFormModal({ isOpen, onClose, onSave, item, tenantId }: ItemF
     setSizes(sizes.filter(s => s.size !== sizeToRemove));
   }
 
+  function handleAddColor() {
+    const trimmed = colorNameInput.trim();
+    if (trimmed && !colors.some(c => c.name === trimmed)) {
+      setColors([...colors, { name: trimmed, hex: colorHexInput }]);
+      setColorNameInput('');
+      setColorHexInput('#000000');
+    }
+  }
+
+  function handleRemoveColor(colorToRemove: string) {
+    setColors(colors.filter(c => c.name !== colorToRemove));
+  }
+
+  function handleAddFeature() {
+    const trimmed = featureInput.trim();
+    if (trimmed && !features.includes(trimmed)) {
+      setFeatures([...features, trimmed]);
+      setFeatureInput('');
+    }
+  }
+
+  function handleRemoveFeature(featureToRemove: string) {
+    setFeatures(features.filter(f => f !== featureToRemove));
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError('');
@@ -147,6 +190,12 @@ export function ItemFormModal({ isOpen, onClose, onSave, item, tenantId }: ItemF
       return;
     }
 
+    if (hasMultipleColors && colors.length === 0) {
+      setError('Please add at least one color option or disable "multiple colors" option.');
+      setIsSubmitting(false);
+      return;
+    }
+
     try {
       const slug = generateSlug(title);
       const payload = {
@@ -164,6 +213,9 @@ export function ItemFormModal({ isOpen, onClose, onSave, item, tenantId }: ItemF
         stock_status: stockStatus,
         image_urls: filteredImages,
         sizes: hasMultipleSizes ? sizes : null,
+        colors: hasMultipleColors ? colors : null,
+        features: features.length > 0 ? features : null,
+        delivery_info: deliveryInfo.trim() || null,
         leeway_enabled: leewayEnabled,
         leeway_down_payment_required: leewayDownPaymentRequired,
         leeway_down_payment_amount: leewayEnabled && leewayDownPaymentRequired ? leewayDownPaymentAmount : 0,
@@ -350,7 +402,7 @@ export function ItemFormModal({ isOpen, onClose, onSave, item, tenantId }: ItemF
             </div>
 
             {/* Multiple Sizes Toggle */}
-            <div className="md:col-span-2 flex items-center gap-3 py-2 border-b border-white/5 pb-4">
+            <div className="md:col-span-2 flex items-center gap-3 py-2 border-b border-white/5 pb-2">
               <label className="flex items-center gap-3 text-sm text-white/80 cursor-pointer select-none">
                 <input
                   type="checkbox"
@@ -365,6 +417,19 @@ export function ItemFormModal({ isOpen, onClose, onSave, item, tenantId }: ItemF
                   className="w-4 h-4 rounded border-white/10 text-[#fb7a90] bg-transparent outline-none focus:ring-0 focus:ring-offset-0 cursor-pointer"
                 />
                 This product has multiple sizes / measurement options (e.g. S, M, L, US 9)
+              </label>
+            </div>
+
+            {/* Multiple Colors Toggle */}
+            <div className="md:col-span-2 flex items-center gap-3 py-2 border-b border-white/5 pb-4">
+              <label className="flex items-center gap-3 text-sm text-white/80 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={hasMultipleColors}
+                  onChange={e => setHasMultipleColors(e.target.checked)}
+                  className="w-4 h-4 rounded border-white/10 text-[#fb7a90] bg-transparent outline-none focus:ring-0 focus:ring-offset-0 cursor-pointer"
+                />
+                This product comes in multiple colors
               </label>
             </div>
           </div>
@@ -522,6 +587,152 @@ export function ItemFormModal({ isOpen, onClose, onSave, item, tenantId }: ItemF
               )}
             </div>
           )}
+
+          {/* Color Options Section */}
+          {hasMultipleColors && (
+            <div className="flex flex-col gap-2 border-t border-white/5 pt-4">
+              <label className="text-white/60 text-xs font-medium uppercase tracking-wider">Color Options</label>
+              <p className="text-white/40 text-[10px] -mt-1">Add colors available for this product with their hex codes.</p>
+              
+              <div className="flex gap-2 items-center">
+                <input
+                  type="text"
+                  value={colorNameInput}
+                  onChange={e => setColorNameInput(e.target.value)}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleAddColor();
+                    }
+                  }}
+                  placeholder="e.g. Black, Rose Gold, Midnight"
+                  className="bg-[#0f1117] border border-white/10 rounded-xl px-4 py-2 text-xs text-white placeholder:text-white/20 outline-none focus:border-[#fb7a90]/50 transition-colors flex-1"
+                />
+                <input
+                  type="color"
+                  value={colorHexInput}
+                  onChange={e => setColorHexInput(e.target.value)}
+                  className="w-10 h-10 p-1 bg-[#0f1117] border border-white/10 rounded-xl outline-none focus:border-[#fb7a90]/50 cursor-pointer"
+                  title="Select Hex Color"
+                />
+                <button
+                  type="button"
+                  onClick={handleAddColor}
+                  className="bg-white/5 hover:bg-white/10 border border-white/10 text-white text-xs px-4 py-2.5 rounded-xl font-semibold transition-all h-full"
+                >
+                  Add Color
+                </button>
+              </div>
+
+              {/* Presets */}
+              <div className="flex flex-wrap gap-2 items-center mt-1">
+                <span className="text-white/30 text-[9px] uppercase font-bold mr-1">Presets:</span>
+                <button
+                  type="button"
+                  onClick={() => setColors([{ name: 'Black', hex: '#000000' }, { name: 'White', hex: '#ffffff' }])}
+                  className="bg-white/5 hover:bg-white/10 text-white/60 text-[9px] px-2 py-1 rounded border border-white/5 hover:text-white transition-all"
+                >
+                  B/W
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setColors([{ name: 'Gold', hex: '#ffd700' }, { name: 'Silver', hex: '#c0c0c0' }, { name: 'Rose Gold', hex: '#b76e79' }])}
+                  className="bg-white/5 hover:bg-white/10 text-white/60 text-[9px] px-2 py-1 rounded border border-white/5 hover:text-white transition-all"
+                >
+                  Metals
+                </button>
+                {colors.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setColors([])}
+                    className="text-red-400 hover:text-red-300 text-[9px] font-bold ml-auto"
+                  >
+                    Clear All
+                  </button>
+                )}
+              </div>
+
+              {/* Color Tags Display */}
+              {colors.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 mt-2 bg-[#0f1117] border border-white/5 p-3 rounded-xl">
+                  {colors.map((c) => (
+                    <span
+                      key={c.name}
+                      onClick={() => handleRemoveColor(c.name)}
+                      className="flex items-center gap-1.5 bg-[#fb7a90]/10 hover:bg-red-500/10 text-[#fb7a90] hover:text-red-400 border border-[#fb7a90]/20 hover:border-red-500/20 px-2.5 py-1 rounded-lg text-xs font-semibold cursor-pointer transition-all"
+                      title="Click to remove"
+                    >
+                      <div className="w-2.5 h-2.5 rounded-full border border-white/20" style={{ backgroundColor: c.hex }} />
+                      {c.name} <X className="w-3 h-3 opacity-60" />
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Product Features (Bullet Points) */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-bold text-typography-primary uppercase tracking-wider">Features (Bullet Points)</label>
+            </div>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={featureInput}
+                onChange={e => setFeatureInput(e.target.value)}
+                onKeyDown={e => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleAddFeature();
+                  }
+                }}
+                placeholder="e.g. Material: Premium vegan leather"
+                className="flex-1 bg-surface-white border border-surface-light rounded-xl px-4 py-3 text-sm text-typography-primary placeholder:text-typography-muted outline-none focus:border-brand-pink transition-colors"
+              />
+              <button
+                type="button"
+                onClick={handleAddFeature}
+                className="bg-brand-navy hover:bg-brand-navy/90 text-white text-xs px-6 py-3 rounded-xl font-bold uppercase tracking-wider transition-all"
+              >
+                Add
+              </button>
+            </div>
+            
+            {features.length > 0 && (
+              <div className="flex flex-col gap-2 mt-2 bg-surface-offWhite border border-surface-light p-4 rounded-xl">
+                {features.map((f, idx) => (
+                  <div key={idx} className="flex items-start justify-between gap-3 text-sm text-typography-primary bg-white p-3 rounded-lg border border-surface-light">
+                    <div className="flex gap-2 items-start flex-1">
+                      <span className="text-brand-pink mt-0.5">•</span>
+                      <span>{f}</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveFeature(f)}
+                      className="text-typography-muted hover:text-red-500 transition-colors shrink-0"
+                      title="Remove feature"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Custom Delivery Info */}
+          <div className="space-y-2">
+            <label className="text-xs font-bold text-typography-primary uppercase tracking-wider">Custom Delivery & Returns (Optional)</label>
+            <p className="text-xs text-typography-muted">Leave blank to use the store's default delivery text.</p>
+            <textarea
+              value={deliveryInfo}
+              onChange={(e) => setDeliveryInfo(e.target.value)}
+              placeholder="e.g. Ships within 2 weeks. Non-refundable."
+              rows={3}
+              className="w-full bg-surface-white border border-surface-light rounded-xl px-4 py-3 text-sm text-typography-primary placeholder:text-typography-muted outline-none focus:border-brand-pink transition-colors resize-none"
+            />
+          </div>
 
           {/* Image URLs */}
           <div className="space-y-3">

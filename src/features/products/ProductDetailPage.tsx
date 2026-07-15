@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { ShoppingBag, ChevronDown, Star, ArrowLeft } from 'lucide-react';
 import { fetchProductBySlug, fetchProducts } from './api';
@@ -17,11 +17,12 @@ export function ProductDetailPage() {
   const [product, setProduct] = useState<Product | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
-  const [selectedColor, setSelectedColor] = useState<string>('Black'); // Mock color state
+  const [selectedColor, setSelectedColor] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState('');
   
   const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
   const [recentProducts, setRecentProducts] = useState<Product[]>([]);
+  const [activeImageIdx, setActiveImageIdx] = useState(0);
   
   // Accordion state
   const [detailsOpen, setDetailsOpen] = useState(true);
@@ -35,6 +36,11 @@ export function ProductDetailPage() {
           setProduct(data);
           if (data?.sizes && data.sizes.length === 1) {
             setSelectedSize(data.sizes[0].size);
+          }
+          if (data?.colors && data.colors.length === 1) {
+            setSelectedColor(data.colors[0].name);
+          } else {
+            setSelectedColor(null);
           }
           if (data) {
             fetchProducts().then(related => {
@@ -90,6 +96,7 @@ export function ProductDetailPage() {
   }
 
   const hasSizes = product.sizes && product.sizes.length > 0;
+  const hasColors = product.colors && product.colors.length > 0;
   const matchedSizeObj = product.sizes?.find(s => s.size === selectedSize);
   const allSizesOutOfStock = hasSizes && (!product.sizes || product.sizes.every(s => s.quantity <= 0));
   const maxAvailable = allSizesOutOfStock
@@ -105,6 +112,11 @@ export function ProductDetailPage() {
       return;
     }
 
+    if (hasColors && !selectedColor) {
+      setErrorMsg('Please select a color before adding to your bag.');
+      return;
+    }
+
     if (maxAvailable <= 0) {
       setErrorMsg('Selected size is out of stock.');
       return;
@@ -112,24 +124,82 @@ export function ProductDetailPage() {
 
     addToCart({
       ...product,
-      selectedSize: selectedSize || null
+      selectedSize: selectedSize || null,
+      selectedColor: selectedColor || null
     } as any);
 
     showSuccess(`${product.title} added to Bag!`);
   };
 
-  // Ensure we have 4 images for the grid, using placeholders if needed
-  const displayImages = [
-    product.image_urls[0] || '/placeholder.png',
-    product.image_urls[1] || product.image_urls[0] || '/placeholder.png',
-    product.image_urls[2] || product.image_urls[0] || '/placeholder.png',
-    product.image_urls[3] || product.image_urls[0] || '/placeholder.png',
-  ];
+  const displayImages = product.image_urls && product.image_urls.length > 0 
+    ? product.image_urls 
+    : ['/placeholder.png'];
+  
+  // Custom loupe magnifying glass component
+  const ImageZoom = ({ src, alt }: { src: string; alt: string }) => {
+    const [mousePos, setMousePos] = useState({ x: 0, y: 0, px: 0, py: 0 });
+    const [isZoomed, setIsZoomed] = useState(false);
+    const containerRef = useRef<HTMLDivElement>(null);
+    const [dimensions, setDimensions] = useState({ w: 0, h: 0 });
 
-  const mockColors = [
-    { name: 'Black', hex: '#000000' },
-    { name: 'Beige', hex: '#F5F5DC' }
-  ];
+    const handleMouseEnter = () => {
+      if (containerRef.current) {
+        setDimensions({
+          w: containerRef.current.offsetWidth,
+          h: containerRef.current.offsetHeight
+        });
+      }
+      setIsZoomed(true);
+    };
+
+    const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+      if (!containerRef.current) return;
+      const { left, top, width, height } = containerRef.current.getBoundingClientRect();
+      const px = e.clientX - left;
+      const py = e.clientY - top;
+      const x = (px / width) * 100;
+      const y = (py / height) * 100;
+      setMousePos({ x, y, px, py });
+    };
+
+    const ZOOM_FACTOR = 2.5;
+    const LENS_SIZE = 240; // 240px circle
+
+    return (
+      <div 
+        ref={containerRef}
+        className="relative w-full h-full overflow-hidden cursor-none bg-[#f8f5f2] rounded-md group"
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={() => setIsZoomed(false)}
+        onMouseMove={handleMouseMove}
+      >
+        <img
+          src={src}
+          alt={alt}
+          className="w-full h-full object-cover mix-blend-multiply"
+        />
+        
+        {/* The magnifying lens */}
+        {isZoomed && dimensions.w > 0 && (
+          <div 
+            className="absolute pointer-events-none border-[4px] border-white shadow-xl rounded-full z-10"
+            style={{
+              width: `${LENS_SIZE}px`,
+              height: `${LENS_SIZE}px`,
+              left: `${mousePos.px - LENS_SIZE / 2}px`,
+              top: `${mousePos.py - LENS_SIZE / 2}px`,
+              backgroundImage: `url('${src}')`,
+              backgroundRepeat: 'no-repeat',
+              backgroundPosition: `${mousePos.x}% ${mousePos.y}%`,
+              backgroundSize: `${dimensions.w * ZOOM_FACTOR}px ${dimensions.h * ZOOM_FACTOR}px`,
+              backgroundColor: '#f8f5f2',
+              backgroundBlendMode: 'multiply'
+            }}
+          />
+        )}
+      </div>
+    );
+  };
 
   return (
     <div className="bg-surface-white min-h-screen">
@@ -163,19 +233,53 @@ export function ProductDetailPage() {
         {/* Layout Grid */}
         <div className="flex flex-col lg:flex-row gap-12 lg:gap-16">
           
-          {/* Left Column: 2x2 Image Grid */}
-          <div className="w-full lg:w-[60%]">
-            <div className="grid grid-cols-2 gap-4">
-              {displayImages.map((imgUrl, idx) => (
-                <div key={idx} className="aspect-[4/5] bg-[#f8f5f2] overflow-hidden">
-                  <img
-                    src={imgUrl}
-                    alt={`${product.title} - view ${idx + 1}`}
-                    className="w-full h-full object-cover mix-blend-multiply"
-                  />
-                </div>
-              ))}
+          {/* Left Column: Image Carousel with Zoom */}
+          <div className="w-full lg:w-[60%] flex flex-col-reverse md:flex-row gap-4">
+            
+            {/* Thumbnails (Vertical on desktop, horizontal on mobile) */}
+            {displayImages.length > 1 && (
+              <div className="flex md:flex-col gap-3 overflow-x-auto md:overflow-y-auto scrollbar-hide md:w-24 shrink-0 pb-2 md:pb-0">
+                {displayImages.map((imgUrl, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => setActiveImageIdx(idx)}
+                    className={`aspect-[3/4] md:w-full shrink-0 w-20 overflow-hidden bg-[#f8f5f2] rounded-md transition-all ${
+                      activeImageIdx === idx ? 'ring-1 ring-brand-navy ring-offset-2 opacity-100' : 'opacity-60 hover:opacity-100'
+                    }`}
+                  >
+                    <img
+                      src={imgUrl}
+                      alt={`Thumbnail ${idx + 1}`}
+                      className="w-full h-full object-cover mix-blend-multiply"
+                    />
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* Main Image */}
+            <div className="w-full flex-1 relative aspect-[4/5] bg-[#f8f5f2] rounded-md">
+              <ImageZoom src={displayImages[activeImageIdx]} alt={`${product.title} view`} />
+              
+              {/* Carousel Arrows (Mobile mostly, but useful everywhere) */}
+              {displayImages.length > 1 && (
+                <>
+                  <button 
+                    onClick={() => setActiveImageIdx((prev) => (prev > 0 ? prev - 1 : displayImages.length - 1))}
+                    className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/80 hover:bg-white text-brand-navy rounded-full flex items-center justify-center shadow-sm backdrop-blur transition-all"
+                  >
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+                  </button>
+                  <button 
+                    onClick={() => setActiveImageIdx((prev) => (prev < displayImages.length - 1 ? prev + 1 : 0))}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/80 hover:bg-white text-brand-navy rounded-full flex items-center justify-center shadow-sm backdrop-blur transition-all"
+                  >
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+                  </button>
+                </>
+              )}
             </div>
+            
           </div>
 
           {/* Right Column: Details & Actions */}
@@ -217,27 +321,30 @@ export function ProductDetailPage() {
               </div>
 
               {/* Color Selection */}
-              <div>
-                <p className="text-xs font-bold text-typography-primary uppercase tracking-wider mb-3">
-                  Color: {selectedColor}
-                </p>
-                <div className="flex gap-3">
-                  {mockColors.map((color) => (
-                    <button
-                      key={color.name}
-                      onClick={() => setSelectedColor(color.name)}
-                      className={`w-8 h-8 rounded-full border-2 transition-all ${
-                        selectedColor === color.name ? 'border-brand-navy p-0.5' : 'border-transparent'
-                      }`}
-                    >
-                      <div 
-                        className="w-full h-full rounded-full border border-surface-light"
-                        style={{ backgroundColor: color.hex }}
-                      />
-                    </button>
-                  ))}
+              {hasColors && (
+                <div>
+                  <p className="text-xs font-bold text-typography-primary uppercase tracking-wider mb-3">
+                    Color: {selectedColor || <span className="text-typography-muted font-normal">Select</span>}
+                  </p>
+                  <div className="flex gap-3">
+                    {product.colors!.map((color) => (
+                      <button
+                        key={color.name}
+                        onClick={() => setSelectedColor(color.name)}
+                        className={`w-8 h-8 rounded-full border-2 transition-all ${
+                          selectedColor === color.name ? 'border-brand-navy p-0.5' : 'border-transparent'
+                        }`}
+                        title={color.name}
+                      >
+                        <div 
+                          className="w-full h-full rounded-full border border-surface-light"
+                          style={{ backgroundColor: color.hex }}
+                        />
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* Size Selection */}
               {hasSizes && (
@@ -307,12 +414,13 @@ export function ProductDetailPage() {
                   {detailsOpen && (
                     <div className="mt-4 text-sm text-typography-muted leading-relaxed whitespace-pre-line pr-4">
                       {product.description || 'Elevate your everyday style with our signature design. Crafted with premium materials for maximum comfort and durability.'}
-                      <ul className="mt-4 space-y-2 list-disc pl-5">
-                         <li>Material: Premium vegan leather</li>
-                         <li>Heel height: 2.5 inches</li>
-                         <li>Padded insole for all-day comfort</li>
-                         <li>Slip-resistant outsole</li>
-                      </ul>
+                      {product.features && product.features.length > 0 && (
+                        <ul className="mt-4 space-y-2 list-disc pl-5">
+                          {product.features.map((feature, idx) => (
+                            <li key={idx}>{feature}</li>
+                          ))}
+                        </ul>
+                      )}
                     </div>
                   )}
                 </div>
@@ -327,11 +435,17 @@ export function ProductDetailPage() {
                     <ChevronDown className={`w-4 h-4 transition-transform ${deliveryOpen ? 'rotate-180' : ''}`} />
                   </button>
                   {deliveryOpen && (
-                    <div className="mt-4 text-sm text-typography-muted leading-relaxed pr-4 space-y-3">
-                      <p><strong>Standard Delivery:</strong> 3-5 business days (₱150)</p>
-                      <p><strong>Express Delivery:</strong> 1-2 business days (₱250)</p>
-                      <p>Free standard delivery on orders over ₱3,000.</p>
-                      <p>Returns accepted within 30 days of receipt. Items must be unworn and in original packaging.</p>
+                    <div className="mt-4 text-sm text-typography-muted leading-relaxed pr-4 space-y-3 whitespace-pre-line">
+                      {product.delivery_info ? (
+                        <p>{product.delivery_info}</p>
+                      ) : (
+                        <>
+                          <p><strong>Standard Delivery:</strong> 3-5 business days (₱150)</p>
+                          <p><strong>Express Delivery:</strong> 1-2 business days (₱250)</p>
+                          <p>Free standard delivery on orders over ₱3,000.</p>
+                          <p>Returns accepted within 30 days of receipt. Items must be unworn and in original packaging.</p>
+                        </>
+                      )}
                     </div>
                   )}
                 </div>

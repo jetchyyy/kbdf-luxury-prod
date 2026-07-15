@@ -258,6 +258,13 @@ export function CustomerOrdersPage() {
   const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user?.id) return;
+
+    const cleanedPhone = profilePhone.replace(/\D/g, '');
+    if (cleanedPhone.length !== 11) {
+      showError("Contact number must be exactly 11 digits.");
+      return;
+    }
+
     setSavingProfile(true);
     try {
       const { error } = await supabase
@@ -724,62 +731,62 @@ export function CustomerOrdersPage() {
     <div className="pt-32 pb-24 min-h-screen bg-surface-white">
       <div className="max-w-4xl mx-auto px-4">
         
-        {/* Header and Tab Toggles */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between border-b border-surface-light pb-6 mb-8 gap-4">
-          <div>
-            <h1 className="text-2xl font-sans font-light tracking-widest uppercase text-typography-primary">
-              Account Dashboard
-            </h1>
-            <div className="w-12 h-px bg-typography-primary mt-4 mb-2"></div>
-            <p className="text-xs text-typography-muted uppercase tracking-wider">Manage your purchase records and active leeway schedules</p>
-          </div>
+        {/* Header */}
+        <div className="mb-10 text-center">
+          <h1 className="text-3xl font-serif text-typography-primary mb-3">
+            Account Dashboard
+          </h1>
+          <p className="text-[10px] uppercase tracking-[0.2em] text-typography-muted font-bold">
+            Manage your purchase records and active leeway schedules
+          </p>
+        </div>
 
-          <div className="flex flex-wrap gap-2 self-start md:self-auto bg-surface-offWhite p-1 border border-surface-light rounded-2xl">
-            <button
-              onClick={() => {
-                setActiveTab('orders');
-                setSearchParams({});
-              }}
-              className={`px-5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
-                activeTab === 'orders' ? 'bg-brand-navy text-white shadow-md' : 'text-typography-muted hover:text-typography-primary'
-              }`}
-            >
-              <ShoppingBag className="w-4 h-4" /> Order History
-            </button>
-            <button
-              onClick={() => {
-                setActiveTab('leeway');
-                setSearchParams({ tab: 'leeway' });
-              }}
-              className={`px-5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
-                activeTab === 'leeway' ? 'bg-brand-navy text-white shadow-md' : 'text-typography-muted hover:text-typography-primary'
-              }`}
-            >
-              <Coins className="w-4 h-4" /> Leeway Installments
-            </button>
-            <button
-              onClick={() => {
-                setActiveTab('favorites');
-                setSearchParams({ tab: 'favorites' });
-              }}
-              className={`px-5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
-                activeTab === 'favorites' ? 'bg-brand-navy text-white shadow-md' : 'text-typography-muted hover:text-typography-primary'
-              }`}
-            >
-              <Heart className="w-4 h-4" /> Favorites List
-            </button>
-            <button
-              onClick={() => {
-                setActiveTab('profile');
-                setSearchParams({ tab: 'profile' });
-              }}
-              className={`px-5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
-                activeTab === 'profile' ? 'bg-brand-navy text-white shadow-md' : 'text-typography-muted hover:text-typography-primary'
-              }`}
-            >
-              <User className="w-4 h-4" /> Profile Details
-            </button>
-          </div>
+        {/* Tab Toggles */}
+        <div className="flex flex-wrap justify-center gap-8 border-b border-surface-light mb-12">
+          <button
+            onClick={() => {
+              setActiveTab('orders');
+              setSearchParams({});
+            }}
+            className={`pb-4 text-[10px] uppercase tracking-[0.15em] font-bold transition-all flex items-center gap-2 border-b-2 ${
+              activeTab === 'orders' ? 'border-brand-navy text-brand-navy' : 'border-transparent text-typography-muted hover:text-typography-primary hover:border-typography-primary/30'
+            }`}
+          >
+            <ShoppingBag className="w-4 h-4" /> Order History
+          </button>
+          <button
+            onClick={() => {
+              setActiveTab('leeway');
+              setSearchParams({ tab: 'leeway' });
+            }}
+            className={`pb-4 text-[10px] uppercase tracking-[0.15em] font-bold transition-all flex items-center gap-2 border-b-2 ${
+              activeTab === 'leeway' ? 'border-brand-navy text-brand-navy' : 'border-transparent text-typography-muted hover:text-typography-primary hover:border-typography-primary/30'
+            }`}
+          >
+            <Coins className="w-4 h-4" /> Leeway Installments
+          </button>
+          <button
+            onClick={() => {
+              setActiveTab('favorites');
+              setSearchParams({ tab: 'favorites' });
+            }}
+            className={`pb-4 text-[10px] uppercase tracking-[0.15em] font-bold transition-all flex items-center gap-2 border-b-2 ${
+              activeTab === 'favorites' ? 'border-brand-navy text-brand-navy' : 'border-transparent text-typography-muted hover:text-typography-primary hover:border-typography-primary/30'
+            }`}
+          >
+            <Heart className="w-4 h-4" /> Favorites List
+          </button>
+          <button
+            onClick={() => {
+              setActiveTab('profile');
+              setSearchParams({ tab: 'profile' });
+            }}
+            className={`pb-4 text-[10px] uppercase tracking-[0.15em] font-bold transition-all flex items-center gap-2 border-b-2 ${
+              activeTab === 'profile' ? 'border-brand-navy text-brand-navy' : 'border-transparent text-typography-muted hover:text-typography-primary hover:border-typography-primary/30'
+            }`}
+          >
+            <User className="w-4 h-4" /> Profile Details
+          </button>
         </div>
 
         {/* Tab 1: Order History */}
@@ -792,11 +799,17 @@ export function CustomerOrdersPage() {
                 ))}
               </div>
             ) : orders.length === 0 ? (
-              <div className="border border-surface-light bg-surface-offWhite rounded-3xl p-12 text-center">
-                <ShoppingBag className="w-12 h-12 text-typography-muted/40 mx-auto mb-4" strokeWidth={1} />
-                <h3 className="text-lg font-serif text-typography-primary">No Orders Placed Yet</h3>
-                <p className="text-xs text-typography-muted mt-1 uppercase tracking-wider mb-6">Explore our curated collections to place your first order</p>
-                <Link to="/shop" className="bg-brand-navy hover:bg-brand-pink text-white px-8 py-3.5 text-[10px] uppercase tracking-widest font-bold transition-all">Shop Collections</Link>
+              <div className="flex flex-col items-center justify-center py-24 px-4 bg-surface-offWhite rounded-3xl border border-surface-light">
+                <div className="w-16 h-16 rounded-full bg-surface-white border border-surface-light flex items-center justify-center mb-6 shadow-sm">
+                  <ShoppingBag className="w-6 h-6 text-brand-navy" strokeWidth={1.5} />
+                </div>
+                <h3 className="text-2xl font-serif text-typography-primary mb-3">Your Collection is Empty</h3>
+                <p className="text-[10px] text-typography-muted uppercase tracking-[0.2em] mb-10 text-center max-w-sm font-bold leading-relaxed">
+                  You haven't placed any orders yet. Discover our latest arrivals and begin your luxury experience.
+                </p>
+                <Link to="/shop" className="border border-brand-navy text-brand-navy hover:bg-brand-navy hover:text-white px-10 py-4 text-[10px] uppercase tracking-[0.2em] font-bold transition-colors">
+                  Explore Collections
+                </Link>
               </div>
             ) : (
               <div className="space-y-4">
@@ -1465,9 +1478,12 @@ export function CustomerOrdersPage() {
                     <input 
                       type="tel" 
                       required 
+                      maxLength={11}
+                      pattern="\d{11}"
                       value={profilePhone} 
-                      onChange={e => setProfilePhone(e.target.value)} 
-                      placeholder="+63 917 123 4567" 
+                      onChange={e => setProfilePhone(e.target.value.replace(/\D/g, ''))} 
+                      placeholder="09171234567" 
+                      title="Contact number must be exactly 11 digits"
                       className="bg-surface-offWhite border border-surface-light rounded-xl px-4 py-3 text-sm text-typography-primary placeholder:text-typography-muted/40 outline-none focus:border-brand-pink" 
                     />
                   </div>

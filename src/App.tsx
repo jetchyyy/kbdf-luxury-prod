@@ -1,5 +1,6 @@
 import { Routes, Route } from "react-router-dom";
 import { AppShell } from "./core/layout/AppShell";
+import { ScrollToTop } from "./core/layout/ScrollToTop";
 import { HomePage } from "./features/home/HomePage";
 import { TrackPage } from "./features/track/TrackPage";
 import { ShopPage } from "./features/shop/ShopPage";
@@ -51,6 +52,7 @@ function App() {
       <AdminAuthProvider>
         <UserAuthProvider>
           <CartProvider>
+            <ScrollToTop />
             <Routes>
             {/* Storefront Routes (wrapped in AppShell with custom navbar/footer) */}
             <Route

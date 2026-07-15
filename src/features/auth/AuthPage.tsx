@@ -2,7 +2,7 @@ import { useState } from "react";
 import { FadeUp } from "../../ui/Motion/FadeUp";
 import { useUserAuth } from "../../core/context/UserAuthContext";
 import { useNavigate } from "react-router-dom";
-import { Loader2, AlertCircle, CheckCircle, Check, X } from "lucide-react";
+import { Loader2, AlertCircle, CheckCircle, Check, X, Eye, EyeOff } from "lucide-react";
 import { useNotification } from "../../core/context/NotificationContext";
 
 export function AuthPage() {
@@ -15,6 +15,8 @@ export function AuthPage() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [fullName, setFullName] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
@@ -32,6 +34,11 @@ export function AuthPage() {
     e.preventDefault();
     if (!email || !password || (!isLogin && (!fullName || !confirmPassword))) {
       setErrorMsg("Please fill in all required fields.");
+      return;
+    }
+
+    if (!email.toLowerCase().endsWith('@gmail.com')) {
+      setErrorMsg("Email address must end with @gmail.com");
       return;
     }
 
@@ -147,14 +154,23 @@ export function AuthPage() {
               </div>
               <div className="flex flex-col gap-2">
                 <label className="text-[10px] uppercase tracking-widest text-typography-primary font-bold">Password *</label>
-                <input 
-                  type="password" 
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  placeholder="••••••••"
-                  className="w-full border-b border-surface-light py-2 bg-transparent outline-none focus:border-brand-pink transition-colors text-sm text-typography-primary" 
-                />
+                <div className="relative">
+                  <input 
+                    type={showPassword ? "text" : "password"} 
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    placeholder="••••••••"
+                    className="w-full border-b border-surface-light py-2 pr-10 bg-transparent outline-none focus:border-brand-pink transition-colors text-sm text-typography-primary" 
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-0 top-1/2 -translate-y-1/2 text-typography-muted hover:text-typography-primary transition-colors p-2"
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
                 {!isLogin && (
                   <div className="mt-2.5 space-y-1 bg-surface-offWhite border border-surface-light rounded-xl p-3 text-[10px]">
                     <span className="font-bold text-typography-primary uppercase tracking-wider block mb-1.5">Password Requirements:</span>
@@ -177,14 +193,23 @@ export function AuthPage() {
               {!isLogin && (
                 <div className="flex flex-col gap-2">
                   <label className="text-[10px] uppercase tracking-widest text-typography-primary font-bold">Confirm Password *</label>
-                  <input 
-                    type="password" 
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    required
-                    placeholder="••••••••"
-                    className="w-full border-b border-surface-light py-2 bg-transparent outline-none focus:border-brand-pink transition-colors text-sm text-typography-primary" 
-                  />
+                  <div className="relative">
+                    <input 
+                      type={showConfirmPassword ? "text" : "password"} 
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      required
+                      placeholder="••••••••"
+                      className="w-full border-b border-surface-light py-2 pr-10 bg-transparent outline-none focus:border-brand-pink transition-colors text-sm text-typography-primary" 
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      className="absolute right-0 top-1/2 -translate-y-1/2 text-typography-muted hover:text-typography-primary transition-colors p-2"
+                    >
+                      {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
                 </div>
               )}
               
