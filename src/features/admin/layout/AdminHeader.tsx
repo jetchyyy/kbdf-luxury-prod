@@ -1,4 +1,4 @@
-import { LogOut, Bell, ChevronDown, Sun, Moon } from 'lucide-react';
+import { LogOut, Bell, ChevronDown, Sun, Moon, Menu } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useAdminAuth } from '../context/AdminAuthContext';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -6,6 +6,7 @@ import { supabase } from '../../../lib/supabase/supabaseClient';
 
 interface AdminHeaderProps {
   title: string;
+  onMenuClick?: () => void;
 }
 
 interface NotificationItem {
@@ -16,7 +17,7 @@ interface NotificationItem {
   timestamp: Date;
 }
 
-export function AdminHeader({ title }: AdminHeaderProps) {
+export function AdminHeader({ title, onMenuClick }: AdminHeaderProps) {
   const { adminUser, tenant, isSuperadmin, signOut } = useAdminAuth();
   const [menuOpen, setMenuOpen] = useState(false);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
@@ -132,16 +133,26 @@ export function AdminHeader({ title }: AdminHeaderProps) {
   };
 
   return (
-    <header className="h-16 bg-[#0f1117]/80 backdrop-blur-sm border-b border-white/5 flex items-center justify-between px-6 flex-shrink-0 sticky top-0 z-30">
-      {/* Page title */}
-      <div>
-        <h1 className="text-white font-semibold text-base">{title}</h1>
-        {tenant && (
-          <p className="text-white/40 text-xs">{tenant.name}</p>
-        )}
-        {isSuperadmin && (
-          <p className="text-[#fb7a90] text-xs font-medium">Superadmin — Platform View</p>
-        )}
+    <header className="h-16 bg-[#0f1117]/80 backdrop-blur-sm border-b border-white/5 flex items-center justify-between px-4 md:px-6 flex-shrink-0 sticky top-0 z-30">
+      <div className="flex items-center gap-3">
+        {/* Mobile Menu Toggle */}
+        <button
+          onClick={onMenuClick}
+          className="md:hidden w-9 h-9 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center text-white/70 hover:text-white transition-colors"
+        >
+          <Menu className="w-5 h-5" />
+        </button>
+
+        {/* Page title */}
+        <div>
+          <h1 className="text-white font-semibold text-base">{title}</h1>
+          {tenant && (
+            <p className="text-white/40 text-xs">{tenant.name}</p>
+          )}
+          {isSuperadmin && (
+            <p className="text-[#fb7a90] text-xs font-medium">Superadmin — Platform View</p>
+          )}
+        </div>
       </div>
 
       {/* Right: actions */}

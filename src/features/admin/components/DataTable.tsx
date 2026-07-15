@@ -156,47 +156,45 @@ export function DataTable<T extends { id: string }>({
               </tr>
             </thead>
             <tbody>
-              <AnimatePresence mode="wait">
-                {isLoading ? (
-                  Array.from({ length: pageSize }).map((_, i) => (
-                    <tr key={i} className="border-b border-white/5 last:border-0">
-                      {columns.map(col => (
-                        <td key={String(col.key)} className="px-4 py-3.5">
-                          <div className="h-4 bg-white/5 rounded animate-pulse" style={{ width: `${60 + Math.random() * 40}%` }} />
-                        </td>
-                      ))}
-                    </tr>
-                  ))
-                ) : paginated.length === 0 ? (
-                  <tr>
-                    <td colSpan={columns.length} className="px-4 py-12 text-center text-white/30 text-sm">
-                      {emptyMessage}
-                    </td>
+              {isLoading ? (
+                Array.from({ length: pageSize }).map((_, i) => (
+                  <tr key={`skeleton-${i}`} className="border-b border-white/5 last:border-0">
+                    {columns.map(col => (
+                      <td key={String(col.key)} className="px-4 py-3.5">
+                        <div className="h-4 bg-white/5 rounded animate-pulse" style={{ width: `${60 + Math.random() * 40}%` }} />
+                      </td>
+                    ))}
                   </tr>
-                ) : (
-                  paginated.map((row, idx) => (
-                    <motion.tr
-                      key={row.id}
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{ delay: idx * 0.03 }}
-                      onClick={() => onRowClick?.(row)}
-                      className={clsx(
-                        'border-b border-white/5 last:border-0 transition-colors',
-                        onRowClick ? 'cursor-pointer hover:bg-white/3' : ''
-                      )}
-                    >
-                      {columns.map(col => (
-                        <td key={String(col.key)} className="px-4 py-3.5 text-sm text-white/70">
-                          {col.render
-                            ? col.render(row)
-                            : String((row as Record<string, unknown>)[String(col.key)] ?? '—')}
-                        </td>
-                      ))}
-                    </motion.tr>
-                  ))
-                )}
-              </AnimatePresence>
+                ))
+              ) : paginated.length === 0 ? (
+                <tr>
+                  <td colSpan={columns.length} className="px-4 py-12 text-center text-white/30 text-sm">
+                    {emptyMessage}
+                  </td>
+                </tr>
+              ) : (
+                paginated.map((row, idx) => (
+                  <motion.tr
+                    key={row.id}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: idx * 0.03 }}
+                    onClick={() => onRowClick?.(row)}
+                    className={clsx(
+                      'border-b border-white/5 last:border-0 transition-colors',
+                      onRowClick ? 'cursor-pointer hover:bg-white/3' : ''
+                    )}
+                  >
+                    {columns.map(col => (
+                      <td key={String(col.key)} className="px-4 py-3.5 text-sm text-white/70">
+                        {col.render
+                          ? col.render(row)
+                          : String((row as Record<string, unknown>)[String(col.key)] ?? '—')}
+                      </td>
+                    ))}
+                  </motion.tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>

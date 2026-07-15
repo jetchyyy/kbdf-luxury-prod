@@ -66,12 +66,20 @@
   background-color: rgba(249, 250, 251, 0.8) !important;
 }
 
+.admin-light-mode .bg-white\/3 {
+  background-color: rgba(0, 0, 0, 0.03) !important;
+}
+
 .admin-light-mode .bg-white\/5 {
   background-color: rgba(0, 0, 0, 0.05) !important;
 }
 
 .admin-light-mode .bg-white\/10 {
   background-color: rgba(0, 0, 0, 0.08) !important;
+}
+
+.admin-light-mode .bg-white\/20 {
+  background-color: rgba(0, 0, 0, 0.12) !important;
 }
 
 .admin-light-mode .border-white\/5 {
@@ -82,12 +90,20 @@
   border-color: rgba(0, 0, 0, 0.12) !important;
 }
 
+.admin-light-mode .border-white\/20 {
+  border-color: rgba(0, 0, 0, 0.18) !important;
+}
+
 .admin-light-mode .text-white {
   color: #111827 !important;
 }
 
 .admin-light-mode .text-white\/80 {
   color: #1f2937 !important;
+}
+
+.admin-light-mode .text-white\/70 {
+  color: #374151 !important;
 }
 
 .admin-light-mode .text-white\/60 {
@@ -104,6 +120,11 @@
 
 .admin-light-mode .text-white\/30 {
   color: #a0aec0 !important;
+}
+
+.admin-light-mode .text-white\/25,
+.admin-light-mode .text-white\/20 {
+  color: #9ca3af !important;
 }
 
 .admin-light-mode .divide-white\/5 > * + * {
