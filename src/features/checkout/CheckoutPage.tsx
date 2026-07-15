@@ -8,7 +8,7 @@ import { ImageUploadInput } from '../admin/components/ImageUploadInput';
 import { useUserAuth } from '../../core/context/UserAuthContext';
 import { useNotification } from '../../core/context/NotificationContext';
 import { Check, X, Clipboard, CreditCard, ShoppingBag, MapPin, Truck, ChevronRight, Download, Loader2, User, LogIn, Clock, AlertTriangle, Store, ChevronDown } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 interface PaymentMethod {
   id: string;
@@ -21,7 +21,9 @@ interface PaymentMethod {
 }
 
 export function CheckoutPage() {
-  const { items, cartTotal, clearCart } = useCart();
+  const { selectedCartItems: items, selectedCartTotal: cartTotal, clearSelectedItems: clearCart } = useCart();
+  const navigate = useNavigate();
+
   const { tenant } = useTenant();
   const { user, signIn, signUp } = useUserAuth();
   const { showSuccess, showError, showInfo } = useNotification();
@@ -40,9 +42,21 @@ export function CheckoutPage() {
 
   const [step, setStep] = useState<1 | 2 | 3 | 4 | 5>(1);
   const [isPlacing, setIsPlacing] = useState(false);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
   const [trackingCode, setTrackingCode] = useState('');
   const [showMobileSummary, setShowMobileSummary] = useState(false);
+
+  useEffect(() => {
+    if (items.length === 0 && step !== 5) {
+      navigate('/shop', { replace: true });
+    }
+  }, [items.length, step, navigate]);
+
+  // Scroll to top on step change
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [step]);
 
   // Promo code states
   const [promoCodeInput, setPromoCodeInput] = useState('');
@@ -1071,7 +1085,7 @@ export function CheckoutPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
           
           {/* LEFT: Stepped Inputs */}
-          <div className={`${step === 4 ? 'lg:col-span-3 max-w-2xl mx-auto w-full' : 'lg:col-span-2'} space-y-8`}>
+          <div className="lg:col-span-2 space-y-8">
             
             {/* STEP 1: CONTACT DETAILS & SHIPPING */}
             {step === 1 && (
@@ -1453,7 +1467,7 @@ export function CheckoutPage() {
             )}
 
             {/* STEP 3: ORDER REVIEW */}
-            {step === 3 && (
+            {(step === 3 || step === 4) && (
               <div className="space-y-6">
 
                 {/* Reservation Timer Banner */}
@@ -1526,51 +1540,12 @@ export function CheckoutPage() {
               </div>
             )}
 
-            {/* STEP 4: ORDER SUCCESS SCREEN */}
-            {step === 4 && (
-              <div className="border border-surface-light rounded-3xl p-8 md:p-12 text-center bg-surface-offWhite flex flex-col items-center space-y-6">
-                <div className="w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-500">
-                  <Check className="w-8 h-8" strokeWidth={2.5} />
-                </div>
-
-                <div>
-                  <h2 className="text-2xl font-serif text-typography-primary">Order Placed Successfully!</h2>
-                  <p className="text-xs text-typography-muted uppercase tracking-widest mt-1">Thank you for your business</p>
-                </div>
-
-                <div className="bg-white border border-surface-light p-6 rounded-2xl max-w-md w-full space-y-4">
-                  <span className="text-[10px] uppercase font-bold text-typography-muted tracking-widest block">Your Tracking Number</span>
-                  <div className="flex items-center justify-center gap-3 bg-surface-offWhite p-4 rounded-xl border border-surface-light">
-                    <span className="font-mono text-lg font-bold text-typography-primary tracking-widest">{trackingCode}</span>
-                    <button onClick={copyToClipboard} className="text-brand-pink hover:text-brand-navy transition-all" title="Copy tracking code">
-                      <Clipboard className="w-5 h-5" />
-                    </button>
-                  </div>
-                  {user ? (
-                    <div className="text-left text-xs text-emerald-500 bg-emerald-50 border border-emerald-200/50 p-4 rounded-xl">
-                      <strong className="block text-[10px] uppercase tracking-wider">Order Linked to Profile:</strong>
-                      <p>Since you are logged in, this order has been saved to your profile history. You can view its progress anytime under your <strong>My Orders</strong> history page.</p>
-                    </div>
-                  ) : (
-                    <div className="text-left text-xs text-red-500 bg-red-50 border border-red-200/50 p-4 rounded-xl space-y-1">
-                      <strong className="block text-[10px] uppercase tracking-wider">⚠️ CRITICAL REQUIREMENT:</strong>
-                      <p>Please write down, screenshot, or copy this tracking number now! You will need it to query your order updates on the <strong>Track Order</strong> page.</p>
-                    </div>
-                  )}
-                </div>
-
-                <div className="pt-6 flex gap-4">
-                  <Link to={user ? "/orders" : "/track"} className="bg-brand-navy hover:bg-brand-pink text-white rounded-xl px-8 py-3.5 font-bold text-xs uppercase tracking-widest transition-all">
-                    {user ? "View My Orders" : "Track Order"}
-                  </Link>
-                </div>
-              </div>
-            )}
+            {/* STEP 4: ORDER SUCCESS SCREEN (Moved to Modal) */}
 
           </div>
 
           {/* RIGHT: Order Summary */}
-          {step < 4 && (
+          {step < 5 && (
             <div className="bg-surface-offWhite border border-surface-light rounded-2xl p-6 h-max space-y-6">
               <h3 className="text-xs uppercase tracking-widest font-bold text-typography-primary border-b border-surface-light pb-2">Order Summary</h3>
               
@@ -1721,9 +1696,9 @@ export function CheckoutPage() {
                     <div className="flex flex-col gap-3">
                       <button 
                         type="button" 
-                        onClick={handlePlaceOrder}
+                        onClick={() => setShowConfirmModal(true)}
                         disabled={isPlacing} 
-                        className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-[#fb7a90] to-[#f16881] text-white rounded-xl py-3.5 font-bold text-xs uppercase tracking-widest hover:opacity-90 active:scale-[0.98] transition-all disabled:opacity-50 shadow-sm"
+                        className="w-full flex items-center justify-center gap-2 bg-brand-navy hover:bg-brand-navy/90 text-white rounded-xl py-3.5 font-bold text-xs uppercase tracking-widest active:scale-[0.98] transition-all disabled:opacity-50 shadow-sm"
                       >
                         {isPlacing ? (
                           <>
@@ -1750,7 +1725,7 @@ export function CheckoutPage() {
         </div>
 
         {/* Mobile Sticky Bottom Action Bar */}
-        {step < 4 && (
+        {step < 5 && (
           <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-surface-light p-4 z-40 flex flex-col gap-2 safe-bottom shadow-[0_-8px_30px_rgba(0,0,0,0.08)]">
             <div className="flex items-center justify-between text-xs font-bold px-1 mb-1">
               <span className="text-typography-muted uppercase tracking-wider text-[9px]">Total Order Amount:</span>
@@ -1789,13 +1764,91 @@ export function CheckoutPage() {
               {step === 3 && (
                 <button
                   type="button"
-                  onClick={handlePlaceOrder}
+                  onClick={() => setShowConfirmModal(true)}
                   disabled={isPlacing}
-                  className="flex-[2] flex items-center justify-center gap-2 bg-gradient-to-r from-[#fb7a90] to-[#f16881] text-white rounded-xl py-3.5 font-bold text-xs uppercase tracking-widest active:scale-[0.98] transition-all disabled:opacity-50 shadow-sm"
+                  className="flex-[2] flex items-center justify-center gap-2 bg-brand-navy hover:bg-brand-navy/90 text-white rounded-xl py-3.5 font-bold text-xs uppercase tracking-widest active:scale-[0.98] transition-all disabled:opacity-50 shadow-sm"
                 >
                   {isPlacing ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Confirm & Place'}
                 </button>
               )}
+            </div>
+          </div>
+        )}
+        {/* Confirmation Modal */}
+        {showConfirmModal && (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
+            <div className="bg-white rounded-3xl p-6 md:p-8 max-w-md w-full shadow-xl">
+              <div className="flex flex-col items-center text-center">
+                <div className="w-16 h-16 bg-surface-light rounded-full flex items-center justify-center mb-4">
+                  <ShoppingBag className="w-8 h-8 text-brand-navy" strokeWidth={1.5} />
+                </div>
+                <h3 className="text-xl font-bold font-serif text-typography-primary mb-2">Confirm Order</h3>
+                <p className="text-sm text-typography-muted mb-6">
+                  Are you sure you want to place this order? Please ensure all your details are correct.
+                </p>
+                <div className="flex flex-col w-full gap-3">
+                  <button
+                    onClick={() => {
+                      setShowConfirmModal(false);
+                      handlePlaceOrder();
+                    }}
+                    disabled={isPlacing}
+                    className="w-full flex items-center justify-center gap-2 bg-brand-navy hover:bg-brand-navy/90 text-white rounded-xl py-3.5 font-bold text-xs uppercase tracking-widest active:scale-[0.98] transition-all disabled:opacity-50"
+                  >
+                    {isPlacing ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Yes, Place Order'}
+                  </button>
+                  <button
+                    onClick={() => setShowConfirmModal(false)}
+                    disabled={isPlacing}
+                    className="w-full flex items-center justify-center bg-surface-light hover:bg-[#f3dada] text-typography-primary rounded-xl py-3.5 font-bold text-xs uppercase tracking-widest active:scale-[0.98] transition-all"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Success Modal (Step 4) */}
+        {step === 4 && (
+          <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
+            <div className="bg-white rounded-3xl p-6 md:p-8 max-w-md w-full shadow-xl flex flex-col items-center space-y-6 text-center">
+              <div className="w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-500">
+                <Check className="w-8 h-8" strokeWidth={2.5} />
+              </div>
+
+              <div>
+                <h2 className="text-2xl font-serif text-typography-primary">Order Placed Successfully!</h2>
+                <p className="text-xs text-typography-muted uppercase tracking-widest mt-1">Thank you for your business</p>
+              </div>
+
+              <div className="bg-surface-offWhite border border-surface-light p-6 rounded-2xl w-full space-y-4">
+                <span className="text-[10px] uppercase font-bold text-typography-muted tracking-widest block">Your Tracking Number</span>
+                <div className="flex items-center justify-center gap-3 bg-white p-4 rounded-xl border border-surface-light">
+                  <span className="font-mono text-lg font-bold text-typography-primary tracking-widest">{trackingCode}</span>
+                  <button onClick={copyToClipboard} className="text-brand-pink hover:text-brand-navy transition-all" title="Copy tracking code">
+                    <Clipboard className="w-5 h-5" />
+                  </button>
+                </div>
+                {user ? (
+                  <div className="text-left text-xs text-emerald-500 bg-emerald-50 border border-emerald-200/50 p-4 rounded-xl">
+                    <strong className="block text-[10px] uppercase tracking-wider">Order Linked to Profile:</strong>
+                    <p>Since you are logged in, this order has been saved to your profile history. You can view its progress anytime under your <strong>My Orders</strong> history page.</p>
+                  </div>
+                ) : (
+                  <div className="text-left text-xs text-red-500 bg-red-50 border border-red-200/50 p-4 rounded-xl space-y-1">
+                    <strong className="block text-[10px] uppercase tracking-wider">⚠️ CRITICAL REQUIREMENT:</strong>
+                    <p>Please write down, screenshot, or copy this tracking number now! You will need it to query your order updates on the <strong>Track Order</strong> page.</p>
+                  </div>
+                )}
+              </div>
+
+              <div className="pt-2 flex gap-4 w-full">
+                <Link to={user ? "/orders" : "/track"} className="flex-1 text-center bg-brand-navy hover:bg-brand-navy/90 text-white rounded-xl py-3.5 font-bold text-xs uppercase tracking-widest transition-all">
+                  {user ? "View My Orders" : "Track Order"}
+                </Link>
+              </div>
             </div>
           </div>
         )}

@@ -168,6 +168,7 @@ export interface Database {
            features: string[] | null;
            delivery_info: string | null;
           is_active: boolean;
+          is_new_arrival: boolean;
           leeway_enabled: boolean;
           leeway_down_payment_required: boolean;
           leeway_down_payment_amount: number;
@@ -195,6 +196,7 @@ export interface Database {
           features?: string[] | null;
           delivery_info?: string | null;
           is_active?: boolean;
+          is_new_arrival?: boolean;
           leeway_enabled?: boolean;
           leeway_down_payment_required?: boolean;
           leeway_down_payment_amount?: number;

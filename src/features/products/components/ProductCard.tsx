@@ -63,8 +63,15 @@ export function ProductCard({ product, index }: ProductCardProps) {
             <h3 className="text-xs font-semibold text-typography-primary line-clamp-1 flex-1 text-left">
               {product.title}
             </h3>
-            <div className="text-xs font-medium text-typography-primary whitespace-nowrap">
-              ₱{product.price.toLocaleString()}
+            <div className="flex flex-col items-end gap-0.5">
+              <div className="text-xs font-medium text-typography-primary whitespace-nowrap">
+                ₱{product.price.toLocaleString()}
+              </div>
+              {product.original_price && product.original_price > product.price && (
+                <div className="text-[10px] text-typography-muted line-through font-medium whitespace-nowrap">
+                  ₱{product.original_price.toLocaleString()}
+                </div>
+              )}
             </div>
           </div>
 

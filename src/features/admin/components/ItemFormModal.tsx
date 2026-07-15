@@ -42,6 +42,8 @@ export function ItemFormModal({ isOpen, onClose, onSave, item, tenantId }: ItemF
   const [hasMultipleSizes, setHasMultipleSizes] = useState(false);
   const [hasMultipleColors, setHasMultipleColors] = useState(false);
 
+  const [isNewArrival, setIsNewArrival] = useState(false);
+
   // Leeway states
   const [leewayEnabled, setLeewayEnabled] = useState(false);
   const [leewayDownPaymentRequired, setLeewayDownPaymentRequired] = useState(false);
@@ -71,6 +73,7 @@ export function ItemFormModal({ isOpen, onClose, onSave, item, tenantId }: ItemF
         setHasMultipleColors(!!item.colors && item.colors.length > 0);
         setFeatures(item.features || []);
         setDeliveryInfo(item.delivery_info || '');
+        setIsNewArrival((item as any).is_new_arrival || false);
         setLeewayEnabled((item as any).leeway_enabled || false);
         setLeewayDownPaymentRequired((item as any).leeway_down_payment_required || false);
         setLeewayDownPaymentAmount(Number((item as any).leeway_down_payment_amount || 0));
@@ -93,6 +96,7 @@ export function ItemFormModal({ isOpen, onClose, onSave, item, tenantId }: ItemF
         setHasMultipleColors(false);
         setFeatures([]);
         setDeliveryInfo('');
+        setIsNewArrival(false);
         setLeewayEnabled(false);
         setLeewayDownPaymentRequired(false);
         setLeewayDownPaymentAmount(0);
@@ -216,6 +220,7 @@ export function ItemFormModal({ isOpen, onClose, onSave, item, tenantId }: ItemF
         colors: hasMultipleColors ? colors : null,
         features: features.length > 0 ? features : null,
         delivery_info: deliveryInfo.trim() || null,
+        is_new_arrival: isNewArrival,
         leeway_enabled: leewayEnabled,
         leeway_down_payment_required: leewayDownPaymentRequired,
         leeway_down_payment_amount: leewayEnabled && leewayDownPaymentRequired ? leewayDownPaymentAmount : 0,
@@ -430,6 +435,19 @@ export function ItemFormModal({ isOpen, onClose, onSave, item, tenantId }: ItemF
                   className="w-4 h-4 rounded border-white/10 text-[#fb7a90] bg-transparent outline-none focus:ring-0 focus:ring-offset-0 cursor-pointer"
                 />
                 This product comes in multiple colors
+              </label>
+            </div>
+
+            {/* New Arrival Toggle */}
+            <div className="md:col-span-2 flex items-center gap-3 py-2 border-b border-white/5 pb-4">
+              <label className="flex items-center gap-3 text-sm text-white/80 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={isNewArrival}
+                  onChange={e => setIsNewArrival(e.target.checked)}
+                  className="w-4 h-4 rounded border-white/10 text-[#fb7a90] bg-transparent outline-none focus:ring-0 focus:ring-offset-0 cursor-pointer"
+                />
+                Mark as "New Arrival"
               </label>
             </div>
           </div>

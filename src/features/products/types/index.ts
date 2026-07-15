@@ -25,6 +25,7 @@ export interface Product {
   colors?: { name: string; hex: string }[] | null;
   features?: string[] | null;
   delivery_info?: string | null;
+  is_new_arrival?: boolean;
   leeway_enabled?: boolean;
   leeway_down_payment_required?: boolean;
   leeway_down_payment_amount?: number;

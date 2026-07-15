@@ -1,10 +1,16 @@
+import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Trash2 } from "lucide-react";
-import { useCart } from "./CartContext";
+import { X, Trash2, ChevronDown, ChevronUp } from "lucide-react";
+import { useCart, getCartItemKey } from "./CartContext";
 import { Link } from "react-router-dom";
 
 export function CartDrawer() {
-  const { isCartOpen, closeCart, items, removeFromCart, cartTotal } = useCart();
+  const { 
+    isCartOpen, closeCart, items, removeFromCart, 
+    selectedCartKeys, toggleCartItemSelection, selectedCartItems, selectedCartTotal 
+  } = useCart();
+  
+  const [isSummaryExpanded, setIsSummaryExpanded] = useState(false);
 
   const checkItemOutOfStock = (item: any) => {
     const hasSizes = item.sizes && item.sizes.length > 0;
@@ -56,8 +62,20 @@ export function CartDrawer() {
               ) : (
                 items.map((item) => {
                   const isOutOfStock = checkItemOutOfStock(item);
+                  const itemKey = getCartItemKey(item.id, item.selectedSize, item.selectedColor);
+                  const isSelected = selectedCartKeys.includes(itemKey);
+
                   return (
-                    <div key={`${item.id}-${item.selectedSize || ''}`} className={`flex gap-4 border-b border-surface-light pb-6 ${isOutOfStock ? 'opacity-70' : ''}`}>
+                    <div key={itemKey} className={`flex items-center gap-4 border border-surface-light p-4 bg-white ${isOutOfStock ? 'opacity-70' : ''}`}>
+                      <div className="flex-shrink-0 flex items-center justify-center">
+                        <input
+                          type="checkbox"
+                          disabled={isOutOfStock}
+                          checked={isSelected && !isOutOfStock}
+                          onChange={() => toggleCartItemSelection(itemKey)}
+                          className="w-4 h-4 rounded-none border-typography-primary text-brand-navy focus:ring-0 focus:ring-offset-0 cursor-pointer disabled:opacity-40"
+                        />
+                      </div>
                       <div className="w-24 h-32 bg-surface-offWhite flex-shrink-0 relative">
                         <img src={item.image_urls[0]} alt={item.title} className="w-full h-full object-cover mix-blend-multiply" />
                         {isOutOfStock && (
@@ -110,12 +128,57 @@ export function CartDrawer() {
                   </div>
                 )}
                 
+                {/* Selected Items Summary */}
+                {selectedCartItems.length > 0 && (
+                  <div className="bg-white border border-surface-light">
+                    <button 
+                      onClick={() => setIsSummaryExpanded(!isSummaryExpanded)}
+                      className="w-full flex items-center justify-between p-4 focus:outline-none"
+                    >
+                      <h4 className="text-[10px] uppercase font-bold tracking-widest text-typography-primary">
+                        Selected Items ({selectedCartItems.length})
+                      </h4>
+                      {isSummaryExpanded ? (
+                        <ChevronUp className="w-4 h-4 text-typography-muted" />
+                      ) : (
+                        <ChevronDown className="w-4 h-4 text-typography-muted" />
+                      )}
+                    </button>
+                    
+                    <AnimatePresence>
+                      {isSummaryExpanded && (
+                        <motion.div 
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: "auto", opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }}
+                          className="overflow-hidden"
+                        >
+                          <div className="px-4 pb-4 space-y-2 max-h-32 overflow-y-auto border-t border-surface-light mt-1 pt-3">
+                            {selectedCartItems.map(item => (
+                              <div key={getCartItemKey(item.id, item.selectedSize, item.selectedColor)} className="flex justify-between items-start text-xs text-typography-muted">
+                                <span className="flex-1 pr-2 truncate">
+                                  {item.quantity}x {item.title} 
+                                  {item.selectedSize && ` (${item.selectedSize})`}
+                                  {item.selectedColor && ` [${item.selectedColor}]`}
+                                </span>
+                                <span className="font-semibold text-typography-primary whitespace-nowrap">
+                                  PHP {(item.price * item.quantity).toLocaleString()}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                )}
+                
                 <div className="flex justify-between items-center">
-                  <span className="text-xs uppercase tracking-widest font-bold text-typography-primary">Subtotal</span>
-                  <span className="text-lg font-bold text-typography-primary">PHP {cartTotal.toLocaleString()}</span>
+                  <span className="text-xs uppercase tracking-widest font-bold text-typography-primary">Subtotal ({selectedCartItems.length} items)</span>
+                  <span className="text-lg font-bold text-typography-primary">PHP {selectedCartTotal.toLocaleString()}</span>
                 </div>
                 
-                {hasOutOfStockItems ? (
+                {hasOutOfStockItems || selectedCartItems.length === 0 ? (
                   <button 
                     disabled
                     className="w-full bg-surface-light text-typography-muted py-4 text-[10px] uppercase tracking-widest font-bold cursor-not-allowed text-center block border border-surface-light"
@@ -128,14 +191,9 @@ export function CartDrawer() {
                     onClick={closeCart}
                     className="w-full bg-brand-navy text-white py-4 text-[10px] uppercase tracking-widest font-bold hover:bg-brand-pink transition-colors text-center block"
                   >
-                    Proceed to Checkout
+                    Proceed to Checkout ({selectedCartItems.length})
                   </Link>
                 )}
-                <div className="mt-2 text-center">
-                  <Link to="/cart" onClick={closeCart} className="text-[10px] uppercase tracking-widest text-typography-muted hover:text-brand-navy border-b border-transparent hover:border-brand-navy pb-0.5 transition-all">
-                    View full bag
-                  </Link>
-                </div>
               </div>
             )}
           </motion.div>

@@ -7,15 +7,16 @@ interface ProductGridProps {
   hideHeader?: boolean;
   category?: string;
   searchQuery?: string;
+  onlyNewArrivals?: boolean;
 }
 
-export function ProductGrid({ hideHeader = false, category = "all", searchQuery }: ProductGridProps = {}) {
+export function ProductGrid({ hideHeader = false, category = "all", searchQuery, onlyNewArrivals = false }: ProductGridProps = {}) {
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     setIsLoading(true);
-    fetchProducts(category, searchQuery).then(data => {
+    fetchProducts(category, searchQuery, onlyNewArrivals).then(data => {
       setProducts(data);
       setIsLoading(false);
     }).catch(err => {

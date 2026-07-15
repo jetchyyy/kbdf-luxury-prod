@@ -1,8 +1,8 @@
 import { useEffect, useState, useRef } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { ShoppingBag, ChevronDown, Star, ArrowLeft } from 'lucide-react';
-import { fetchProductBySlug, fetchProducts } from './api';
-import type { Product } from './types';
+import { fetchProductBySlug, fetchProducts, fetchProductReviews } from './api';
+import type { Product, Review } from './types';
 import { useCart } from '../cart/CartContext';
 import { useNotification } from '../../core/context/NotificationContext';
 import { ReviewsSection } from './components/ReviewsSection';
@@ -22,6 +22,8 @@ export function ProductDetailPage() {
   
   const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
   const [recentProducts, setRecentProducts] = useState<Product[]>([]);
+  const [completeLookProduct, setCompleteLookProduct] = useState<Product | null>(null);
+  const [reviews, setReviews] = useState<Review[]>([]);
   const [activeImageIdx, setActiveImageIdx] = useState(0);
   
   // Accordion state
@@ -43,9 +45,22 @@ export function ProductDetailPage() {
             setSelectedColor(null);
           }
           if (data) {
-            fetchProducts().then(related => {
-              setRelatedProducts(related.filter(p => p.category_id === data.category_id && p.id !== data.id));
+            fetchProducts().then(allProducts => {
+              setRelatedProducts(allProducts.filter(p => p.category_id === data.category_id && p.id !== data.id));
+              
+              // Complete the look product
+              const accessories = allProducts.filter(p => p.category_id === 'accessories' && p.id !== data.id);
+              if (accessories.length > 0) {
+                setCompleteLookProduct(accessories[Math.floor(Math.random() * accessories.length)]);
+              } else {
+                const others = allProducts.filter(p => p.id !== data.id);
+                if (others.length > 0) {
+                  setCompleteLookProduct(others[Math.floor(Math.random() * others.length)]);
+                }
+              }
             }).catch(console.error);
+
+            fetchProductReviews(data.id).then(setReviews).catch(console.error);
 
             const recentSlugs: string[] = JSON.parse(localStorage.getItem('recentlyViewed') || '[]');
             const newRecentSlugs = [data.slug, ...recentSlugs.filter(s => s !== data.slug)].slice(0, 5);
@@ -234,7 +249,7 @@ export function ProductDetailPage() {
         <div className="flex flex-col lg:flex-row gap-12 lg:gap-16">
           
           {/* Left Column: Image Carousel with Zoom */}
-          <div className="w-full lg:w-[60%] flex flex-col-reverse md:flex-row gap-4">
+          <div className="w-full lg:w-[50%] flex flex-col-reverse md:flex-row gap-4 lg:pr-8">
             
             {/* Thumbnails (Vertical on desktop, horizontal on mobile) */}
             {displayImages.length > 1 && (
@@ -243,8 +258,8 @@ export function ProductDetailPage() {
                   <button
                     key={idx}
                     onClick={() => setActiveImageIdx(idx)}
-                    className={`aspect-[3/4] md:w-full shrink-0 w-20 overflow-hidden bg-[#f8f5f2] rounded-md transition-all ${
-                      activeImageIdx === idx ? 'ring-1 ring-brand-navy ring-offset-2 opacity-100' : 'opacity-60 hover:opacity-100'
+                    className={`aspect-[3/4] md:w-full shrink-0 w-20 overflow-hidden bg-[#f8f5f2] rounded-md transition-all border ${
+                      activeImageIdx === idx ? 'border-brand-navy opacity-100' : 'border-surface-light opacity-60 hover:opacity-100'
                     }`}
                   >
                     <img
@@ -258,7 +273,7 @@ export function ProductDetailPage() {
             )}
 
             {/* Main Image */}
-            <div className="w-full flex-1 relative aspect-[4/5] bg-[#f8f5f2] rounded-md">
+            <div className="w-full flex-1 relative aspect-[4/5] bg-[#f8f5f2] rounded-md border border-surface-light overflow-hidden">
               <ImageZoom src={displayImages[activeImageIdx]} alt={`${product.title} view`} />
               
               {/* Carousel Arrows (Mobile mostly, but useful everywhere) */}
@@ -283,7 +298,7 @@ export function ProductDetailPage() {
           </div>
 
           {/* Right Column: Details & Actions */}
-          <div className="w-full lg:w-[40%] flex flex-col py-4 pr-4 lg:pr-8">
+          <div className="w-full lg:w-[50%] flex flex-col py-4 max-w-xl">
             <div className="space-y-8">
               
               {/* Header */}
@@ -291,17 +306,39 @@ export function ProductDetailPage() {
                 <h1 className="text-2xl font-serif text-typography-primary leading-tight mb-2">
                   {product.title}
                 </h1>
-                <div className="flex items-center gap-4 mb-4">
-                  <div className="flex text-brand-navy">
-                    {[1, 2, 3, 4, 5].map((s) => (
-                      <Star key={s} className="w-3.5 h-3.5 fill-current" />
-                    ))}
+                
+                {reviews.length > 0 ? (
+                  <div className="flex items-center gap-4 mb-4">
+                    <div className="flex text-brand-navy">
+                      {[1, 2, 3, 4, 5].map((s) => (
+                        <Star key={s} className={`w-3.5 h-3.5 ${s <= Math.round(reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length) ? 'fill-current' : 'text-surface-light fill-current'}`} />
+                      ))}
+                    </div>
+                    <span className="text-xs text-typography-muted font-medium">
+                      {(reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length).toFixed(2)} ({reviews.length} {reviews.length === 1 ? 'Review' : 'Reviews'})
+                    </span>
                   </div>
-                  <span className="text-xs text-typography-muted font-medium">4.89 (151 Reviews)</span>
+                ) : (
+                  <div className="flex items-center gap-4 mb-4">
+                    <div className="flex text-brand-navy">
+                      {[1, 2, 3, 4, 5].map((s) => (
+                        <Star key={s} className="w-3.5 h-3.5 text-surface-light fill-current" />
+                      ))}
+                    </div>
+                    <span className="text-xs text-typography-muted font-medium">No reviews yet</span>
+                  </div>
+                )}
+
+                <div className="flex items-baseline gap-3">
+                  <p className="text-xl font-bold text-typography-primary">
+                    ₱ {product.price.toLocaleString()}
+                  </p>
+                  {product.original_price && product.original_price > product.price && (
+                    <p className="text-sm text-typography-muted line-through font-medium">
+                      ₱ {product.original_price.toLocaleString()}
+                    </p>
+                  )}
                 </div>
-                <p className="text-xl font-bold text-typography-primary">
-                  ₱ {product.price.toLocaleString()}
-                </p>
                 <p className="text-xs text-typography-muted mt-2">
                   Tax included.
                 </p>
@@ -392,11 +429,11 @@ export function ProductDetailPage() {
                 >
                   <ShoppingBag className="w-4 h-4" /> {maxAvailable <= 0 ? 'Out of Stock' : 'Add to Bag'}
                 </button>
-                <div className="mt-4 flex gap-2 justify-center">
+                 <div className="mt-4 flex gap-2 justify-center">
                    <p className="text-[10px] text-typography-muted tracking-wide uppercase text-center flex items-center gap-1">
-                      <Star className="w-3 h-3" /> Handcrafted <span className="mx-1">|</span> Premium Quality <span className="mx-1">|</span> Free Returns
+                      <Star className="w-3 h-3" /> Handcrafted <span className="mx-1">|</span> Premium Quality <span className="mx-1">|</span> Final Sale
                    </p>
-                </div>
+                 </div>
               </div>
 
               {/* Accordions */}
@@ -452,24 +489,29 @@ export function ProductDetailPage() {
               </div>
 
               {/* Complete the look */}
-              <div className="pt-6">
-                 <h3 className="text-sm font-bold font-serif text-typography-primary mb-4">Complete the look</h3>
-                 <div className="flex gap-4 border border-surface-light p-4 bg-white">
-                    <div className="w-20 h-20 bg-surface-offWhite shrink-0">
-                       <img src="/placeholder.png" alt="Wallet" className="w-full h-full object-cover mix-blend-multiply" />
-                    </div>
-                    <div className="flex flex-col justify-center flex-1">
-                       <p className="text-[10px] text-brand-peach font-bold uppercase tracking-widest mb-1">Accessories</p>
-                       <p className="text-sm font-bold text-typography-primary">Quilted Long Wallet</p>
-                       <p className="text-sm font-bold text-brand-navy mt-1">₱ 899</p>
-                    </div>
-                    <div className="flex items-center">
-                       <button className="w-8 h-8 flex items-center justify-center border border-typography-primary text-typography-primary hover:bg-brand-navy hover:text-white hover:border-brand-navy transition-colors">
-                         +
-                       </button>
-                    </div>
-                 </div>
-              </div>
+              {completeLookProduct && (
+                <div className="pt-6">
+                   <h3 className="text-sm font-bold font-serif text-typography-primary mb-4">Complete the look</h3>
+                   <div 
+                     className="flex gap-4 border border-surface-light p-4 bg-white cursor-pointer hover:border-brand-navy transition-colors"
+                     onClick={() => navigate(`/product/${completeLookProduct.slug}`)}
+                   >
+                      <div className="w-20 h-20 bg-surface-offWhite shrink-0">
+                         <img src={completeLookProduct.image_urls?.[0] || '/placeholder.png'} alt={completeLookProduct.title} className="w-full h-full object-cover mix-blend-multiply" />
+                      </div>
+                      <div className="flex flex-col justify-center flex-1">
+                         <p className="text-[10px] text-brand-peach font-bold uppercase tracking-widest mb-1">{completeLookProduct.category_id}</p>
+                         <p className="text-sm font-bold text-typography-primary line-clamp-1">{completeLookProduct.title}</p>
+                         <p className="text-sm font-bold text-brand-navy mt-1">₱ {completeLookProduct.price.toLocaleString()}</p>
+                      </div>
+                      <div className="flex items-center">
+                         <button className="w-8 h-8 flex items-center justify-center border border-typography-primary text-typography-primary hover:bg-brand-navy hover:text-white hover:border-brand-navy transition-colors">
+                           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 5v14m-7-7h14"/></svg>
+                         </button>
+                      </div>
+                   </div>
+                </div>
+              )}
 
             </div>
           </div>

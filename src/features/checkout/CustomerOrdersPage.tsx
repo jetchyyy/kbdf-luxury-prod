@@ -6,7 +6,7 @@ import { supabase } from "../../lib/supabase/supabaseClient";
 import { 
   Check, Calendar, ShoppingBag, MapPin, CreditCard, ChevronDown, 
   ChevronUp, AlertCircle, Loader2, Coins, ArrowUpRight, Upload, X, CheckCircle,
-  Heart, Trash2, Info, User
+  Heart, Info, User
 } from "lucide-react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useCart } from "../cart/CartContext";
@@ -320,19 +320,6 @@ export function CustomerOrdersPage() {
   const [selectedFavSizes, setSelectedFavSizes] = useState<{ [itemId: string]: string }>({});
   const [isCheckingOutBulk, setIsCheckingOutBulk] = useState(false);
 
-  const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.checked) {
-      const inStockFavs = favorites.filter(fav => {
-        const hasSizes = fav.product.sizes && fav.product.sizes.length > 0;
-        return fav.product.stock_status !== 'out_of_stock' && 
-          fav.product.stock_quantity !== 0 && 
-          (!hasSizes || (fav.product.sizes && fav.product.sizes.some(s => s.quantity > 0)));
-      });
-      setSelectedFavIds(inStockFavs.map(fav => fav.item_id));
-    } else {
-      setSelectedFavIds([]);
-    }
-  };
 
   const handleToggleSelect = (itemId: string) => {
     setSelectedFavIds(prev => 
@@ -850,134 +837,139 @@ export function CustomerOrdersPage() {
                           </div>
                           {isExpanded ? <ChevronUp className="w-5 h-5 text-typography-muted" /> : <ChevronDown className="w-5 h-5 text-typography-muted" />}
                         </div>
-                      </button>
-
-                      {/* Expanded View */}
+                      </button>                      {/* Expanded View */}
                       {isExpanded && (
-                        <div className="border-t border-surface-light p-6 bg-white space-y-8 animate-fadeIn">
+                        <div className="border-t border-surface-light p-6 md:p-8 bg-white space-y-10 animate-fadeIn">
                           
                           {order.status === 'cancelled' ? (
-                            <div className="bg-red-50 border border-red-200 text-red-500 rounded-xl p-4 text-center text-xs">
+                            <div className="bg-red-50/50 border border-red-100 text-red-600 rounded-none p-4 text-center text-xs tracking-wide">
                               This order was cancelled. Please coordinate with administrators.
                             </div>
                           ) : (
-                            <div className="flex flex-col md:flex-row justify-between items-center relative gap-6 py-2 border-b border-surface-light pb-6">
-                              <div className="absolute top-1/2 left-0 right-0 h-0.5 bg-surface-light -translate-y-1/2 hidden md:block z-0" />
-                              {getStepsForOrder(order).map((step, idx) => {
-                                const isCompleted = idx <= activeIndex;
-                                const isCurrent = idx === activeIndex;
+                            <div className="relative pt-4 pb-6 px-1 md:px-0">
+                              {/* Horizontal line */}
+                              <div className="absolute top-7 md:top-8 left-[10%] right-[10%] h-[1px] bg-surface-light z-0" />
+                              
+                              <div className="flex flex-row justify-between items-start relative w-full gap-1 md:gap-0">
+                                {getStepsForOrder(order).map((step, idx) => {
+                                  const isCompleted = idx <= activeIndex;
+                                  const isCurrent = idx === activeIndex;
 
-                                return (
-                                  <div key={step.key} className="flex flex-col items-center text-center relative z-10 w-full md:w-auto">
-                                    <div className={`w-7 h-7 rounded-full border-2 flex items-center justify-center transition-all ${
-                                      isCompleted 
-                                        ? 'bg-brand-pink border-brand-pink text-white shadow-md' 
-                                        : 'bg-white border-surface-light text-typography-muted'
-                                    }`}>
-                                      {isCompleted ? <Check className="w-3.5 h-3.5" strokeWidth={3} /> : idx + 1}
+                                  return (
+                                    <div key={step.key} className="flex flex-col items-center text-center relative z-10 flex-1 w-0">
+                                      <div className={`w-6 h-6 md:w-8 md:h-8 rounded-full border flex items-center justify-center transition-all bg-white mb-2 md:mb-3 shrink-0 ${
+                                        isCompleted 
+                                          ? 'border-brand-navy text-brand-navy shadow-sm' 
+                                          : 'border-surface-light text-typography-muted'
+                                      }`}>
+                                        {isCompleted ? <Check className="w-3 h-3 md:w-4 md:h-4" strokeWidth={2.5} /> : <span className="text-[10px] md:text-xs font-medium">{idx + 1}</span>}
+                                      </div>
+                                      <span className={`text-[7px] md:text-[9px] uppercase tracking-wider md:tracking-widest leading-tight ${
+                                        isCurrent ? 'text-brand-navy font-bold' : 'text-typography-muted font-medium'
+                                      }`}>
+                                        {step.label}
+                                      </span>
                                     </div>
-                                    <span className={`text-[9px] uppercase font-bold tracking-wider mt-1.5 ${
-                                      isCurrent ? 'text-brand-pink font-extrabold' : 'text-typography-muted'
-                                    }`}>
-                                      {step.label}
-                                    </span>
-                                  </div>
-                                );
-                              })}
+                                  );
+                                })}
+                              </div>
                             </div>
                           )}
 
                           {order.notes && (
-                            <div className="bg-brand-pink/5 border border-brand-pink/20 rounded-2xl p-4 text-xs text-typography-primary flex flex-col gap-1.5">
-                              <span className="text-[9px] uppercase font-bold text-brand-pink tracking-widest flex items-center gap-1">
+                            <div className="bg-brand-navy/5 border border-brand-navy/10 rounded-none p-5 text-xs text-typography-primary flex flex-col gap-2">
+                              <span className="text-[9px] uppercase font-bold text-brand-navy tracking-widest flex items-center gap-1.5">
                                 <Info className="w-3.5 h-3.5" /> Store Update Notes
                               </span>
                               <p className="font-medium text-typography-primary leading-relaxed whitespace-pre-wrap">{order.notes}</p>
                             </div>
                           )}
 
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-xs text-typography-primary">
+                          <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-12 gap-y-10 text-xs text-typography-primary border-t border-surface-light pt-8">
                             
                             {/* Address details */}
-                            <div className="space-y-3">
-                              <h4 className="text-[10px] uppercase font-bold tracking-widest text-typography-muted border-b border-surface-light pb-1 flex items-center gap-1.5">
-                                <MapPin className="w-4 h-4 text-brand-pink" /> Delivery Details
+                            <div className="space-y-4">
+                              <h4 className="text-[10px] uppercase font-bold tracking-widest text-brand-navy border-b border-surface-light pb-2 flex items-center gap-2">
+                                <MapPin className="w-3.5 h-3.5" strokeWidth={1.5} /> Delivery Details
                               </h4>
-                              <div>
-                                <p className="font-semibold capitalize font-serif">
+                              <div className="bg-surface-offWhite/50 p-5 border border-surface-light/50">
+                                <p className="font-serif text-sm text-typography-primary mb-3">
                                   {order.delivery_method?.toLowerCase().trim() === 'pickup' ? 'Store Pick Up' : `${order.delivery_method} Delivery`}
                                 </p>
                                 {order.delivery_method?.toLowerCase().trim() === 'pickup' ? (
-                                  <div className="text-typography-muted space-y-1 mt-2 bg-surface-offWhite p-3 rounded-2xl border border-surface-light">
-                                    <strong className="block text-[9px] uppercase tracking-wider text-typography-muted">Pick Up Location Address:</strong>
-                                    <p className="font-sans text-typography-primary">
-                                      {order.pickup_location || (tenant?.store_settings as any)?.address || "123 Store Street, City"}
+                                  <div className="space-y-1">
+                                    <strong className="block text-[9px] uppercase tracking-[0.2em] text-typography-muted mb-2">Pick Up Location Address:</strong>
+                                    <p className="font-sans leading-relaxed text-typography-primary">
+                                      {order.pickup_location || (tenant?.store_settings as any)?.address || "123 Luxury Avenue, Metro Manila, Philippines"}
                                     </p>
-                                    <p className="text-[10px] text-brand-pink font-semibold mt-1">Please present your tracking ID to the store staff when claiming.</p>
+                                    <p className="text-[10px] text-brand-navy mt-4 italic font-medium">Please present your tracking ID to the store staff when claiming.</p>
                                   </div>
                                 ) : (
-                                  <div className="text-typography-muted space-y-0.5 mt-1">
-                                    <p>{order.shipping_street}</p>
+                                  <div className="space-y-1 text-typography-muted leading-relaxed">
+                                    <p className="text-typography-primary font-medium">{order.shipping_street}</p>
                                     <p>{order.shipping_barangay}, {order.shipping_city}</p>
                                     <p>{order.shipping_province}</p>
-                                    {order.shipping_landmark && <p className="italic text-typography-primary bg-surface-offWhite p-2 rounded mt-1.5">Landmark: {order.shipping_landmark}</p>}
+                                    {order.shipping_landmark && <p className="mt-3 text-typography-primary italic bg-surface-light/30 px-3 py-2">Landmark: {order.shipping_landmark}</p>}
                                   </div>
                                 )}
                               </div>
                             </div>
 
-                            {/* Payment Receipt */}
-                            <div className="space-y-3 flex flex-col justify-between">
-                              <div className="space-y-3">
-                                <h4 className="text-[10px] uppercase font-bold tracking-widest text-typography-muted border-b border-surface-light pb-1 flex items-center gap-1.5">
-                                  <CreditCard className="w-4 h-4 text-brand-pink" /> Payment Route
-                                </h4>
-                                <p className="font-semibold uppercase">{order.payment_method_type.replace('_', ' ')}</p>
-                                {order.proof_of_payment_url && (
-                                  <div className="w-20 h-20 bg-surface-offWhite border border-surface-light rounded overflow-hidden mt-1">
-                                    <img src={order.proof_of_payment_url} alt="Proof" className="w-full h-full object-cover" />
+                            {/* Payment Route */}
+                            <div className="space-y-4">
+                              <h4 className="text-[10px] uppercase font-bold tracking-widest text-brand-navy border-b border-surface-light pb-2 flex items-center gap-2">
+                                <CreditCard className="w-3.5 h-3.5" strokeWidth={1.5} /> Payment Route
+                              </h4>
+                              <div className="bg-surface-offWhite/50 p-5 border border-surface-light/50 flex flex-col justify-center h-[calc(100%-2.25rem)]">
+                                <p className="font-serif text-sm text-typography-primary uppercase mb-4">{order.payment_method_type.replace('_', ' ')}</p>
+                                
+                                {order.status === 'pending_verification' ? (
+                                  <div className="space-y-3">
+                                    <label className="text-[9px] font-bold uppercase tracking-widest text-typography-muted block">
+                                      {order.proof_of_payment_url ? 'Update payment receipt photo' : 'Upload payment receipt photo'}
+                                    </label>
+                                    <div className="flex flex-col sm:flex-row gap-3">
+                                      <div className="flex-1">
+                                        <ImageUploadInput
+                                          value={receiptUrlMap[order.id] || ""}
+                                          onChange={url => setReceiptUrlMap(prev => ({ ...prev, [order.id]: url }))}
+                                          tenantId={order.tenant_id}
+                                          placeholder="Select receipt file..."
+                                          theme="light"
+                                        />
+                                      </div>
+                                      <button 
+                                        onClick={() => handleUpdateReceipt(order.id)}
+                                        disabled={receiptUrlMap[order.id] === order.proof_of_payment_url}
+                                        className="bg-brand-navy hover:bg-brand-navy/90 text-white px-6 py-3 text-[10px] font-bold uppercase tracking-[0.2em] transition-all whitespace-nowrap self-stretch sm:self-start disabled:opacity-50"
+                                      >
+                                        Save
+                                      </button>
+                                    </div>
+                                  </div>
+                                ) : order.proof_of_payment_url && (
+                                  <div className="w-24 h-24 bg-surface-offWhite border border-surface-light p-1">
+                                    <img src={order.proof_of_payment_url} alt="Proof" className="w-full h-full object-cover mix-blend-multiply" />
                                   </div>
                                 )}
                               </div>
-
-                              {/* Upload receipt triggers */}
-                              {order.status === 'pending_verification' && (
-                                <div className="space-y-2 pt-2">
-                                  <label className="text-[9px] font-bold uppercase text-typography-muted block">
-                                    {order.proof_of_payment_url ? 'Update payment receipt photo' : 'Upload payment receipt photo'}
-                                  </label>
-                                  <div className="flex gap-2">
-                                    <ImageUploadInput
-                                      value={receiptUrlMap[order.id] || ""}
-                                      onChange={url => setReceiptUrlMap(prev => ({ ...prev, [order.id]: url }))}
-                                      tenantId={order.tenant_id}
-                                      placeholder="Select receipt file..."
-                                    />
-                                    <button 
-                                      onClick={() => handleUpdateReceipt(order.id)}
-                                      disabled={receiptUrlMap[order.id] === order.proof_of_payment_url}
-                                      className="bg-brand-navy hover:bg-brand-pink text-white rounded-xl px-4 py-2 text-[10px] font-bold uppercase tracking-wider disabled:opacity-50 transition-all whitespace-nowrap self-start"
-                                    >
-                                      Save
-                                    </button>
-                                  </div>
-                                </div>
-                              )}
                             </div>
 
                             {/* Items list */}
-                            <div className="md:col-span-2 space-y-3 pt-2">
-                              <h4 className="text-[10px] uppercase font-bold tracking-widest text-typography-muted border-b border-surface-light pb-1">
+                            <div className="lg:col-span-2 space-y-4 mt-2">
+                              <h4 className="text-[10px] uppercase font-bold tracking-widest text-typography-muted border-b border-surface-light pb-2">
                                 Items Purchased
                               </h4>
-                              <div className="divide-y divide-surface-light">
+                              <div className="divide-y divide-surface-light/60">
                                 {order.order_items.map(item => (
-                                  <div key={item.id} className="flex justify-between py-2 items-center text-xs">
-                                    <div>
-                                      <p className="font-semibold">{item.title}</p>
-                                      <p className="text-typography-muted">Qty: {item.quantity}</p>
+                                  <div key={item.id} className="flex justify-between items-center py-4">
+                                    <div className="space-y-1.5">
+                                      <p className="font-serif text-sm text-typography-primary">{item.title}</p>
+                                      <p className="text-[10px] text-typography-muted uppercase tracking-[0.15em]">Qty: {item.quantity}</p>
                                     </div>
-                                    <span className="font-bold">{currencySymbol}{(item.price * item.quantity).toLocaleString()}</span>
+                                    <span className="font-bold font-sans text-sm text-brand-navy">
+                                      {currencySymbol}{(item.price * item.quantity).toLocaleString()}
+                                    </span>
                                   </div>
                                 ))}
                               </div>
@@ -1289,9 +1281,9 @@ export function CustomerOrdersPage() {
                 <Link to="/shop" className="bg-brand-navy hover:bg-brand-pink text-white px-8 py-3.5 text-[10px] uppercase tracking-widest font-bold transition-all rounded-xl inline-block">Go Shopping</Link>
               </div>
             ) : (
-              <div className="border border-surface-light bg-surface-white rounded-3xl overflow-hidden shadow-sm">
+              <div className="bg-white border border-surface-light/50">
                 {/* Bulk Actions Header */}
-                <div className="px-6 py-4 bg-surface-offWhite border-b border-surface-light flex items-center justify-between flex-wrap gap-4">
+                <div className="px-6 py-5 border-b border-surface-light flex items-center justify-between flex-wrap gap-4">
                   <label className="flex items-center gap-3 text-xs font-bold uppercase text-typography-primary cursor-pointer select-none">
                     <input
                       type="checkbox"
@@ -1299,8 +1291,7 @@ export function CustomerOrdersPage() {
                         const hasSizes = f.product.sizes && f.product.sizes.length > 0;
                         return f.product.stock_status !== 'out_of_stock' && f.product.stock_quantity !== 0 && (!hasSizes || (f.product.sizes && f.product.sizes.some(s => s.quantity > 0)));
                       }).length}
-                      onChange={handleSelectAll}
-                      className="w-4 h-4 rounded border-surface-light text-brand-pink focus:ring-0 focus:ring-offset-0 cursor-pointer"
+                      className="w-4 h-4 rounded-none border-typography-primary text-brand-navy focus:ring-0 focus:ring-offset-0 cursor-pointer transition-colors"
                     />
                     Select All In-Stock
                   </label>
@@ -1318,7 +1309,7 @@ export function CustomerOrdersPage() {
                     const selectedSize = selectedFavSizes[fav.item_id] || "";
 
                     return (
-                      <div key={fav.id} className="p-6 flex items-center gap-4 md:gap-6 flex-wrap md:flex-nowrap hover:bg-surface-offWhite/30 transition-colors">
+                      <div key={fav.id} className="p-6 flex items-start md:items-center gap-6 flex-wrap md:flex-nowrap hover:bg-surface-offWhite/30 transition-colors group">
                         {/* Checkbox */}
                         <div className="flex-shrink-0">
                           <input
@@ -1326,12 +1317,12 @@ export function CustomerOrdersPage() {
                             disabled={isItemOutOfStock}
                             checked={selectedFavIds.includes(fav.item_id)}
                             onChange={() => handleToggleSelect(fav.item_id)}
-                            className="w-4 h-4 rounded border-surface-light text-brand-pink focus:ring-0 focus:ring-offset-0 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                            className="w-4 h-4 rounded-none border-typography-primary text-brand-navy focus:ring-0 focus:ring-offset-0 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed mt-2 md:mt-0"
                           />
                         </div>
 
                         {/* Image */}
-                        <div className="w-20 h-20 md:w-24 md:h-24 bg-surface-offWhite border border-surface-light rounded-2xl overflow-hidden flex-shrink-0">
+                        <div className="w-24 h-32 md:w-28 md:h-36 bg-[#f8f5f2] shrink-0">
                           <img
                             src={fav.product.image_urls[0] || "/placeholder.jpg"}
                             alt={fav.product.title}
@@ -1340,20 +1331,20 @@ export function CustomerOrdersPage() {
                         </div>
 
                         {/* Title, Brand, Status */}
-                        <div className="flex-1 min-w-[200px] space-y-1">
-                          <p className="text-[10px] uppercase font-bold text-brand-pink tracking-widest">{fav.product.brand}</p>
-                          <h4 className="font-serif text-sm text-typography-primary hover:text-brand-pink transition-colors">
+                        <div className="flex-1 min-w-[200px] space-y-2">
+                          <p className="text-[10px] uppercase font-bold text-typography-muted tracking-[0.2em]">{fav.product.brand}</p>
+                          <h4 className="font-serif text-base text-typography-primary group-hover:text-brand-navy transition-colors">
                             <Link to={`/product/${fav.product.slug}`}>{fav.product.title}</Link>
                           </h4>
                           
                           {/* Stock Status Badge */}
-                          <div className="pt-1">
+                          <div className="pt-2">
                             {isItemOutOfStock ? (
-                              <span className="inline-block bg-red-500/10 text-red-500 border border-red-500/20 px-2 py-0.5 text-[9px] uppercase font-semibold rounded">
+                              <span className="text-[10px] uppercase tracking-[0.2em] font-bold text-red-500">
                                 Out of Stock
                               </span>
                             ) : (
-                              <span className="inline-block bg-green-500/10 text-green-600 border border-green-500/20 px-2 py-0.5 text-[9px] uppercase font-semibold rounded">
+                              <span className="text-[10px] uppercase tracking-[0.2em] font-bold text-typography-muted">
                                 In Stock
                               </span>
                             )}
@@ -1364,13 +1355,14 @@ export function CustomerOrdersPage() {
                         <div className="flex-shrink-0 w-full md:w-auto flex flex-col gap-1">
                           {hasSizes ? (
                             <>
-                              <label className="text-[9px] font-bold uppercase text-typography-muted font-mono tracking-wider">Choose Size:</label>
-                              <select
-                                disabled={isItemOutOfStock}
-                                value={selectedSize}
-                                onChange={(e) => handleSizeChange(fav.item_id, e.target.value)}
-                                className="bg-surface-offWhite border border-surface-light rounded-xl px-3 py-2 text-xs text-typography-primary outline-none focus:border-brand-pink disabled:opacity-50 min-w-[120px]"
-                              >
+                              <label className="text-[10px] font-bold uppercase text-typography-primary tracking-widest mb-1">Size</label>
+                              <div className="relative">
+                                <select
+                                  disabled={isItemOutOfStock}
+                                  value={selectedSize}
+                                  onChange={(e) => handleSizeChange(fav.item_id, e.target.value)}
+                                  className="appearance-none bg-transparent border border-typography-primary rounded-none px-4 py-2.5 text-xs text-typography-primary outline-none focus:border-brand-navy focus:ring-1 focus:ring-brand-navy disabled:opacity-30 disabled:border-surface-light min-w-[140px] transition-all cursor-pointer"
+                                >
                                 <option value="">Select Size...</option>
                                 {fav.product.sizes
                                   ?.filter(s => s.quantity > 0)
@@ -1379,33 +1371,37 @@ export function CustomerOrdersPage() {
                                       {s.size} ({s.quantity} left)
                                     </option>
                                   ))}
-                              </select>
+                                </select>
+                                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-typography-primary">
+                                  <svg className="w-3 h-3 fill-current" viewBox="0 0 20 20"><path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" /></svg>
+                                </div>
+                              </div>
                             </>
                           ) : (
-                            <span className="text-[10px] font-semibold text-typography-muted bg-surface-offWhite px-3 py-1.5 rounded-lg border border-surface-light">One Size</span>
+                            <span className="text-[10px] uppercase font-bold text-typography-primary tracking-widest">One Size</span>
                           )}
                         </div>
 
                         {/* Price */}
-                        <div className="flex-shrink-0 text-right min-w-[100px]">
-                          <p className="text-sm font-bold text-typography-primary">
+                        <div className="flex-shrink-0 text-right min-w-[100px] flex flex-col md:items-end justify-center">
+                          <p className="text-sm font-bold text-typography-primary tracking-wider">
                             {currencySymbol}{fav.product.price.toLocaleString()}
                           </p>
                           {fav.product.original_price && (
-                            <p className="text-[10px] text-typography-muted line-through">
+                            <p className="text-[10px] text-typography-muted line-through tracking-wider mt-1">
                               {currencySymbol}{fav.product.original_price.toLocaleString()}
                             </p>
                           )}
                         </div>
 
                         {/* Delete button */}
-                        <div className="flex-shrink-0">
+                        <div className="flex-shrink-0 md:ml-4">
                           <button
                             onClick={() => toggleFavorite(fav.product)}
-                            className="p-2 text-typography-muted hover:text-red-500 hover:bg-red-500/5 rounded-xl transition-all"
+                            className="text-[10px] uppercase font-bold tracking-widest text-typography-muted hover:text-typography-primary transition-colors underline underline-offset-4 decoration-typography-muted/30 hover:decoration-typography-primary"
                             title="Remove from favorites"
                           >
-                            <Trash2 className="w-4 h-4" />
+                            Remove
                           </button>
                         </div>
                       </div>
@@ -1414,18 +1410,18 @@ export function CustomerOrdersPage() {
                 </div>
 
                 {/* Bulk Actions Footer */}
-                <div className="px-6 py-4 bg-surface-offWhite border-t border-surface-light flex items-center justify-between flex-wrap gap-4">
-                  <span className="text-xs font-semibold text-typography-muted">
+                <div className="px-6 py-5 bg-white border-t border-surface-light flex flex-col md:flex-row items-center justify-between gap-6">
+                  <span className="text-[10px] uppercase font-bold tracking-widest text-typography-muted">
                     {selectedFavIds.length} of {favorites.length} items selected
                   </span>
                   
                   <button
                     onClick={handleCheckoutSelected}
                     disabled={selectedFavIds.length === 0 || isCheckingOutBulk}
-                    className="px-6 py-2.5 bg-brand-navy hover:bg-brand-pink text-white disabled:bg-typography-muted/20 disabled:text-typography-muted/40 disabled:cursor-not-allowed rounded-xl text-xs uppercase font-bold tracking-widest transition-all flex items-center gap-2 shadow-sm"
+                    className="w-full md:w-auto px-10 py-3.5 bg-brand-navy hover:bg-brand-navy/90 text-white disabled:bg-surface-light disabled:text-typography-muted disabled:cursor-not-allowed rounded-none text-xs uppercase font-bold tracking-[0.2em] transition-all flex items-center justify-center gap-3"
                   >
-                    {isCheckingOutBulk ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ShoppingBag className="w-3.5 h-3.5" />}
-                    {isCheckingOutBulk ? 'Preparing Checkout...' : `Checkout Selected (${selectedFavIds.length})`}
+                    {isCheckingOutBulk ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShoppingBag className="w-4 h-4" />}
+                    {isCheckingOutBulk ? 'Preparing...' : `Checkout Selected (${selectedFavIds.length})`}
                   </button>
                 </div>
               </div>

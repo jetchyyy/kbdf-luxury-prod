@@ -44,7 +44,7 @@ const MOCK_PRODUCTS: Product[] = [
   }
 ];
 
-export async function fetchProducts(categorySlug?: string, searchQuery?: string): Promise<Product[]> {
+export async function fetchProducts(categorySlug?: string, searchQuery?: string, onlyNewArrivals?: boolean): Promise<Product[]> {
   if (!TENANT_ID || TENANT_ID === 'will-be-set-after-migration-seed') {
     // If tenant variables are placeholders, return mock products gracefully
     console.log('Using mock products (tenant id is unset)');
@@ -65,6 +65,10 @@ export async function fetchProducts(categorySlug?: string, searchQuery?: string)
       .select('*, categories(slug)')
       .eq('tenant_id', TENANT_ID)
       .eq('is_active', true);
+
+    if (onlyNewArrivals) {
+      query = query.eq('is_new_arrival', true);
+    }
 
     if (categorySlug && categorySlug !== 'all') {
       // Filter by category slug relation
@@ -106,6 +110,7 @@ export async function fetchProducts(categorySlug?: string, searchQuery?: string)
       colors: item.colors || [],
       features: item.features || [],
       delivery_info: item.delivery_info || null,
+      is_new_arrival: item.is_new_arrival || false,
       leeway_enabled: item.leeway_enabled || false,
       leeway_down_payment_required: item.leeway_down_payment_required || false,
       leeway_down_payment_amount: item.leeway_down_payment_amount ? Number(item.leeway_down_payment_amount) : 0,
@@ -150,6 +155,7 @@ export async function fetchProductBySlug(slug: string): Promise<Product | null> 
       colors: data.colors || [],
       features: data.features || [],
       delivery_info: data.delivery_info || null,
+      is_new_arrival: data.is_new_arrival || false,
       leeway_enabled: data.leeway_enabled || false,
       leeway_down_payment_required: data.leeway_down_payment_required || false,
       leeway_down_payment_amount: data.leeway_down_payment_amount ? Number(data.leeway_down_payment_amount) : 0,

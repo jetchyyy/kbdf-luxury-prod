@@ -4,6 +4,7 @@ import { ProductGrid } from "../products/components/ProductGrid";
 import { Link } from "react-router-dom";
 import { useTenant } from "../../core/context/TenantContext";
 import { fetchCategories } from "../admin/api/categories";
+import { ArrowUp } from "lucide-react";
 
 // Fallback Default Presets
 const DEFAULT_HEROS = [
@@ -85,6 +86,23 @@ export function HomePage() {
   const { tenant } = useTenant();
   const [categories, setCategories] = useState<any[]>([]);
   const [currentHero, setCurrentHero] = useState(0);
+  const [showFAB, setShowFAB] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.scrollY > 300) {
+        setShowFAB(true);
+      } else {
+        setShowFAB(false);
+      }
+    };
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   // Load category images from the database dynamically
   useEffect(() => {
@@ -208,7 +226,7 @@ export function HomePage() {
 
       {/* 3. Product Grid (Latest Arrivals) */}
       <div className="mt-8 border-t border-surface-light pt-12">
-        <ProductGrid />
+        <ProductGrid onlyNewArrivals={true} />
       </div>
 
       {/* 4. Editorial Bento Grid */}
@@ -359,6 +377,15 @@ export function HomePage() {
           </div>
         </div>
       </section>
+
+      {/* Scroll to Top FAB */}
+      <button
+        onClick={scrollToTop}
+        className={`fixed bottom-8 right-8 z-50 p-4 bg-brand-navy text-white rounded-full shadow-[0_8px_30px_rgb(0,0,0,0.12)] transition-all duration-300 transform ${showFAB ? 'translate-y-0 opacity-100 visible' : 'translate-y-10 opacity-0 invisible'} hover:bg-brand-pink hover:-translate-y-1 hover:shadow-[0_8px_30px_rgb(251,122,144,0.3)] focus:outline-none`}
+        aria-label="Scroll to top"
+      >
+        <ArrowUp className="w-5 h-5" strokeWidth={2.5} />
+      </button>
     </div>
   );
 }

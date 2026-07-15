@@ -9,6 +9,7 @@ interface ImageUploadInputProps {
   tenantId: string;
   placeholder?: string;
   maxSizeMB?: number;
+  theme?: 'dark' | 'light';
 }
 
 export function ImageUploadInput({
@@ -16,7 +17,8 @@ export function ImageUploadInput({
   onChange,
   tenantId,
   placeholder = 'Select photo...',
-  maxSizeMB = 5
+  maxSizeMB = 5,
+  theme = 'dark'
 }: ImageUploadInputProps) {
   const [isUploading, setIsUploading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -85,6 +87,14 @@ export function ImageUploadInput({
     fileInputRef.current?.click();
   };
 
+  const isDark = theme === 'dark';
+  const containerClasses = isDark 
+    ? "bg-[#0f1117] hover:bg-[#0f1117]/80 border-white/10 hover:border-[#fb7a90]/40" 
+    : "bg-surface-white hover:bg-surface-offWhite border-surface-light hover:border-brand-navy";
+  const textTitleClasses = isDark ? "text-white" : "text-typography-primary";
+  const textSubClasses = isDark ? "text-white/30" : "text-typography-muted";
+  const iconBgClasses = isDark ? "bg-white/5 text-white/50" : "bg-surface-offWhite border border-surface-light text-typography-muted shadow-sm";
+
   return (
     <div className="w-full space-y-1">
       {/* Invisible input file trigger */}
@@ -99,21 +109,21 @@ export function ImageUploadInput({
 
       {isUploading ? (
         /* UPLOADING STATE */
-        <div className="flex items-center justify-center gap-3 bg-[#0f1117] border border-white/10 rounded-xl p-4 text-sm text-white/70">
-          <Loader2 className="w-5 h-5 animate-spin text-[#fb7a90]" />
+        <div className={`flex items-center justify-center gap-3 border rounded-xl p-4 text-sm ${isDark ? 'bg-[#0f1117] border-white/10 text-white/70' : 'bg-surface-white border-surface-light text-typography-muted shadow-sm'}`}>
+          <Loader2 className={`w-5 h-5 animate-spin ${isDark ? 'text-[#fb7a90]' : 'text-brand-navy'}`} />
           <span>Uploading and compressing photo...</span>
         </div>
       ) : value ? (
         /* UPLOAD SUCCESS STATE WITH PREVIEW */
-        <div className="flex items-center justify-between gap-4 bg-[#0f1117]/50 border border-white/10 rounded-xl p-3.5">
+        <div className={`flex items-center justify-between gap-4 border rounded-xl p-3.5 ${isDark ? 'bg-[#0f1117]/50 border-white/10' : 'bg-surface-white border-surface-light shadow-sm'}`}>
           <div className="flex items-center gap-3 min-w-0">
             {/* Small image preview circle */}
-            <div className="w-10 h-10 rounded-lg overflow-hidden bg-black border border-white/10 flex-shrink-0">
-              <img src={value} alt="Preview" className="w-full h-full object-cover" />
+            <div className={`w-10 h-10 rounded-lg overflow-hidden border flex-shrink-0 ${isDark ? 'bg-black border-white/10' : 'bg-surface-light border-surface-light'}`}>
+              <img src={value} alt="Preview" className={`w-full h-full object-cover ${!isDark ? 'mix-blend-multiply' : ''}`} />
             </div>
             <div className="min-w-0 flex items-center">
-              <span className="text-white text-xs font-semibold flex items-center gap-1">
-                <Check className="w-3.5 h-3.5 text-emerald-400" /> Photo Uploaded
+              <span className={`text-xs font-semibold flex items-center gap-1 ${textTitleClasses}`}>
+                <Check className={`w-3.5 h-3.5 ${isDark ? 'text-emerald-400' : 'text-emerald-500'}`} /> Photo Uploaded
               </span>
             </div>
           </div>
@@ -122,14 +132,22 @@ export function ImageUploadInput({
             <button
               type="button"
               onClick={triggerUpload}
-              className="px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 text-white text-[11px] font-bold rounded-lg transition-all"
+              className={`px-3 py-1.5 border text-[11px] font-bold rounded-lg transition-all ${
+                isDark 
+                  ? 'bg-white/5 hover:bg-white/10 border-white/10 text-white' 
+                  : 'bg-white hover:bg-surface-light border-surface-light text-typography-primary shadow-sm'
+              }`}
             >
               Replace
             </button>
             <button
               type="button"
               onClick={() => onChange('')}
-              className="p-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 rounded-lg transition-all"
+              className={`p-1.5 border rounded-lg transition-all ${
+                isDark
+                  ? 'bg-red-500/10 hover:bg-red-500/20 text-red-400 border-red-500/20'
+                  : 'bg-red-50 hover:bg-red-100 text-red-500 border-red-200 shadow-sm'
+              }`}
               title="Delete photo"
             >
               <Trash2 className="w-4 h-4" />
@@ -141,20 +159,20 @@ export function ImageUploadInput({
         <button
           type="button"
           onClick={triggerUpload}
-          className="w-full flex flex-col items-center justify-center gap-2 bg-[#0f1117] hover:bg-[#0f1117]/80 border border-dashed border-white/10 hover:border-[#fb7a90]/40 rounded-xl p-6 transition-all"
+          className={`w-full flex flex-col items-center justify-center gap-2 border border-dashed rounded-xl p-6 transition-all ${containerClasses}`}
         >
-          <div className="w-9 h-9 rounded-full bg-white/5 flex items-center justify-center text-white/50">
+          <div className={`w-9 h-9 rounded-full flex items-center justify-center ${iconBgClasses}`}>
             <Upload className="w-4 h-4" />
           </div>
           <div className="text-center">
-            <p className="text-white text-xs font-semibold">{placeholder}</p>
-            <p className="text-white/30 text-[10px] mt-0.5">JPEG/PNG up to {maxSizeMB}MB</p>
+            <p className={`text-xs font-semibold ${textTitleClasses}`}>{placeholder}</p>
+            <p className={`text-[10px] mt-0.5 ${textSubClasses}`}>JPEG/PNG up to {maxSizeMB}MB</p>
           </div>
         </button>
       )}
 
       {errorMsg && (
-        <div className="flex items-center gap-1.5 text-red-400 text-[11px] mt-1 pl-1">
+        <div className={`flex items-center gap-1.5 text-[11px] mt-1 pl-1 ${isDark ? 'text-red-400' : 'text-red-500 font-medium'}`}>
           <AlertCircle className="w-3.5 h-3.5" />
           <span>{errorMsg}</span>
         </div>
