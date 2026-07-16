@@ -1,4 +1,5 @@
 import { supabase, TENANT_ID } from '../../../lib/supabase/supabaseClient';
+import { withCache } from '../../../lib/utils/cache';
 import type { Product, Review } from '../types';
 
 const MOCK_PRODUCTS: Product[] = [
@@ -45,6 +46,8 @@ const MOCK_PRODUCTS: Product[] = [
 ];
 
 export async function fetchProducts(categorySlug?: string, searchQuery?: string, onlyNewArrivals?: boolean): Promise<Product[]> {
+  const cacheKey = `products_${TENANT_ID}_${categorySlug || 'all'}_${searchQuery || ''}_${onlyNewArrivals || false}`;
+  return withCache(cacheKey, 5 * 60 * 1000, async () => {
   if (!TENANT_ID || TENANT_ID === 'will-be-set-after-migration-seed') {
     // If tenant variables are placeholders, return mock products gracefully
     console.log('Using mock products (tenant id is unset)');
@@ -120,9 +123,12 @@ export async function fetchProducts(categorySlug?: string, searchQuery?: string,
     console.error('Error fetching storefront products:', err);
     return MOCK_PRODUCTS;
   }
+  });
 }
 
 export async function fetchProductBySlug(slug: string): Promise<Product | null> {
+  const cacheKey = `product_${TENANT_ID}_${slug}`;
+  return withCache(cacheKey, 5 * 60 * 1000, async () => {
   if (!TENANT_ID || TENANT_ID === 'will-be-set-after-migration-seed') {
     return MOCK_PRODUCTS.find(p => p.slug === slug) || null;
   }
@@ -165,9 +171,12 @@ export async function fetchProductBySlug(slug: string): Promise<Product | null> 
     console.error('Error fetching product by slug:', err);
     return MOCK_PRODUCTS.find(p => p.slug === slug) || null;
   }
+  });
 }
 
 export async function fetchProductReviews(itemId: string): Promise<Review[]> {
+  const cacheKey = `reviews_${TENANT_ID}_${itemId}`;
+  return withCache(cacheKey, 5 * 60 * 1000, async () => {
   if (!TENANT_ID || TENANT_ID === 'will-be-set-after-migration-seed') {
     return [];
   }
@@ -192,4 +201,5 @@ export async function fetchProductReviews(itemId: string): Promise<Review[]> {
     console.error('Error in fetchProductReviews:', err);
     return [];
   }
+  });
 }

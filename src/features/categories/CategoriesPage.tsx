@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { FadeUp } from "../../ui/Motion/FadeUp";
 import { Link } from "react-router-dom";
-import { fetchCategories } from "../admin/api/categories";
+import { fetchStorefrontCategories } from "./api";
 import { TENANT_ID } from "../../lib/supabase/supabaseClient";
 
 interface StorefrontCategory {
@@ -63,7 +63,7 @@ export function CategoriesPage() {
 
   useEffect(() => {
     if (TENANT_ID && TENANT_ID !== 'will-be-set-after-migration-seed') {
-      fetchCategories(TENANT_ID)
+      fetchStorefrontCategories()
         .then(data => {
           const list = data.map((cat: any, idx: number) => ({
             title: cat.name,
