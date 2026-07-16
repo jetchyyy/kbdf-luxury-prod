@@ -16,42 +16,42 @@ const DEFAULT_CATEGORIES: StorefrontCategory[] = [
   { 
     title: "Handbags", 
     subtitle: "The ultimate collection",
-    image: "https://images.unsplash.com/photo-1584916201218-f4242ceb4809?q=80&w=1200&auto=format&fit=crop",
+    image: "",
     colSpan: "col-span-1 md:col-span-2",
     accent: "border-brand-peach"
   },
   { 
     title: "Footwear", 
     subtitle: "Step in style",
-    image: "https://images.unsplash.com/photo-1543163521-1bf539c55dd2?q=80&w=800&auto=format&fit=crop",
+    image: "",
     colSpan: "col-span-1",
     accent: "border-brand-pink"
   },
   { 
     title: "Wallets", 
     subtitle: "Everyday essentials",
-    image: "https://images.unsplash.com/photo-1591561954557-26941169b49e?q=80&w=800&auto=format&fit=crop",
+    image: "",
     colSpan: "col-span-1",
     accent: "border-brand-coral"
   },
   { 
     title: "Watches", 
     subtitle: "Timeless pieces",
-    image: "https://images.unsplash.com/photo-1523170335258-f5ed11844a49?q=80&w=800&auto=format&fit=crop",
+    image: "",
     colSpan: "col-span-1 md:col-span-2",
     accent: "border-brand-navy"
   },
   { 
     title: "Accessories", 
     subtitle: "Finishing touches",
-    image: "https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?q=80&w=800&auto=format&fit=crop",
+    image: "",
     colSpan: "col-span-1 md:col-span-2",
     accent: "border-brand-peach"
   },
   { 
     title: "Preloved", 
     subtitle: "Vintage archives",
-    image: "https://images.unsplash.com/photo-1603487742131-4160ec999306?q=80&w=800&auto=format&fit=crop",
+    image: "",
     colSpan: "col-span-1",
     accent: "border-brand-pink"
   }
@@ -68,7 +68,7 @@ export function CategoriesPage() {
           const list = data.map((cat: any, idx: number) => ({
             title: cat.name,
             subtitle: cat.description || "Curated pieces",
-            image: cat.image_url || "https://images.unsplash.com/photo-1584916201218-f4242ceb4809?q=80&w=800",
+            image: cat.image_url || "",
             // Alternate spans for beautiful grid layouts
             colSpan: idx % 3 === 0 || idx % 3 === 2 ? "col-span-1 md:col-span-2" : "col-span-1",
             accent: idx % 3 === 0 ? "border-brand-peach" : idx % 3 === 1 ? "border-brand-pink" : "border-brand-coral"
@@ -114,11 +114,13 @@ export function CategoriesPage() {
             {categories.map((category, idx) => (
               <FadeUp key={category.title} delay={idx * 0.1} className={category.colSpan}>
                 <Link to={`/shop?category=${category.title.toLowerCase()}`} className={`group relative block w-full h-[350px] md:h-[450px] overflow-hidden border-b-4 ${category.accent} bg-surface-offWhite`}>
-                  <img 
-                    src={category.image} 
-                    alt={category.title} 
-                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:scale-105"
-                  />
+                  {category.image && (
+                    <img 
+                      src={category.image} 
+                      alt={category.title} 
+                      className="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:scale-105"
+                    />
+                  )}
                   {/* Gradient Overlay */}
                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-80 group-hover:opacity-100 transition-opacity duration-500"></div>
                   

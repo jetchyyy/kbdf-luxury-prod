@@ -771,7 +771,7 @@ export function ItemFormModal({ isOpen, onClose, onSave, item, tenantId }: ItemF
                   value={url}
                   onChange={val => handleImageChange(idx, val)}
                   tenantId={tenantId}
-                  placeholder="https://images.unsplash.com/photo-..."
+                  placeholder="https://example.com/image.jpg"
                 />
                 <button
                   type="button"

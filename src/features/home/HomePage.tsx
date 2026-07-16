@@ -9,13 +9,13 @@ import { ArrowUp } from "lucide-react";
 // Fallback Default Presets
 const DEFAULT_HEROS = [
   {
-    image_url: "https://images.unsplash.com/photo-1543163521-1bf539c55dd2?q=80&w=2000&auto=format&fit=crop",
+    image_url: "",
     title: "Payday Special Offer",
     cta_text: "Shop Now",
     cta_link: "/shop"
   },
   {
-    image_url: "https://images.unsplash.com/photo-1584916201218-f4242ceb4809?q=80&w=2000&auto=format&fit=crop",
+    image_url: "",
     title: "Exclusive Bags",
     cta_text: "Discover",
     cta_link: "/shop"
@@ -27,44 +27,44 @@ const DEFAULT_EDITORIAL = {
   subtitle: "Discover the latest arrivals",
   cta_text: "Shop Now",
   cta_link: "/shop",
-  banner_image: "https://images.unsplash.com/photo-1584916201218-f4242ceb4809?q=80&w=1200",
+  banner_image: "",
   grid_images: [
-    "https://images.unsplash.com/photo-1591561954557-26941169b49e?w=600",
-    "https://images.unsplash.com/photo-1595950653106-6c9ebd614d3a?w=600",
-    "https://images.unsplash.com/photo-1595341888016-a392ef81b7de?w=600",
-    "https://images.unsplash.com/photo-1603487742131-4160ec999306?w=600"
+    "",
+    "",
+    "",
+    ""
   ]
 };
 
 const DEFAULT_COLLECTIONS = [
-  { title: "All Flats", image_url: "https://images.unsplash.com/photo-1595341888016-a392ef81b7de?w=800" },
-  { title: "Tote Bags", image_url: "https://images.unsplash.com/photo-1591561954557-26941169b49e?w=800" },
-  { title: "Sneakers", image_url: "https://images.unsplash.com/photo-1595950653106-6c9ebd614d3a?w=800" },
+  { title: "All Flats", image_url: "" },
+  { title: "Tote Bags", image_url: "" },
+  { title: "Sneakers", image_url: "" },
 ];
 
 const DEFAULT_TESTIMONIALS = [
   {
     quote: "Five Stars! This wallet is fantastic. This wallet is durable enough to withstand daily use. I love the design - it's sleek and modern, but also practical with plenty of space for cards and cash/coins. It's the perfect blend of style and functionality. Highly recommend!",
     author: "- Richie A.E.",
-    image_url: "https://images.unsplash.com/photo-1628149463056-118bd095dc2b?w=400",
+    image_url: "",
     product_name: "CLASSIC WALLET"
   },
   {
     quote: "Been looking for this kind of design and I really love it! I took the risk to order even if I wasn't sure about my size, but I got it correct! It fits perfectly. Btw, you have to add 1 size up. Thanks! I will definitely order again 😊",
     author: "- MJ G.",
-    image_url: "https://images.unsplash.com/photo-1603487742131-4160ec999306?w=400",
+    image_url: "",
     product_name: "KESHI SLIDES"
   },
   {
     quote: "This is actually my second time ordering the same pair of shoes. The quality is excellent, and they're really comfortable to wear. I'm very satisfied with my purchase!",
     author: "- Cyndy",
-    image_url: "https://images.unsplash.com/photo-1595950653106-6c9ebd614d3a?w=400",
+    image_url: "",
     product_name: "EVERYDAY SNEAKERS"
   }
 ];
 
 const DEFAULT_LIFESTYLE = {
-  image_url: "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?q=80&w=2000",
+  image_url: "",
   text: "Where style meets <span class=\"text-brand-peach italic\">value</span> - shoes, bags, and wallets that make you stand out.",
   cta_text: "Shop Now",
   cta_link: "/shop"
@@ -74,11 +74,11 @@ const DEFAULT_SOCIAL = {
   title: "As Seen On @kbdf.ph",
   handle: "@kbdf.ph",
   images: [
-    "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=400",
-    "https://images.unsplash.com/photo-1529139574466-a303027c1d8b?w=400",
-    "https://images.unsplash.com/photo-1483985988355-763728e1935b?w=400",
-    "https://images.unsplash.com/photo-1485230895905-ef0e1261d15c?w=400",
-    "https://images.unsplash.com/photo-1485968579580-b6d095142e6e?w=400"
+    "",
+    "",
+    "",
+    "",
+    ""
   ]
 };
 
@@ -113,7 +113,7 @@ export function HomePage() {
             .filter((c: any) => c.is_active)
             .map((c: any) => ({
               slug: c.slug,
-              img: c.image_url || "https://images.unsplash.com/photo-1584916201218-f4242ceb4809?w=500&q=80"
+              img: c.image_url || ""
             }));
           setCategories(list);
         })
@@ -213,8 +213,12 @@ export function HomePage() {
       {categories.length > 0 && (
         <section className="w-full bg-surface-white flex overflow-x-auto no-scrollbar">
           {categories.map((cat, i) => (
-            <Link key={i} to={`/shop?category=${cat.slug}`} className="group relative min-w-[150px] md:flex-1 aspect-square md:aspect-auto md:h-[250px] overflow-hidden">
-              <img src={cat.img} alt={cat.slug} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+            <Link key={i} to={`/shop?category=${cat.slug}`} className="group relative min-w-[150px] md:flex-1 aspect-square md:aspect-auto md:h-[250px] overflow-hidden bg-brand-navy/10 flex items-center justify-center">
+              {cat.img ? (
+                <img src={cat.img} alt={cat.slug} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+              ) : (
+                <span className="text-brand-navy/30 text-xs font-bold uppercase tracking-widest">{cat.slug}</span>
+              )}
               <div className="absolute inset-0 bg-black/10 group-hover:bg-black/20 transition-colors"></div>
               <span className="absolute bottom-4 left-4 text-white text-[10px] md:text-xs font-bold uppercase tracking-widest drop-shadow-md">
                 {cat.slug}
@@ -256,9 +260,13 @@ export function HomePage() {
             {(editorial.grid_images || DEFAULT_EDITORIAL.grid_images).map((src: string, i: number) => (
               <div 
                 key={i} 
-                className="relative aspect-square bg-surface-offWhite overflow-hidden group"
+                className="relative aspect-square bg-surface-offWhite overflow-hidden group flex items-center justify-center"
               >
-                 <img src={src} className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000 ease-out" alt="Product Thumbnail" />
+                 {src ? (
+                   <img src={src} className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000 ease-out" alt="Product Thumbnail" />
+                 ) : (
+                   <span className="text-brand-navy/20 text-xs uppercase tracking-widest">Image</span>
+                 )}
                  {/* Elegant hover overlay */}
                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-500 pointer-events-none"></div>
               </div>
@@ -367,8 +375,12 @@ export function HomePage() {
         <div className="flex w-full">
           <div className="animate-marquee flex w-max">
             {[...(social.images || DEFAULT_SOCIAL.images), ...(social.images || DEFAULT_SOCIAL.images)].map((src: string, i: number) => (
-              <a key={i} href="#" className="relative w-[50vw] md:w-[25vw] lg:w-[20vw] aspect-[4/5] group overflow-hidden block shrink-0">
-                 <img src={src} className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-700" alt="Instagram Post" />
+              <a key={i} href="#" className="relative w-[50vw] md:w-[25vw] lg:w-[20vw] aspect-[4/5] group overflow-hidden block shrink-0 bg-brand-navy/5 flex items-center justify-center">
+                 {src ? (
+                   <img src={src} className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-700" alt="Instagram Post" />
+                 ) : (
+                   <span className="text-brand-navy/20 font-bold uppercase tracking-widest text-xs">Social</span>
+                 )}
                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300 flex items-center justify-center">
                     <span className="text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300">{social.handle || "@kbdf.ph"}</span>
                  </div>

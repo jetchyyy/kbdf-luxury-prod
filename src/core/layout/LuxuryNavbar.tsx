@@ -12,6 +12,7 @@ export function LuxuryNavbar() {
   const [isOpen, setIsOpen] = useState(false);
   const [showUserDropdown, setShowUserDropdown] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [logoError, setLogoError] = useState(false);
   
   const { openCart, items } = useCart();
   const { tenant } = useTenant();
@@ -60,8 +61,13 @@ export function LuxuryNavbar() {
         {/* Left: Logo */}
         <div className="flex-1 flex items-center">
           <Link to="/" className="text-3xl font-sans tracking-[0.15em] uppercase font-bold text-typography-primary flex items-center gap-2">
-            {tenant?.logo_url ? (
-              <img src={tenant.logo_url} alt={tenant.name} className="h-8 max-w-[120px] object-contain" />
+            {tenant?.logo_url && !logoError ? (
+              <img 
+                src={tenant.logo_url} 
+                alt={tenant.name} 
+                className="h-8 max-w-[120px] object-contain" 
+                onError={() => setLogoError(true)}
+              />
             ) : (
               tenant?.name || "KBDF"
             )}

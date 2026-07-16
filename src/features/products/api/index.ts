@@ -10,7 +10,7 @@ const MOCK_PRODUCTS: Product[] = [
     description: 'A masterpiece in fine-grained calfskin leather with a minimalist silhouette.',
     price: 3200,
     category_id: 'bags',
-    image_urls: ['https://images.unsplash.com/photo-1584916201218-f4242ceb4809?q=80&w=800&auto=format&fit=crop'],
+    image_urls: [],
     stock_status: 'in_stock',
     condition: 'new',
     brand: 'KBDF',
@@ -24,7 +24,7 @@ const MOCK_PRODUCTS: Product[] = [
     price: 4500,
     original_price: 5200,
     category_id: 'preloved-bags',
-    image_urls: ['https://images.unsplash.com/photo-1548036328-c9fa89d128fa?q=80&w=800&auto=format&fit=crop'],
+    image_urls: [],
     stock_status: 'in_stock',
     condition: 'preloved_excellent',
     brand: 'Heritage',
@@ -37,7 +37,7 @@ const MOCK_PRODUCTS: Product[] = [
     description: 'Sleek, essential, and crafted from sustainable pebble leather.',
     price: 450,
     category_id: 'wallets',
-    image_urls: ['https://images.unsplash.com/photo-1606503825008-9087118151eb?q=80&w=800&auto=format&fit=crop'],
+    image_urls: [],
     stock_status: 'low_stock',
     condition: 'new',
     brand: 'KBDF',
@@ -45,8 +45,14 @@ const MOCK_PRODUCTS: Product[] = [
   }
 ];
 
-export async function fetchProducts(categorySlug?: string, searchQuery?: string, onlyNewArrivals?: boolean): Promise<Product[]> {
-  const cacheKey = `products_${TENANT_ID}_${categorySlug || 'all'}_${searchQuery || ''}_${onlyNewArrivals || false}`;
+export async function fetchProducts(
+  categorySlug?: string, 
+  searchQuery?: string, 
+  onlyNewArrivals?: boolean,
+  page: number = 1,
+  limit: number = 12
+): Promise<Product[]> {
+  const cacheKey = `products_${TENANT_ID}_${categorySlug || 'all'}_${searchQuery || ''}_${onlyNewArrivals || false}_${page}_${limit}`;
   return withCache(cacheKey, 5 * 60 * 1000, async () => {
   if (!TENANT_ID || TENANT_ID === 'will-be-set-after-migration-seed') {
     // If tenant variables are placeholders, return mock products gracefully
@@ -59,7 +65,8 @@ export async function fetchProducts(categorySlug?: string, searchQuery?: string,
       const q = searchQuery.toLowerCase();
       filtered = filtered.filter(p => p.title.toLowerCase().includes(q) || (p.brand && p.brand.toLowerCase().includes(q)));
     }
-    return filtered;
+    const startIndex = (page - 1) * limit;
+    return filtered.slice(startIndex, startIndex + limit);
   }
 
   try {
@@ -93,6 +100,10 @@ export async function fetchProducts(categorySlug?: string, searchQuery?: string,
       query = query.or(`brand.ilike.%${searchQuery}%,title.ilike.%${searchQuery}%`);
     }
 
+    const from = (page - 1) * limit;
+    const to = from + limit - 1;
+    query = query.range(from, to);
+
     const { data, error } = await query;
     if (error) throw error;
     
@@ -104,7 +115,7 @@ export async function fetchProducts(categorySlug?: string, searchQuery?: string,
       price: Number(item.price),
       original_price: item.original_price ? Number(item.original_price) : undefined,
       category_id: item.category_id || '',
-      image_urls: item.image_urls && item.image_urls.length > 0 ? item.image_urls : ['https://images.unsplash.com/photo-1584916201218-f4242ceb4809?q=80&w=800'],
+      image_urls: item.image_urls && item.image_urls.length > 0 ? item.image_urls : [],
       stock_status: item.stock_status,
       stock_quantity: Number(item.quantity || 0),
       condition: item.condition,
@@ -152,7 +163,7 @@ export async function fetchProductBySlug(slug: string): Promise<Product | null> 
       price: Number(data.price),
       original_price: data.original_price ? Number(data.original_price) : undefined,
       category_id: data.category_id || '',
-      image_urls: data.image_urls && data.image_urls.length > 0 ? data.image_urls : ['https://images.unsplash.com/photo-1584916201218-f4242ceb4809?q=80&w=800'],
+      image_urls: data.image_urls && data.image_urls.length > 0 ? data.image_urls : [],
       stock_status: data.stock_status,
       stock_quantity: Number(data.quantity || 0),
       condition: data.condition,

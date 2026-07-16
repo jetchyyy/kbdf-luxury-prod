@@ -148,7 +148,7 @@ export function ProductDetailPage() {
 
   const displayImages = product.image_urls && product.image_urls.length > 0 
     ? product.image_urls 
-    : ['/placeholder.png'];
+    : [''];
   
   // Custom loupe magnifying glass component
   const ImageZoom = ({ src, alt }: { src: string; alt: string }) => {
@@ -188,14 +188,20 @@ export function ProductDetailPage() {
         onMouseLeave={() => setIsZoomed(false)}
         onMouseMove={handleMouseMove}
       >
-        <img
-          src={src}
-          alt={alt}
-          className="w-full h-full object-cover mix-blend-multiply"
-        />
+        {src ? (
+          <img
+            src={src}
+            alt={alt}
+            className="w-full h-full object-cover mix-blend-multiply"
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center text-brand-navy/20 font-bold uppercase tracking-widest text-sm">
+            No Image
+          </div>
+        )}
         
         {/* The magnifying lens */}
-        {isZoomed && dimensions.w > 0 && (
+        {isZoomed && dimensions.w > 0 && src && (
           <div 
             className="absolute pointer-events-none border-[4px] border-white shadow-xl rounded-full z-10"
             style={{

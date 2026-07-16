@@ -46,12 +46,17 @@ export function ProductCard({ product, index }: ProductCardProps) {
         )}
 
         {/* Image Area */}
-        <div className="w-full flex-1 overflow-hidden bg-transparent">
-          <img 
-            src={product.image_urls[0]} 
-            alt={product.title} 
-            className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] mix-blend-multiply"
-          />
+        <div className="w-full flex-1 overflow-hidden bg-transparent flex items-center justify-center bg-brand-navy/5">
+          {product.image_urls && product.image_urls[0] ? (
+            <img 
+              src={product.image_urls[0]} 
+              alt={product.title} 
+              loading="lazy"
+              className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] mix-blend-multiply"
+            />
+          ) : (
+            <span className="text-brand-navy/20 text-xs font-bold uppercase tracking-widest">No Image</span>
+          )}
         </div>
         
         {/* Content bottom */}

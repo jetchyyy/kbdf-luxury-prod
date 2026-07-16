@@ -13,17 +13,38 @@ interface ProductGridProps {
 export function ProductGrid({ hideHeader = false, category = "all", searchQuery, onlyNewArrivals = false }: ProductGridProps = {}) {
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(false);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const limit = 12;
 
+  // Initial load or category/search change
   useEffect(() => {
     setIsLoading(true);
-    fetchProducts(category, searchQuery, onlyNewArrivals).then(data => {
+    setPage(1); // Reset page on category change
+    fetchProducts(category, searchQuery, onlyNewArrivals, 1, limit).then(data => {
       setProducts(data);
+      setHasMore(data.length === limit);
       setIsLoading(false);
     }).catch(err => {
       console.error(err);
       setIsLoading(false);
     });
-  }, [category, searchQuery]);
+  }, [category, searchQuery, onlyNewArrivals]);
+
+  const handleLoadMore = () => {
+    setIsLoadingMore(true);
+    const nextPage = page + 1;
+    fetchProducts(category, searchQuery, onlyNewArrivals, nextPage, limit).then(data => {
+      setProducts(prev => [...prev, ...data]);
+      setHasMore(data.length === limit);
+      setPage(nextPage);
+      setIsLoadingMore(false);
+    }).catch(err => {
+      console.error(err);
+      setIsLoadingMore(false);
+    });
+  };
 
   return (
     <section className="py-12 px-4 md:px-12 max-w-7xl mx-auto">
@@ -57,10 +78,23 @@ export function ProductGrid({ hideHeader = false, category = "all", searchQuery,
       ) : (
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 md:gap-6 border-t md:border-t-0 pt-4 md:pt-0 border-surface-light">
           {products.map((product, idx) => (
-            <div key={product.id}>
+            <div key={`${product.id}-${idx}`}>
               <ProductCard product={product} index={idx} />
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Load More Button */}
+      {hasMore && !isLoading && (
+        <div className="mt-16 flex justify-center">
+          <button
+            onClick={handleLoadMore}
+            disabled={isLoadingMore}
+            className="px-12 py-4 bg-brand-navy text-white text-xs tracking-[0.2em] uppercase font-bold hover:bg-brand-peach transition-colors disabled:opacity-50"
+          >
+            {isLoadingMore ? "Loading..." : "Load More"}
+          </button>
         </div>
       )}
       

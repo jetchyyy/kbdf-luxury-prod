@@ -126,7 +126,7 @@ export function CategoryFormModal({ isOpen, onClose, onSave, category, tenantId 
               value={imageUrl}
               onChange={setImageUrl}
               tenantId={tenantId}
-              placeholder="https://images.unsplash.com/photo-..."
+              placeholder="https://example.com/image.jpg"
             />
           </div>
 

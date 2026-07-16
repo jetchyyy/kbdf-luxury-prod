@@ -49,12 +49,7 @@ export function AdminLoginPage() {
   return (
     <div className="min-h-screen bg-surface-white flex font-sans">
       {/* Left Side Image */}
-      <div className="hidden lg:block w-1/2 relative bg-[#f4f2ed]">
-        <img 
-          src="https://images.unsplash.com/photo-1490481651871-ab68de25d43d?q=80&w=1200" 
-          alt="Luxury Office" 
-          className="absolute inset-0 w-full h-full object-cover mix-blend-multiply opacity-90"
-        />
+      <div className="hidden lg:block w-1/2 relative bg-[#111827]">
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
         <div className="absolute bottom-16 left-16 right-16 text-white">
           <h1 className="text-4xl font-serif mb-4 drop-shadow-md">

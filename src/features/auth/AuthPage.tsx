@@ -87,12 +87,7 @@ export function AuthPage() {
     <div className="pt-24 min-h-screen bg-surface-white flex">
       {/* Left side Image */}
       <div className="hidden lg:block w-1/2 relative bg-surface-offWhite">
-        <img 
-          src="https://images.unsplash.com/photo-1483985988355-763728e1935b?q=80&w=1200" 
-          alt="Luxury Fashion" 
-          className="absolute inset-0 w-full h-full object-cover"
-        />
-        <div className="absolute inset-0 bg-brand-navy/20 mix-blend-multiply"></div>
+        <div className="absolute inset-0 bg-brand-navy/5 mix-blend-multiply"></div>
         <div className="absolute inset-0 flex items-center justify-center">
           <h1 className="text-4xl font-sans tracking-[0.2em] uppercase font-bold text-white drop-shadow-md">
             Quiet Luxury

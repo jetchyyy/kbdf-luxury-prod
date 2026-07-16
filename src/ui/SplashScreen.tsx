@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTenant } from "../core/context/TenantContext";
 
@@ -7,6 +8,7 @@ interface SplashScreenProps {
 
 export function SplashScreen({ isLoading }: SplashScreenProps) {
   const { tenant } = useTenant();
+  const [logoError, setLogoError] = useState(false);
 
   return (
     <AnimatePresence>
@@ -24,11 +26,12 @@ export function SplashScreen({ isLoading }: SplashScreenProps) {
             transition={{ duration: 1.5, ease: [0.32, 0.72, 0, 1] }}
             className="flex flex-col items-center justify-center gap-8"
           >
-            {tenant?.logo_url ? (
+            {tenant?.logo_url && !logoError ? (
               <img 
                 src={tenant.logo_url} 
                 alt={tenant?.name || "Luxury Store"} 
                 className="h-10 md:h-14 max-w-[200px] object-contain" 
+                onError={() => setLogoError(true)}
               />
             ) : (
               <h1 className="text-3xl md:text-5xl font-sans tracking-[0.25em] uppercase font-bold text-typography-primary">

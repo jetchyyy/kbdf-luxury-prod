@@ -153,7 +153,7 @@ export function SettingsPage() {
 
       const hero = homepage.hero || homepage.heros?.[0] || {};
       setHeroTitle(hero.title || 'Payday Special Offer');
-      setHeroImageUrl(hero.image_url || 'https://images.unsplash.com/photo-1543163521-1bf539c55dd2?q=80&w=2000&auto=format&fit=crop');
+      setHeroImageUrl(hero.image_url || '');
       setHeroCtaText(hero.cta_text || 'Shop Now');
       setHeroCtaLink(hero.cta_link || '/shop');
 
@@ -172,35 +172,35 @@ export function SettingsPage() {
       const editorial = homepage.editorial || {};
       setEditorialTitle(editorial.title || 'New In');
       setEditorialSubtitle(editorial.subtitle || 'Discover the latest arrivals');
-      setEditorialBannerImage(editorial.banner_image || 'https://images.unsplash.com/photo-1584916201218-f4242ceb4809?q=80&w=1200');
+      setEditorialBannerImage(editorial.banner_image || '');
       setEditorialCtaText(editorial.cta_text || 'Shop Now');
       setEditorialCtaLink(editorial.cta_link || '/shop');
       
       const gridImages = editorial.grid_images || [];
-      setEditorialGrid1(gridImages[0] || 'https://images.unsplash.com/photo-1591561954557-26941169b49e?w=600');
-      setEditorialGrid2(gridImages[1] || 'https://images.unsplash.com/photo-1595950653106-6c9ebd614d3a?w=600');
-      setEditorialGrid3(gridImages[2] || 'https://images.unsplash.com/photo-1595341888016-a392ef81b7de?w=600');
-      setEditorialGrid4(gridImages[3] || 'https://images.unsplash.com/photo-1603487742131-4160ec999306?w=600');
+      setEditorialGrid1(gridImages[0] || '');
+      setEditorialGrid2(gridImages[1] || '');
+      setEditorialGrid3(gridImages[2] || '');
+      setEditorialGrid4(gridImages[3] || '');
 
       const cols = homepage.featured_collections || [];
       setCol1Title(cols[0]?.title || 'All Flats');
-      setCol1Image(cols[0]?.image_url || 'https://images.unsplash.com/photo-1595341888016-a392ef81b7de?w=800');
+      setCol1Image(cols[0]?.image_url || '');
       setCol2Title(cols[1]?.title || 'Tote Bags');
-      setCol2Image(cols[1]?.image_url || 'https://images.unsplash.com/photo-1591561954557-26941169b49e?w=800');
+      setCol2Image(cols[1]?.image_url || '');
       setCol3Title(cols[2]?.title || 'Sneakers');
-      setCol3Image(cols[2]?.image_url || 'https://images.unsplash.com/photo-1595950653106-6c9ebd614d3a?w=800');
+      setCol3Image(cols[2]?.image_url || '');
 
       const tests = homepage.testimonials || [];
       setT1Quote(tests[0]?.quote || 'The bag is absolutely gorgeous! It arrived in perfect condition and the packaging was so luxurious. Will definitely order again.');
       setT1Author(tests[0]?.author || 'Sarah T.');
-      setT1Image(tests[0]?.image_url || 'https://images.unsplash.com/photo-1584916201218-f4242ceb4809?w=200');
+      setT1Image(tests[0]?.image_url || '');
 
       setT2Quote(tests[1]?.quote || 'Excellent transaction. The preloved condition of the watches here is unparalleled. Authentic and premium.');
       setT2Author(tests[1]?.author || 'John D.');
-      setT2Image(tests[1]?.image_url || 'https://images.unsplash.com/photo-1523170335258-f5ed11844a49?w=200');
+      setT2Image(tests[1]?.image_url || '');
 
       const lifestyle = homepage.lifestyle || {};
-      setLifestyleImage(lifestyle.image_url || 'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?q=80&w=2000');
+      setLifestyleImage(lifestyle.image_url || '');
       setLifestyleText(lifestyle.text || 'Where style meets <span class="text-brand-peach italic">value</span> - shoes, bags, and wallets that make you stand out.');
       setLifestyleCtaText(lifestyle.cta_text || 'Shop Now');
       setLifestyleCtaLink(lifestyle.cta_link || '/shop');
@@ -210,11 +210,11 @@ export function SettingsPage() {
       setSocialHandle(social.handle || '@kbdf.ph');
       
       const socImgs = social.images || [];
-      setSocialImg1(socImgs[0] || 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=400');
-      setSocialImg2(socImgs[1] || 'https://images.unsplash.com/photo-1529139574466-a303027c1d8b?w=400');
-      setSocialImg3(socImgs[2] || 'https://images.unsplash.com/photo-1483985988355-763728e1935b?w=400');
-      setSocialImg4(socImgs[3] || 'https://images.unsplash.com/photo-1485230895905-ef0e1261d15c?w=400');
-      setSocialImg5(socImgs[4] || 'https://images.unsplash.com/photo-1485968579580-b6d095142e6e?w=400');
+      setSocialImg1(socImgs[0] || '');
+      setSocialImg2(socImgs[1] || '');
+      setSocialImg3(socImgs[2] || '');
+      setSocialImg4(socImgs[3] || '');
+      setSocialImg5(socImgs[4] || '');
     }
   }, [tenant]);
 
@@ -690,7 +690,7 @@ export function SettingsPage() {
                   value={heroImageUrl}
                   onChange={setHeroImageUrl}
                   tenantId={tenantId}
-                  placeholder="https://images.unsplash.com/photo-..."
+                  placeholder="https://example.com/image.png"
                 />
               </div>
 
@@ -864,7 +864,7 @@ export function SettingsPage() {
                     value={editorialBannerImage}
                     onChange={setEditorialBannerImage}
                     tenantId={tenantId}
-                    placeholder="https://images.unsplash.com/photo-..."
+                    placeholder="https://example.com/image.png"
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-2">
