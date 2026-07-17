@@ -217,7 +217,7 @@ export function ItemFormModal({ isOpen, onClose, onSave, item, tenantId }: ItemF
         stock_status: stockStatus,
         image_urls: filteredImages,
         sizes: hasMultipleSizes ? sizes : null,
-        colors: hasMultipleColors ? colors : null,
+        colors: colors.length > 0 ? colors : null,
         features: features.length > 0 ? features : null,
         delivery_info: deliveryInfo.trim() || null,
         is_new_arrival: isNewArrival,
@@ -425,18 +425,6 @@ export function ItemFormModal({ isOpen, onClose, onSave, item, tenantId }: ItemF
               </label>
             </div>
 
-            {/* Multiple Colors Toggle */}
-            <div className="md:col-span-2 flex items-center gap-3 py-2 border-b border-white/5 pb-4">
-              <label className="flex items-center gap-3 text-sm text-white/80 cursor-pointer select-none">
-                <input
-                  type="checkbox"
-                  checked={hasMultipleColors}
-                  onChange={e => setHasMultipleColors(e.target.checked)}
-                  className="w-4 h-4 rounded border-white/10 text-[#fb7a90] bg-transparent outline-none focus:ring-0 focus:ring-offset-0 cursor-pointer"
-                />
-                This product comes in multiple colors
-              </label>
-            </div>
 
             {/* New Arrival Toggle */}
             <div className="md:col-span-2 flex items-center gap-3 py-2 border-b border-white/5 pb-4">
@@ -607,87 +595,85 @@ export function ItemFormModal({ isOpen, onClose, onSave, item, tenantId }: ItemF
           )}
 
           {/* Color Options Section */}
-          {hasMultipleColors && (
-            <div className="flex flex-col gap-2 border-t border-white/5 pt-4">
-              <label className="text-white/60 text-xs font-medium uppercase tracking-wider">Color Options</label>
-              <p className="text-white/40 text-[10px] -mt-1">Add colors available for this product with their hex codes.</p>
-              
-              <div className="flex gap-2 items-center">
-                <input
-                  type="text"
-                  value={colorNameInput}
-                  onChange={e => setColorNameInput(e.target.value)}
-                  onKeyDown={e => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault();
-                      handleAddColor();
-                    }
-                  }}
-                  placeholder="e.g. Black, Rose Gold, Midnight"
-                  className="bg-[#0f1117] border border-white/10 rounded-xl px-4 py-2 text-xs text-white placeholder:text-white/20 outline-none focus:border-[#fb7a90]/50 transition-colors flex-1"
-                />
-                <input
-                  type="color"
-                  value={colorHexInput}
-                  onChange={e => setColorHexInput(e.target.value)}
-                  className="w-10 h-10 p-1 bg-[#0f1117] border border-white/10 rounded-xl outline-none focus:border-[#fb7a90]/50 cursor-pointer"
-                  title="Select Hex Color"
-                />
-                <button
-                  type="button"
-                  onClick={handleAddColor}
-                  className="bg-white/5 hover:bg-white/10 border border-white/10 text-white text-xs px-4 py-2.5 rounded-xl font-semibold transition-all h-full"
-                >
-                  Add Color
-                </button>
-              </div>
+          <div className="flex flex-col gap-2 border-t border-white/5 pt-4">
+            <label className="text-white/60 text-xs font-medium uppercase tracking-wider">Color Options</label>
+            <p className="text-white/40 text-[10px] -mt-1">Add colors available for this product with their hex codes.</p>
+            
+            <div className="flex gap-2 items-center">
+              <input
+                type="text"
+                value={colorNameInput}
+                onChange={e => setColorNameInput(e.target.value)}
+                onKeyDown={e => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleAddColor();
+                  }
+                }}
+                placeholder="e.g. Black, Rose Gold, Midnight"
+                className="bg-[#0f1117] border border-white/10 rounded-xl px-4 py-2 text-xs text-white placeholder:text-white/20 outline-none focus:border-[#fb7a90]/50 transition-colors flex-1"
+              />
+              <input
+                type="color"
+                value={colorHexInput}
+                onChange={e => setColorHexInput(e.target.value)}
+                className="w-10 h-10 p-1 bg-[#0f1117] border border-white/10 rounded-xl outline-none focus:border-[#fb7a90]/50 cursor-pointer"
+                title="Select Hex Color"
+              />
+              <button
+                type="button"
+                onClick={handleAddColor}
+                className="bg-white/5 hover:bg-white/10 border border-white/10 text-white text-xs px-4 py-2.5 rounded-xl font-semibold transition-all h-full"
+              >
+                Add Color
+              </button>
+            </div>
 
-              {/* Presets */}
-              <div className="flex flex-wrap gap-2 items-center mt-1">
-                <span className="text-white/30 text-[9px] uppercase font-bold mr-1">Presets:</span>
-                <button
-                  type="button"
-                  onClick={() => setColors([{ name: 'Black', hex: '#000000' }, { name: 'White', hex: '#ffffff' }])}
-                  className="bg-white/5 hover:bg-white/10 text-white/60 text-[9px] px-2 py-1 rounded border border-white/5 hover:text-white transition-all"
-                >
-                  B/W
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setColors([{ name: 'Gold', hex: '#ffd700' }, { name: 'Silver', hex: '#c0c0c0' }, { name: 'Rose Gold', hex: '#b76e79' }])}
-                  className="bg-white/5 hover:bg-white/10 text-white/60 text-[9px] px-2 py-1 rounded border border-white/5 hover:text-white transition-all"
-                >
-                  Metals
-                </button>
-                {colors.length > 0 && (
-                  <button
-                    type="button"
-                    onClick={() => setColors([])}
-                    className="text-red-400 hover:text-red-300 text-[9px] font-bold ml-auto"
-                  >
-                    Clear All
-                  </button>
-                )}
-              </div>
-
-              {/* Color Tags Display */}
+            {/* Presets */}
+            <div className="flex flex-wrap gap-2 items-center mt-1">
+              <span className="text-white/30 text-[9px] uppercase font-bold mr-1">Presets:</span>
+              <button
+                type="button"
+                onClick={() => setColors([{ name: 'Black', hex: '#000000' }, { name: 'White', hex: '#ffffff' }])}
+                className="bg-white/5 hover:bg-white/10 text-white/60 text-[9px] px-2 py-1 rounded border border-white/5 hover:text-white transition-all"
+              >
+                B/W
+              </button>
+              <button
+                type="button"
+                onClick={() => setColors([{ name: 'Gold', hex: '#ffd700' }, { name: 'Silver', hex: '#c0c0c0' }, { name: 'Rose Gold', hex: '#b76e79' }])}
+                className="bg-white/5 hover:bg-white/10 text-white/60 text-[9px] px-2 py-1 rounded border border-white/5 hover:text-white transition-all"
+              >
+                Metals
+              </button>
               {colors.length > 0 && (
-                <div className="flex flex-wrap gap-1.5 mt-2 bg-[#0f1117] border border-white/5 p-3 rounded-xl">
-                  {colors.map((c) => (
-                    <span
-                      key={c.name}
-                      onClick={() => handleRemoveColor(c.name)}
-                      className="flex items-center gap-1.5 bg-[#fb7a90]/10 hover:bg-red-500/10 text-[#fb7a90] hover:text-red-400 border border-[#fb7a90]/20 hover:border-red-500/20 px-2.5 py-1 rounded-lg text-xs font-semibold cursor-pointer transition-all"
-                      title="Click to remove"
-                    >
-                      <div className="w-2.5 h-2.5 rounded-full border border-white/20" style={{ backgroundColor: c.hex }} />
-                      {c.name} <X className="w-3 h-3 opacity-60" />
-                    </span>
-                  ))}
-                </div>
+                <button
+                  type="button"
+                  onClick={() => setColors([])}
+                  className="text-red-400 hover:text-red-300 text-[9px] font-bold ml-auto"
+                >
+                  Clear All
+                </button>
               )}
             </div>
-          )}
+
+            {/* Color Tags Display */}
+            {colors.length > 0 && (
+              <div className="flex flex-wrap gap-1.5 mt-2 bg-[#0f1117] border border-white/5 p-3 rounded-xl">
+                {colors.map((c) => (
+                  <span
+                    key={c.name}
+                    onClick={() => handleRemoveColor(c.name)}
+                    className="flex items-center gap-1.5 bg-[#fb7a90]/10 hover:bg-red-500/10 text-[#fb7a90] hover:text-red-400 border border-[#fb7a90]/20 hover:border-red-500/20 px-2.5 py-1 rounded-lg text-xs font-semibold cursor-pointer transition-all"
+                    title="Click to remove"
+                  >
+                    <div className="w-2.5 h-2.5 rounded-full border border-white/20" style={{ backgroundColor: c.hex }} />
+                    {c.name} <X className="w-3 h-3 opacity-60" />
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
 
           {/* Product Features (Bullet Points) */}
           <div className="space-y-3">

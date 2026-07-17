@@ -386,6 +386,7 @@ export interface Database {
           price: number;
           quantity: number;
           size: string | null;
+          color: string | null;
           created_at: string;
         };
         Insert: {
@@ -396,6 +397,7 @@ export interface Database {
           price: number;
           quantity?: number;
           size?: string | null;
+          color?: string | null;
           created_at?: string;
         };
         Update: Partial<Database['public']['Tables']['order_items']['Insert']>;

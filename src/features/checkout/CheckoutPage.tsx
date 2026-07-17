@@ -818,7 +818,8 @@ export function CheckoutPage() {
         title: item.title,
         price: item.price,
         quantity: item.quantity,
-        size: item.selectedSize || null
+        size: item.selectedSize || null,
+        color: item.selectedColor || null
       }));
 
       const { error: itemsError } = await supabase

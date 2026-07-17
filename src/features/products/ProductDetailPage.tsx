@@ -91,6 +91,12 @@ export function ProductDetailPage() {
     setErrorMsg('');
   }, [selectedSize, selectedColor]);
 
+  const refreshReviews = () => {
+    if (product?.id) {
+      fetchProductReviews(product.id).then(setReviews).catch(console.error);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh] bg-surface-white">
@@ -526,7 +532,13 @@ export function ProductDetailPage() {
       </div>
       
       {/* Sections below the fold */}
-      <ReviewsSection productId={product.id} />
+      <ReviewsSection 
+        productId={product.id} 
+        reviews={reviews} 
+        onReviewSubmitted={refreshReviews}
+        productColors={product.colors}
+        productSizes={product.sizes}
+      />
       {recentProducts.length > 0 && <ProductCarousel title="Recently Viewed" products={recentProducts} />}
       {relatedProducts.length > 0 && <ProductCarousel title="You May Also Like" products={relatedProducts} />}
       

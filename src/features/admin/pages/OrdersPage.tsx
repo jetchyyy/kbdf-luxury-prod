@@ -13,6 +13,7 @@ interface OrderItem {
   price: number;
   quantity: number;
   size?: string | null;
+  color?: string | null;
 }
 
 interface Order {
@@ -486,6 +487,11 @@ export function OrdersPage() {
                             {item.size && (
                               <span className="text-[#fb7a90] bg-[#fb7a90]/10 border border-[#fb7a90]/25 px-1.5 py-0.5 rounded text-[9px] font-semibold">
                                 Size: {item.size}
+                              </span>
+                            )}
+                            {item.color && (
+                              <span className="text-[#fb7a90] bg-[#fb7a90]/10 border border-[#fb7a90]/25 px-1.5 py-0.5 rounded text-[9px] font-semibold">
+                                Color: {item.color}
                               </span>
                             )}
                           </div>

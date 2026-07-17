@@ -90,7 +90,7 @@ export function CartDrawer() {
                         <div>
                           <div className="flex justify-between items-start mb-1">
                             <h3 className="text-sm font-bold text-typography-primary leading-tight">{item.title}</h3>
-                            <button onClick={() => removeFromCart(item.id, item.selectedSize)} className="text-typography-muted hover:text-brand-pink">
+                            <button onClick={() => removeFromCart(item.id, item.selectedSize, item.selectedColor)} className="text-typography-muted hover:text-brand-pink">
                               <Trash2 className="w-4 h-4" strokeWidth={1.5} />
                             </button>
                           </div>
@@ -99,6 +99,11 @@ export function CartDrawer() {
                             {item.selectedSize && (
                               <span className="inline-block bg-surface-offWhite border border-surface-light text-typography-muted text-[10px] font-semibold px-2 py-0.5 rounded">
                                 Size: {item.selectedSize}
+                              </span>
+                            )}
+                            {item.selectedColor && (
+                              <span className="inline-block bg-surface-offWhite border border-surface-light text-typography-muted text-[10px] font-semibold px-2 py-0.5 rounded">
+                                Color: {item.selectedColor}
                               </span>
                             )}
                             {isOutOfStock && (

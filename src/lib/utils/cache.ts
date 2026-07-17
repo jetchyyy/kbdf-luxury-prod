@@ -63,3 +63,18 @@ export async function withCache<T>(
 
   return data;
 }
+
+/**
+ * Invalidates a specific cache entry from both in-memory and sessionStorage caches.
+ * 
+ * @param key The unique key of the cache entry to remove
+ */
+export function invalidateCache(key: string): void {
+  memoryCache.delete(key);
+  try {
+    sessionStorage.removeItem(key);
+  } catch (err) {
+    console.warn(`Error invalidating cache key ${key}:`, err);
+  }
+}
+

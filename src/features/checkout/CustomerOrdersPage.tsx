@@ -20,6 +20,8 @@ interface OrderItem {
   title: string;
   price: number;
   quantity: number;
+  size?: string | null;
+  color?: string | null;
 }
 
 interface Order {
@@ -965,7 +967,19 @@ export function CustomerOrdersPage() {
                                   <div key={item.id} className="flex justify-between items-center py-4">
                                     <div className="space-y-1.5">
                                       <p className="font-serif text-sm text-typography-primary">{item.title}</p>
-                                      <p className="text-[10px] text-typography-muted uppercase tracking-[0.15em]">Qty: {item.quantity}</p>
+                                      <div className="flex flex-wrap items-center gap-2 mt-0.5">
+                                        <span className="text-[10px] text-typography-muted uppercase tracking-[0.15em]">Qty: {item.quantity}</span>
+                                        {item.size && (
+                                          <span className="bg-surface-offWhite border border-surface-light px-1.5 py-0.5 rounded text-[9px] font-semibold text-typography-muted uppercase tracking-wider">
+                                            Size: {item.size}
+                                          </span>
+                                        )}
+                                        {item.color && (
+                                          <span className="bg-brand-pink/5 border border-brand-pink/20 px-1.5 py-0.5 rounded text-[9px] font-semibold text-brand-pink uppercase tracking-wider">
+                                            Color: {item.color}
+                                          </span>
+                                        )}
+                                      </div>
                                     </div>
                                     <span className="font-bold font-sans text-sm text-brand-navy">
                                       {currencySymbol}{(item.price * item.quantity).toLocaleString()}
@@ -1023,7 +1037,7 @@ export function CustomerOrdersPage() {
                     <div className="space-y-2.5">
                       {leewayRequestedItems.map((item: any, idx: number) => (
                         <div key={idx} className="flex justify-between items-center text-xs text-typography-primary font-medium">
-                          <span>{item.title} {item.size ? `(${item.size})` : ''} <strong className="text-typography-muted">x{item.quantity}</strong></span>
+                          <span>{item.title} {item.size ? `(${item.size})` : ''} {item.color ? `[${item.color}]` : ''} <strong className="text-typography-muted">x{item.quantity}</strong></span>
                           <span className="font-bold">{currencySymbol}{(item.price * item.quantity).toLocaleString()}</span>
                         </div>
                       ))}
@@ -1048,7 +1062,7 @@ export function CustomerOrdersPage() {
                     <div className="space-y-2.5">
                       {leewayRequestedItems.map((item: any, idx: number) => (
                         <div key={idx} className="flex justify-between items-center text-xs text-typography-primary font-medium">
-                          <span>{item.title} {item.size ? `(${item.size})` : ''} <strong className="text-typography-muted">x{item.quantity}</strong></span>
+                          <span>{item.title} {item.size ? `(${item.size})` : ''} {item.color ? `[${item.color}]` : ''} <strong className="text-typography-muted">x{item.quantity}</strong></span>
                           <span className="font-bold">{currencySymbol}{(item.price * item.quantity).toLocaleString()}</span>
                         </div>
                       ))}
@@ -1115,7 +1129,7 @@ export function CustomerOrdersPage() {
                     <div className="space-y-2.5 mb-6">
                       {leewayRequestedItems.map((item: any, idx: number) => (
                         <div key={idx} className="flex justify-between items-center text-xs text-typography-primary font-medium">
-                          <span>{item.title} {item.size ? `(${item.size})` : ''} <strong className="text-typography-muted">x{item.quantity}</strong></span>
+                          <span>{item.title} {item.size ? `(${item.size})` : ''} {item.color ? `[${item.color}]` : ''} <strong className="text-typography-muted">x{item.quantity}</strong></span>
                           <span className="font-bold">{currencySymbol}{(item.price * item.quantity).toLocaleString()}</span>
                         </div>
                       ))}

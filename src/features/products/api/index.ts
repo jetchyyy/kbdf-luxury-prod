@@ -1,6 +1,7 @@
 import { supabase, TENANT_ID } from '../../../lib/supabase/supabaseClient';
-import { withCache } from '../../../lib/utils/cache';
+import { withCache, invalidateCache } from '../../../lib/utils/cache';
 import type { Product, Review } from '../types';
+export { invalidateCache };
 
 const MOCK_PRODUCTS: Product[] = [
   {
@@ -214,3 +215,42 @@ export async function fetchProductReviews(itemId: string): Promise<Review[]> {
   }
   });
 }
+
+export async function submitProductReview(review: {
+  item_id: string;
+  author_name: string;
+  rating: number;
+  content: string;
+  images?: string[];
+  size?: string;
+  color?: string;
+  is_verified_buyer?: boolean;
+}): Promise<void> {
+  if (!TENANT_ID || TENANT_ID === 'will-be-set-after-migration-seed') {
+    throw new Error('Tenant ID is unset or invalid.');
+  }
+
+  const { error } = await supabase
+    .from('product_reviews')
+    .insert({
+      tenant_id: TENANT_ID,
+      item_id: review.item_id,
+      author_name: review.author_name,
+      rating: review.rating,
+      content: review.content,
+      images: review.images || [],
+      size: review.size || null,
+      color: review.color || null,
+      is_approved: true, // Auto-approve for instant feedback
+      is_verified_buyer: review.is_verified_buyer || false
+    });
+
+  if (error) {
+    throw error;
+  }
+
+  // Clear cache for product reviews
+  const cacheKey = `reviews_${TENANT_ID}_${review.item_id}`;
+  invalidateCache(cacheKey);
+}
+

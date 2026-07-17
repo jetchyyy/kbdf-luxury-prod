@@ -125,6 +125,10 @@ export function HomePage() {
   const settings = (tenant?.store_settings as any) || {};
   const homepage = settings.homepage || {};
 
+  const testimonials = homepage.testimonials?.length > 0
+    ? homepage.testimonials
+    : DEFAULT_TESTIMONIALS;
+
   const heros = homepage.heros?.length > 0 
     ? homepage.heros 
     : (homepage.hero?.image_url ? [homepage.hero] : DEFAULT_HEROS);
@@ -315,8 +319,11 @@ export function HomePage() {
             <button className="hover:text-typography-primary transition-colors">→</button>
           </div>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 px-4 md:px-8 max-w-[1600px] mx-auto">
-          {DEFAULT_TESTIMONIALS.map((t: any, i: number) => (
+        <div className={`grid grid-cols-1 ${
+          testimonials.length === 2 ? 'md:grid-cols-2 max-w-4xl' : 
+          testimonials.length === 1 ? 'max-w-md' : 'md:grid-cols-3'
+        } gap-6 px-4 md:px-8 max-w-[1600px] mx-auto`}>
+          {testimonials.map((t: any, i: number) => (
             <div key={i} className="bg-white flex h-[280px]">
                {/* Left: Text */}
                <div className="w-[55%] p-6 flex flex-col justify-between">

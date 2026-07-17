@@ -91,13 +91,21 @@ export function SettingsPage() {
   const [col3Title, setCol3Title] = useState('');
   const [col3Image, setCol3Image] = useState('');
 
-  // Testimonials (2 items)
+  // Testimonials (3 items)
   const [t1Quote, setT1Quote] = useState('');
   const [t1Author, setT1Author] = useState('');
   const [t1Image, setT1Image] = useState('');
+  const [t1Product, setT1Product] = useState('');
+  
   const [t2Quote, setT2Quote] = useState('');
   const [t2Author, setT2Author] = useState('');
   const [t2Image, setT2Image] = useState('');
+  const [t2Product, setT2Product] = useState('');
+
+  const [t3Quote, setT3Quote] = useState('');
+  const [t3Author, setT3Author] = useState('');
+  const [t3Image, setT3Image] = useState('');
+  const [t3Product, setT3Product] = useState('');
 
   // Lifestyle Banner
   const [lifestyleImage, setLifestyleImage] = useState('');
@@ -191,13 +199,20 @@ export function SettingsPage() {
       setCol3Image(cols[2]?.image_url || '');
 
       const tests = homepage.testimonials || [];
-      setT1Quote(tests[0]?.quote || 'The bag is absolutely gorgeous! It arrived in perfect condition and the packaging was so luxurious. Will definitely order again.');
-      setT1Author(tests[0]?.author || 'Sarah T.');
+      setT1Quote(tests[0]?.quote || "Five Stars! This wallet is fantastic. This wallet is durable enough to withstand daily use. I love the design - it's sleek and modern, but also practical with plenty of space for cards and cash/coins. It's the perfect blend of style and functionality. Highly recommend!");
+      setT1Author(tests[0]?.author || '- Richie A.E.');
       setT1Image(tests[0]?.image_url || '');
+      setT1Product(tests[0]?.product_name || 'CLASSIC WALLET');
 
-      setT2Quote(tests[1]?.quote || 'Excellent transaction. The preloved condition of the watches here is unparalleled. Authentic and premium.');
-      setT2Author(tests[1]?.author || 'John D.');
+      setT2Quote(tests[1]?.quote || "Been looking for this kind of design and I really love it! I took the risk to order even if I wasn't sure about my size, but I got it correct! It fits perfectly. Btw, you have to add 1 size up. Thanks! I will definitely order again 😊");
+      setT2Author(tests[1]?.author || '- MJ G.');
       setT2Image(tests[1]?.image_url || '');
+      setT2Product(tests[1]?.product_name || 'KESHI SLIDES');
+
+      setT3Quote(tests[2]?.quote || "This is actually my second time ordering the same pair of shoes. The quality is excellent, and they're really comfortable to wear. I'm very satisfied with my purchase!");
+      setT3Author(tests[2]?.author || '- Cyndy');
+      setT3Image(tests[2]?.image_url || '');
+      setT3Product(tests[2]?.product_name || 'EVERYDAY SNEAKERS');
 
       const lifestyle = homepage.lifestyle || {};
       setLifestyleImage(lifestyle.image_url || '');
@@ -290,8 +305,9 @@ export function SettingsPage() {
             { title: col3Title.trim(), image_url: col3Image.trim() },
           ],
           testimonials: [
-            { quote: t1Quote.trim(), author: t1Author.trim(), image_url: t1Image.trim() },
-            { quote: t2Quote.trim(), author: t2Author.trim(), image_url: t2Image.trim() },
+            { quote: t1Quote.trim(), author: t1Author.trim(), image_url: t1Image.trim(), product_name: t1Product.trim() },
+            { quote: t2Quote.trim(), author: t2Author.trim(), image_url: t2Image.trim(), product_name: t2Product.trim() },
+            { quote: t3Quote.trim(), author: t3Author.trim(), image_url: t3Image.trim(), product_name: t3Product.trim() },
           ],
           lifestyle: {
             image_url: lifestyleImage.trim(),
@@ -919,19 +935,35 @@ export function SettingsPage() {
             <div className="bg-[#111827] border border-white/5 p-5 rounded-2xl space-y-4">
               <h3 className="text-white font-semibold text-sm border-b border-white/5 pb-2">Customer Testimonials</h3>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2 border border-white/5 p-3 rounded-xl">
-                  <span className="text-[10px] text-white/40 uppercase font-bold">Review 1</span>
-                  <textarea value={t1Quote} onChange={e => setT1Quote(e.target.value)} disabled={!canEdit} placeholder="Quote content..." rows={2} className="w-full bg-[#0f1117] border border-white/10 rounded-xl px-3 py-1.5 text-xs text-white resize-none mb-1" />
-                  <input type="text" value={t1Author} onChange={e => setT1Author(e.target.value)} disabled={!canEdit} placeholder="Author Name" className="w-full bg-[#0f1117] border border-white/10 rounded-xl px-3 py-1.5 text-xs text-white mb-1" />
-                  <ImageUploadInput value={t1Image} onChange={setT1Image} tenantId={tenantId} placeholder="Product Thumbnail Image URL / Photo" />
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="space-y-2 border border-white/5 p-3 rounded-xl flex flex-col justify-between">
+                  <div>
+                    <span className="text-[10px] text-white/40 uppercase font-bold block mb-1">Review 1</span>
+                    <textarea value={t1Quote} onChange={e => setT1Quote(e.target.value)} disabled={!canEdit} placeholder="Quote content..." rows={3} className="w-full bg-[#0f1117] border border-white/10 rounded-xl px-3 py-1.5 text-xs text-white resize-none mb-1" />
+                    <input type="text" value={t1Author} onChange={e => setT1Author(e.target.value)} disabled={!canEdit} placeholder="Author Name" className="w-full bg-[#0f1117] border border-white/10 rounded-xl px-3 py-1.5 text-xs text-white mb-1" />
+                    <input type="text" value={t1Product} onChange={e => setT1Product(e.target.value)} disabled={!canEdit} placeholder="Product Label (e.g. CLASSIC WALLET)" className="w-full bg-[#0f1117] border border-white/10 rounded-xl px-3 py-1.5 text-xs text-white mb-2" />
+                  </div>
+                  <ImageUploadInput value={t1Image} onChange={setT1Image} tenantId={tenantId} placeholder="Product Thumbnail Image URL" />
                 </div>
 
-                <div className="space-y-2 border border-white/5 p-3 rounded-xl">
-                  <span className="text-[10px] text-white/40 uppercase font-bold">Review 2</span>
-                  <textarea value={t2Quote} onChange={e => setT2Quote(e.target.value)} disabled={!canEdit} placeholder="Quote content..." rows={2} className="w-full bg-[#0f1117] border border-white/10 rounded-xl px-3 py-1.5 text-xs text-white resize-none mb-1" />
-                  <input type="text" value={t2Author} onChange={e => setT2Author(e.target.value)} disabled={!canEdit} placeholder="Author Name" className="w-full bg-[#0f1117] border border-white/10 rounded-xl px-3 py-1.5 text-xs text-white mb-1" />
-                  <ImageUploadInput value={t2Image} onChange={setT2Image} tenantId={tenantId} placeholder="Product Thumbnail Image URL / Photo" />
+                <div className="space-y-2 border border-white/5 p-3 rounded-xl flex flex-col justify-between">
+                  <div>
+                    <span className="text-[10px] text-white/40 uppercase font-bold block mb-1">Review 2</span>
+                    <textarea value={t2Quote} onChange={e => setT2Quote(e.target.value)} disabled={!canEdit} placeholder="Quote content..." rows={3} className="w-full bg-[#0f1117] border border-white/10 rounded-xl px-3 py-1.5 text-xs text-white resize-none mb-1" />
+                    <input type="text" value={t2Author} onChange={e => setT2Author(e.target.value)} disabled={!canEdit} placeholder="Author Name" className="w-full bg-[#0f1117] border border-white/10 rounded-xl px-3 py-1.5 text-xs text-white mb-1" />
+                    <input type="text" value={t2Product} onChange={e => setT2Product(e.target.value)} disabled={!canEdit} placeholder="Product Label (e.g. KESHI SLIDES)" className="w-full bg-[#0f1117] border border-white/10 rounded-xl px-3 py-1.5 text-xs text-white mb-2" />
+                  </div>
+                  <ImageUploadInput value={t2Image} onChange={setT2Image} tenantId={tenantId} placeholder="Product Thumbnail Image URL" />
+                </div>
+
+                <div className="space-y-2 border border-white/5 p-3 rounded-xl flex flex-col justify-between">
+                  <div>
+                    <span className="text-[10px] text-white/40 uppercase font-bold block mb-1">Review 3</span>
+                    <textarea value={t3Quote} onChange={e => setT3Quote(e.target.value)} disabled={!canEdit} placeholder="Quote content..." rows={3} className="w-full bg-[#0f1117] border border-white/10 rounded-xl px-3 py-1.5 text-xs text-white resize-none mb-1" />
+                    <input type="text" value={t3Author} onChange={e => setT3Author(e.target.value)} disabled={!canEdit} placeholder="Author Name" className="w-full bg-[#0f1117] border border-white/10 rounded-xl px-3 py-1.5 text-xs text-white mb-1" />
+                    <input type="text" value={t3Product} onChange={e => setT3Product(e.target.value)} disabled={!canEdit} placeholder="Product Label (e.g. EVERYDAY SNEAKERS)" className="w-full bg-[#0f1117] border border-white/10 rounded-xl px-3 py-1.5 text-xs text-white mb-2" />
+                  </div>
+                  <ImageUploadInput value={t3Image} onChange={setT3Image} tenantId={tenantId} placeholder="Product Thumbnail Image URL" />
                 </div>
               </div>
             </div>
