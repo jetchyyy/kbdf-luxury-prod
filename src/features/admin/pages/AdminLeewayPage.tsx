@@ -274,8 +274,15 @@ export function AdminLeewayPage() {
               }
             }
 
+            const items = Array.isArray(req.requested_items) ? req.requested_items : [];
+            const mappedItems = items.map((i: any) => ({
+              ...i,
+              status: i.status || req.status || 'pending'
+            }));
+
             return {
               ...req,
+              requested_items: mappedItems,
               customer_name: name,
               customer_email: email
             };
@@ -325,21 +332,71 @@ export function AdminLeewayPage() {
     }
   }
 
+  async function handleProcessSingleItem(requestId: string, itemId: string, itemSize: string | null, action: 'approved' | 'rejected') {
+    if (!canEdit) return;
+    
+    const request = leewayRequests.find(r => r.id === requestId);
+    if (!request) return;
+
+    const itemsList = Array.isArray(request.requested_items) ? [...request.requested_items] : [];
+    const itemIndex = itemsList.findIndex((item: any) => item.id === itemId && item.size === itemSize);
+    if (itemIndex === -1) return;
+
+    itemsList[itemIndex] = {
+      ...itemsList[itemIndex],
+      status: action
+    };
+
+    const overallStatus = itemsList.some(i => i.status === 'pending')
+      ? 'pending'
+      : itemsList.some(i => i.status === 'approved')
+        ? 'approved'
+        : 'rejected';
+
+    try {
+      const { error } = await supabase
+        .from('leeway_requests')
+        .update({
+          requested_items: itemsList,
+          status: overallStatus
+        })
+        .eq('id', requestId);
+
+      if (error) throw error;
+
+      showSuccess(`Item status has been updated to ${action}!`);
+      loadData();
+    } catch (err: any) {
+      console.error(err);
+      showError('Failed to update item status: ' + (err.message || err));
+    }
+  }
+
   async function handleProcessRequest(requestId: string, action: 'approved' | 'rejected') {
     if (!canEdit) return;
+    const request = leewayRequests.find(r => r.id === requestId);
+    if (!request) return;
+
+    const itemsList = Array.isArray(request.requested_items) ? [...request.requested_items] : [];
+    const updatedItems = itemsList.map((item: any) => ({
+      ...item,
+      status: action
+    }));
+
     const notes = requestNotesMap[requestId] || '';
     try {
       const { error } = await supabase
         .from('leeway_requests')
         .update({
           status: action,
+          requested_items: updatedItems,
           admin_notes: notes.trim() || null
         })
         .eq('id', requestId);
 
       if (error) throw error;
 
-      showSuccess(`Leeway approval request has been ${action}!`);
+      showSuccess(`All items in leeway request have been ${action}!`);
       loadData();
     } catch (err: any) {
       console.error(err);
@@ -540,14 +597,49 @@ export function AdminLeewayPage() {
               <p className="text-[11px] text-white/30">{row.customer_email}</p>
             </div>
             {itemsList.length > 0 && (
-              <div className="bg-white/5 rounded-lg p-2 max-w-sm space-y-1">
+              <div className="bg-white/5 rounded-lg p-3 max-w-md space-y-2">
                 <span className="text-[9px] uppercase font-bold text-white/40 block">Requested Items:</span>
-                {itemsList.map((item: any, idx: number) => (
-                  <div key={idx} className="flex justify-between items-center text-[10px] text-white/60 gap-4">
-                    <span className="truncate">{item.title} {item.size ? `(${item.size})` : ''} <strong>x{item.quantity}</strong></span>
-                    <span className="font-bold text-[#fb7a90]">{currency}{Number(item.price * item.quantity).toLocaleString()}</span>
-                  </div>
-                ))}
+                {itemsList.map((item: any, idx: number) => {
+                  let itemStatusStyle = 'text-amber-400 bg-amber-400/10 border-amber-400/20';
+                  if (item.status === 'approved') itemStatusStyle = 'text-emerald-400 bg-emerald-400/10 border-emerald-400/20';
+                  else if (item.status === 'rejected') itemStatusStyle = 'text-red-400 bg-red-400/10 border-red-400/20';
+
+                  return (
+                    <div key={idx} className="flex items-center justify-between gap-4 text-[11px] border-b border-white/5 pb-2 last:border-b-0 last:pb-0">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-white font-medium truncate">{item.title}</p>
+                        <p className="text-white/40 text-[9px]">
+                          {item.size ? `Size: ${item.size} • ` : ''}Qty: {item.quantity} • Price: {currency}{Number(item.price).toLocaleString()}
+                        </p>
+                      </div>
+                      
+                      <div className="flex items-center gap-2">
+                        <span className={`px-1.5 py-0.5 rounded text-[8px] uppercase font-extrabold border ${itemStatusStyle}`}>
+                          {item.status || 'pending'}
+                        </span>
+                        
+                        {canEdit && (
+                          <div className="flex items-center gap-1">
+                            <button
+                              onClick={() => handleProcessSingleItem(row.id, item.id, item.size || null, 'approved')}
+                              className="p-1 text-emerald-400 hover:text-white hover:bg-emerald-500/20 rounded transition-all"
+                              title="Approve Item"
+                            >
+                              <CheckCircle className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              onClick={() => handleProcessSingleItem(row.id, item.id, item.size || null, 'rejected')}
+                              className="p-1 text-red-400 hover:text-white hover:bg-red-500/20 rounded transition-all"
+                              title="Reject Item"
+                            >
+                              <XCircle className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>

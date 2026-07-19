@@ -93,6 +93,7 @@ export function CustomerOrdersPage() {
   const [searchParams, setSearchParams] = useSearchParams();
 
   const [activeTab, setActiveTab] = useState<'orders' | 'leeway' | 'favorites' | 'profile'>('orders');
+  const [isRedirectModalOpen, setIsRedirectModalOpen] = useState(false);
   const [orders, setOrders] = useState<Order[]>([]);
   const [loadingOrders, setLoadingOrders] = useState(true);
   const [expandedOrderId, setExpandedOrderId] = useState<string | null>(null);
@@ -478,8 +479,31 @@ export function CustomerOrdersPage() {
         .maybeSingle();
 
       if (requestData) {
+        const itemsList = requestData.requested_items || [];
+        const mappedItems = itemsList.map((i: any) => ({
+          ...i,
+          status: i.status || requestData.status || 'pending'
+        }));
+
+        if (mappedItems.length > 0) {
+          const itemIds = mappedItems.map((i: any) => i.id);
+          const { data: products } = await supabase
+            .from('items')
+            .select('id, image_urls')
+            .in('id', itemIds);
+
+          if (products) {
+            mappedItems.forEach((mi: any) => {
+              const prod = products.find((p: any) => p.id === mi.id);
+              if (prod) {
+                mi.image_urls = prod.image_urls || [];
+              }
+            });
+          }
+        }
+
         setLeewayRequestStatus(requestData.status as any);
-        setLeewayRequestedItems(requestData.requested_items || []);
+        setLeewayRequestedItems(mappedItems);
       } else {
         setLeewayRequestStatus('not_requested');
         setLeewayRequestedItems([]);
@@ -544,7 +568,12 @@ export function CustomerOrdersPage() {
   const handleCheckoutApprovedItems = async () => {
     setIsCheckingOutLeeway(true);
     try {
-      const itemIds = leewayRequestedItems.map((i: any) => i.id);
+      const approvedItems = leewayRequestedItems.filter((i: any) => i.status === 'approved');
+      if (approvedItems.length === 0) {
+        throw new Error("No approved items found to checkout.");
+      }
+
+      const itemIds = approvedItems.map((i: any) => i.id);
       
       const { data: products, error } = await supabase
         .from('items')
@@ -556,7 +585,7 @@ export function CustomerOrdersPage() {
         throw new Error("Approved items could not be loaded from store catalog. They may have been deleted or deactivated.");
       }
 
-      const cartItemsToSet = leewayRequestedItems.map((reqItem: any) => {
+      const cartItemsToSet = approvedItems.map((reqItem: any) => {
         const product = products.find((p: any) => p.id === reqItem.id);
         if (!product) {
           return {
@@ -579,8 +608,7 @@ export function CustomerOrdersPage() {
       });
 
       setCartItems(cartItemsToSet);
-      showSuccess("Approved items loaded into your shopping bag!");
-      navigate('/checkout');
+      setIsRedirectModalOpen(true);
     } catch (err: any) {
       console.error(err);
       showError("Failed to prepare leeway checkout: " + (err.message || err));
@@ -1004,106 +1032,115 @@ export function CustomerOrdersPage() {
         {activeTab === 'leeway' && (
           <div className="space-y-8 animate-fadeIn">
             
-            {leewayAccounts.length === 0 && leewayRequestStatus === 'not_requested' && (
-              <div className="border border-surface-light bg-surface-offWhite rounded-3xl p-12 text-center space-y-4">
-                <Coins className="w-12 h-12 text-typography-muted/40 mx-auto" strokeWidth={1} />
-                <h3 className="text-lg font-serif text-typography-primary">Avail Leeway Installment Plan</h3>
-                <p className="text-xs text-typography-muted max-w-md mx-auto uppercase tracking-wider leading-relaxed">
-                  In order to buy items on installments, you must first request leeway pre-approval. Our store administrators will verify and authorize leeway eligibility for your account.
-                </p>
-                <button
-                  onClick={handleRequestLeeway}
-                  disabled={isRequestingLeeway}
-                  className="bg-brand-navy hover:bg-brand-pink text-white rounded-xl px-8 py-3.5 text-[10px] uppercase tracking-widest font-bold transition-all disabled:opacity-50 inline-flex items-center gap-2"
-                >
-                  {isRequestingLeeway && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-                  Request Leeway Approval
-                </button>
+            {leewayAccounts.length > 0 && (
+              <div className="bg-gradient-to-r from-brand-navy to-[#1f2d47] text-white rounded-3xl p-6 md:p-8 relative overflow-hidden shadow-xl border border-white/5 flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+                <div className="space-y-1 relative z-10">
+                  <span className="text-[10px] uppercase tracking-[0.2em] font-bold text-brand-pink">Cumulative Outstanding Balance</span>
+                  <h2 className="text-3xl md:text-4xl font-extrabold tracking-wide">{currencySymbol}{totalOutstandingBalance.toLocaleString()}</h2>
+                  <p className="text-xs text-white/60">Across all active leeway installment plans</p>
+                </div>
+                
+                {leewayAccounts.some(a => a.status === 'active') && (
+                  <button
+                    onClick={() => {
+                      const activeAccs = leewayAccounts.filter(a => a.status === 'active');
+                      if (activeAccs.length > 0) {
+                        setSelectedAccountId(activeAccs[0].id);
+                      }
+                      setIsSubmitModalOpen(true);
+                    }}
+                    className="bg-brand-pink hover:bg-white hover:text-brand-navy text-white rounded-2xl px-6 py-3.5 text-xs font-bold uppercase tracking-widest transition-all self-start sm:self-auto relative z-10 flex items-center gap-2 shadow-lg"
+                  >
+                    <Upload className="w-4 h-4" /> Submit Payment Receipt
+                  </button>
+                )}
+
+                <div className="absolute right-0 top-0 w-48 h-48 rounded-full bg-brand-pink/5 -mr-10 -mt-10 blur-xl pointer-events-none" />
+                <div className="absolute left-1/3 bottom-0 w-36 h-36 rounded-full bg-brand-peach/5 -ml-10 -mb-10 blur-xl pointer-events-none" />
               </div>
             )}
 
-            {leewayAccounts.length === 0 && leewayRequestStatus === 'pending' && (
-              <div className="border border-amber-200 bg-amber-50/30 rounded-3xl p-12 text-center space-y-6">
-                <Loader2 className="w-12 h-12 text-amber-500 animate-spin mx-auto" strokeWidth={1} />
-                <div className="space-y-2">
-                  <h3 className="text-lg font-serif text-amber-700">Request Under Review</h3>
-                  <p className="text-xs text-typography-muted max-w-md mx-auto leading-relaxed">
-                    Your request to access leeway installment options has been submitted and is currently pending verification by our store administrators. We will update you here once approved.
+            {/* Leeway Pre-Approval Requests Dashboard */}
+            <div className="border border-surface-light bg-surface-offWhite rounded-3xl p-6 md:p-8 space-y-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-surface-light pb-4">
+                <div>
+                  <h3 className="text-sm font-serif font-bold text-typography-primary flex items-center gap-2">
+                    <Coins className="w-4 h-4 text-brand-pink" /> Leeway Pre-Approval Requests
+                  </h3>
+                  <p className="text-[11px] text-typography-muted mt-0.5 uppercase tracking-wider">
+                    Item-by-item installment plan authorization status
                   </p>
                 </div>
-                {leewayRequestedItems.length > 0 && (
-                  <div className="max-w-md mx-auto border-t border-amber-200/50 pt-4 text-left">
-                    <span className="text-[10px] font-bold text-amber-600 uppercase block mb-2 tracking-wider">Requested Items:</span>
-                    <div className="space-y-2.5">
-                      {leewayRequestedItems.map((item: any, idx: number) => (
-                        <div key={idx} className="flex justify-between items-center text-xs text-typography-primary font-medium">
-                          <span>{item.title} {item.size ? `(${item.size})` : ''} {item.color ? `[${item.color}]` : ''} <strong className="text-typography-muted">x{item.quantity}</strong></span>
-                          <span className="font-bold">{currencySymbol}{(item.price * item.quantity).toLocaleString()}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
+                {leewayRequestedItems.some(i => i.status === 'approved') && (
+                  <button
+                    onClick={handleCheckoutApprovedItems}
+                    disabled={isCheckingOutLeeway}
+                    className="bg-brand-navy hover:bg-brand-pink text-white rounded-xl px-5 py-2.5 text-[9px] uppercase tracking-widest font-bold transition-all disabled:opacity-50 inline-flex items-center gap-2"
+                  >
+                    {isCheckingOutLeeway && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                    Checkout Approved Items
+                  </button>
                 )}
               </div>
-            )}
 
-            {leewayAccounts.length === 0 && leewayRequestStatus === 'rejected' && (
-              <div className="border border-red-200 bg-red-50/30 rounded-3xl p-12 text-center space-y-6">
-                <AlertCircle className="w-12 h-12 text-red-500 mx-auto" strokeWidth={1} />
-                <div className="space-y-2">
-                  <h3 className="text-lg font-serif text-red-700">Leeway Access Request Declined</h3>
-                  <p className="text-xs text-typography-muted max-w-md mx-auto leading-relaxed">
-                    Your request for leeway installment options has been declined by the store administrators. Installment features are currently unavailable for this account.
+              {loadingLeeway ? (
+                <div className="py-6 flex justify-center">
+                  <Loader2 className="w-6 h-6 text-brand-pink animate-spin" />
+                </div>
+              ) : leewayRequestedItems.length === 0 ? (
+                <div className="text-center py-6 space-y-4">
+                  <Coins className="w-10 h-10 text-typography-muted/40 mx-auto" strokeWidth={1} />
+                  <p className="text-xs text-typography-muted max-w-md mx-auto uppercase tracking-wider leading-relaxed">
+                    You haven't requested leeway pre-approval for any items yet. You can request leeway for items in your shopping bag during the checkout process.
                   </p>
                 </div>
-                {leewayRequestedItems.length > 0 && (
-                  <div className="max-w-md mx-auto border-t border-red-200/50 pt-4 text-left">
-                    <span className="text-[10px] font-bold text-red-500 uppercase block mb-2 tracking-wider">Requested Items:</span>
-                    <div className="space-y-2.5">
-                      {leewayRequestedItems.map((item: any, idx: number) => (
-                        <div key={idx} className="flex justify-between items-center text-xs text-typography-primary font-medium">
-                          <span>{item.title} {item.size ? `(${item.size})` : ''} {item.color ? `[${item.color}]` : ''} <strong className="text-typography-muted">x{item.quantity}</strong></span>
-                          <span className="font-bold">{currencySymbol}{(item.price * item.quantity).toLocaleString()}</span>
+              ) : (
+                <div className="divide-y divide-surface-light max-w-3xl">
+                  {leewayRequestedItems.map((item: any, idx: number) => {
+                    let statusLabel = 'Review Pending';
+                    let statusClass = 'bg-amber-50 text-amber-600 border-amber-200';
+                    if (item.status === 'approved') {
+                      statusLabel = 'Approved';
+                      statusClass = 'bg-emerald-50 text-emerald-600 border-emerald-200';
+                    } else if (item.status === 'rejected') {
+                      statusLabel = 'Declined';
+                      statusClass = 'bg-red-50 text-red-500 border-red-200';
+                    }
+
+                    const imageUrl = item.image_urls && item.image_urls.length > 0 ? item.image_urls[0] : null;
+
+                    return (
+                      <div key={idx} className="py-4 flex items-center justify-between gap-4 first:pt-0 last:pb-0">
+                        <div className="flex items-center gap-4 min-w-0">
+                          {/* Thumbnail */}
+                          <div className="w-12 h-12 rounded-xl bg-surface-light overflow-hidden border border-surface-light shrink-0">
+                            {imageUrl ? (
+                              <img src={imageUrl} alt={item.title} className="w-full h-full object-cover" />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center bg-brand-navy/5">
+                                <Coins className="w-5 h-5 text-brand-navy/30" />
+                              </div>
+                            )}
+                          </div>
+                          
+                          <div className="min-w-0">
+                            <h4 className="text-xs font-bold text-typography-primary truncate">{item.title}</h4>
+                            <p className="text-[10px] text-typography-muted mt-0.5 uppercase tracking-wider">
+                              {item.size ? `Size: ${item.size} • ` : ''}Qty: {item.quantity} • Price: {currencySymbol}{Number(item.price).toLocaleString()}
+                            </p>
+                          </div>
                         </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {(leewayAccounts.length > 0 || leewayRequestStatus === 'approved') && (
-              <>
-                {/* Outstanding Balance Banner */}
-                <div className="bg-gradient-to-r from-brand-navy to-[#1f2d47] text-white rounded-3xl p-6 md:p-8 relative overflow-hidden shadow-xl border border-white/5 flex flex-col sm:flex-row sm:items-center justify-between gap-6">
-                  <div className="space-y-1 relative z-10">
-                    <span className="text-[10px] uppercase tracking-[0.2em] font-bold text-brand-pink">Cumulative Outstanding Balance</span>
-                    <h2 className="text-3xl md:text-4xl font-extrabold tracking-wide">{currencySymbol}{totalOutstandingBalance.toLocaleString()}</h2>
-                    <p className="text-xs text-white/60">Across all active leeway installment plans</p>
-                  </div>
-                  
-                  {leewayAccounts.some(a => a.status === 'active') && (
-                    <button
-                      onClick={() => {
-                        // Set default selected leeway account if possible
-                        const activeAccs = leewayAccounts.filter(a => a.status === 'active');
-                        if (activeAccs.length > 0) {
-                          setSelectedAccountId(activeAccs[0].id);
-                        }
-                        setIsSubmitModalOpen(true);
-                      }}
-                      className="bg-brand-pink hover:bg-white hover:text-brand-navy text-white rounded-2xl px-6 py-3.5 text-xs font-bold uppercase tracking-widest transition-all self-start sm:self-auto relative z-10 flex items-center gap-2 shadow-lg"
-                    >
-                      <Upload className="w-4 h-4" /> Submit Payment Receipt
-                    </button>
-                  )}
-
-                  {/* Decorative backgrounds */}
-                  <div className="absolute right-0 top-0 w-48 h-48 rounded-full bg-brand-pink/5 -mr-10 -mt-10 blur-xl pointer-events-none" />
-                  <div className="absolute left-1/3 bottom-0 w-36 h-36 rounded-full bg-brand-peach/5 -ml-10 -mb-10 blur-xl pointer-events-none" />
+                        <div className="flex items-center gap-3 shrink-0">
+                          <span className={`px-2 py-0.5 rounded text-[9px] uppercase font-bold border ${statusClass}`}>
+                            {statusLabel}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
-              </>
-            )}
+              )}
+            </div>
 
             {loadingLeeway ? (
               <div className="space-y-4">
@@ -1111,42 +1148,7 @@ export function CustomerOrdersPage() {
                   <div key={i} className="h-28 bg-surface-offWhite border border-surface-light rounded-2xl animate-pulse" />
                 ))}
               </div>
-            ) : leewayAccounts.length === 0 && leewayRequestStatus === 'approved' ? (
-              <div className="border border-emerald-200 bg-emerald-50/10 rounded-3xl p-12 text-center space-y-6">
-                <div className="w-12 h-12 rounded-full bg-emerald-500/10 flex items-center justify-center mx-auto text-emerald-500">
-                  <CheckCircle className="w-6 h-6" />
-                </div>
-                <div className="space-y-2">
-                  <h3 className="text-lg font-serif text-emerald-800">Leeway Access Approved!</h3>
-                  <p className="text-xs text-typography-muted max-w-md mx-auto leading-relaxed">
-                    Good news! Your request for leeway installment options has been approved. You can now checkout your approved items below directly using our Leeway installment plan.
-                  </p>
-                </div>
-                
-                {leewayRequestedItems.length > 0 && (
-                  <div className="max-w-md mx-auto border-t border-emerald-200/50 pt-4 text-left">
-                    <span className="text-[10px] font-bold text-emerald-600 uppercase block mb-2 tracking-wider">Approved Items:</span>
-                    <div className="space-y-2.5 mb-6">
-                      {leewayRequestedItems.map((item: any, idx: number) => (
-                        <div key={idx} className="flex justify-between items-center text-xs text-typography-primary font-medium">
-                          <span>{item.title} {item.size ? `(${item.size})` : ''} {item.color ? `[${item.color}]` : ''} <strong className="text-typography-muted">x{item.quantity}</strong></span>
-                          <span className="font-bold">{currencySymbol}{(item.price * item.quantity).toLocaleString()}</span>
-                        </div>
-                      ))}
-                    </div>
-                    
-                    <button
-                      onClick={handleCheckoutApprovedItems}
-                      disabled={isCheckingOutLeeway}
-                      className="w-full bg-brand-navy hover:bg-brand-pink text-white rounded-xl py-3.5 text-[10px] uppercase tracking-widest font-bold transition-all disabled:opacity-50 inline-flex items-center justify-center gap-2"
-                    >
-                      {isCheckingOutLeeway && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-                      Proceed to Checkout
-                    </button>
-                  </div>
-                )}
-              </div>
-            ) : leewayAccounts.length > 0 ? (
+            ) : leewayAccounts.length === 0 ? null : (
               <div className="space-y-6">
                 <div>
                   <h3 className="text-xs uppercase tracking-widest font-bold text-typography-primary mb-4">Active Installment Plans</h3>
@@ -1280,7 +1282,7 @@ export function CustomerOrdersPage() {
                   )}
                 </div>
               </div>
-            ) : null}
+            )}
           </div>
         )}
 
@@ -1750,6 +1752,39 @@ export function CustomerOrdersPage() {
               </div>
             </form>
 
+          </div>
+        </div>
+      )}
+
+      {isRedirectModalOpen && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fadeIn">
+          <div className="bg-white rounded-3xl p-8 max-w-sm w-full text-center space-y-6 shadow-2xl border border-surface-light">
+            <div className="w-12 h-12 rounded-full bg-brand-pink/10 flex items-center justify-center mx-auto text-brand-pink">
+              <ShoppingBag className="w-6 h-6" />
+            </div>
+            <div className="space-y-2">
+              <h3 className="text-lg font-serif font-bold text-typography-primary">Shopping Bag Updated</h3>
+              <p className="text-xs text-typography-muted leading-relaxed">
+                Your approved leeway items have been loaded into your shopping bag. Click below to continue to the checkout form.
+              </p>
+            </div>
+            <div className="flex flex-col gap-2.5">
+              <button
+                onClick={() => {
+                  setIsRedirectModalOpen(false);
+                  navigate('/checkout?select=leeway');
+                }}
+                className="w-full bg-brand-navy hover:bg-brand-pink text-white rounded-xl py-3.5 text-[10px] uppercase tracking-widest font-bold transition-all shadow-md"
+              >
+                Continue to Checkout Form
+              </button>
+              <button
+                onClick={() => setIsRedirectModalOpen(false)}
+                className="w-full border border-surface-light hover:bg-surface-offWhite text-typography-primary rounded-xl py-3.5 text-[10px] uppercase tracking-widest font-bold transition-all"
+              >
+                Stay on Profile
+              </button>
+            </div>
           </div>
         </div>
       )}

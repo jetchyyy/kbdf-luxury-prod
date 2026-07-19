@@ -179,6 +179,13 @@ export function CheckoutPage() {
   const [selectedMethodId, setSelectedMethodId] = useState<string>('walk_in');
   const [proofOfPaymentUrl, setProofOfPaymentUrl] = useState('');
 
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('select') === 'leeway') {
+      setSelectedMethodId('leeway');
+    }
+  }, []);
+
   // Currency Symbol and Tenant ID
   const currencySymbol = tenant?.currency_symbol || '₱';
   const tenantId = tenant?.id || TENANT_ID || '';
@@ -414,6 +421,14 @@ export function CheckoutPage() {
     }
   }, [isLeewayEligible, minDownPayment]);
 
+  const getCartItemLeewayStatus = (cartItem: any) => {
+    const matched = leewayRequestedItems.find(
+      req => req.id === cartItem.id && (req.size === (cartItem.selectedSize || null) || !req.size)
+    );
+    if (!matched) return 'not_requested';
+    return matched.status || 'pending';
+  };
+
   // Load leeway request status
   useEffect(() => {
     if (user && tenantId) {
@@ -425,8 +440,13 @@ export function CheckoutPage() {
         .maybeSingle()
         .then(({ data }: any) => {
           if (data) {
+            const itemsList = data.requested_items || [];
+            const mappedItems = itemsList.map((i: any) => ({
+              ...i,
+              status: i.status || data.status || 'pending'
+            }));
             setLeewayRequestStatus(data.status);
-            setLeewayRequestedItems(data.requested_items || []);
+            setLeewayRequestedItems(mappedItems);
           } else {
             setLeewayRequestStatus('not_requested');
             setLeewayRequestedItems([]);
@@ -442,28 +462,86 @@ export function CheckoutPage() {
     if (!user || !tenantId) return;
     setIsRequestingLeeway(true);
     try {
-      const requestedItemsPayload = items.map(item => ({
+      const newRequestedItems = items.map(item => ({
         id: item.id,
         title: item.title,
         price: item.price,
         quantity: item.quantity,
-        size: item.selectedSize || null
+        size: item.selectedSize || null,
+        image_urls: item.image_urls || [],
+        status: 'pending'
       }));
 
-      const { error } = await supabase
+      // Fetch existing leeway request for customer to merge items
+      const { data: existingRequest } = await supabase
         .from('leeway_requests')
-        .insert({
-          tenant_id: tenantId,
-          customer_id: user.id,
-          status: 'pending',
-          requested_items: requestedItemsPayload,
-          customer_name: user.user_metadata?.full_name || `${firstName} ${lastName}`.trim() || email || 'Unknown',
-          customer_email: user.email || email
-        });
+        .select('*')
+        .eq('tenant_id', tenantId)
+        .eq('customer_id', user.id)
+        .maybeSingle();
 
-      if (error) throw error;
-      setLeewayRequestStatus('pending');
-      showSuccess('Leeway pre-approval request submitted successfully!');
+      let mergedItems = [...newRequestedItems];
+      const customerName = user.user_metadata?.full_name || `${firstName} ${lastName}`.trim() || email || 'Unknown';
+      const customerEmail = user.email || email;
+
+      if (existingRequest) {
+        const currentItems = Array.isArray(existingRequest.requested_items) ? existingRequest.requested_items : [];
+        mergedItems = [...currentItems];
+
+        for (const newItem of newRequestedItems) {
+          const index = mergedItems.findIndex(item => item.id === newItem.id && item.size === newItem.size);
+          if (index > -1) {
+            // Re-request if rejected. Keep if already approved or pending.
+            if (mergedItems[index].status === 'rejected') {
+              mergedItems[index].status = 'pending';
+              mergedItems[index].quantity = newItem.quantity;
+            }
+          } else {
+            mergedItems.push(newItem);
+          }
+        }
+
+        const overallStatus = mergedItems.some(i => i.status === 'pending')
+          ? 'pending'
+          : mergedItems.some(i => i.status === 'approved')
+            ? 'approved'
+            : 'rejected';
+
+        const { error } = await supabase
+          .from('leeway_requests')
+          .update({
+            requested_items: mergedItems,
+            status: overallStatus,
+            customer_name: customerName,
+            customer_email: customerEmail
+          })
+          .eq('id', existingRequest.id);
+
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from('leeway_requests')
+          .insert({
+            tenant_id: tenantId,
+            customer_id: user.id,
+            status: 'pending',
+            requested_items: mergedItems,
+            customer_name: customerName,
+            customer_email: customerEmail
+          });
+
+        if (error) throw error;
+      }
+
+      setLeewayRequestedItems(mergedItems);
+      const finalStatus = mergedItems.some(i => i.status === 'pending')
+        ? 'pending'
+        : mergedItems.some(i => i.status === 'approved')
+          ? 'approved'
+          : 'rejected';
+      setLeewayRequestStatus(finalStatus);
+
+      showSuccess('Leeway pre-approval request submitted successfully for your items!');
     } catch (err: any) {
       console.error(err);
       showError('Failed to submit leeway request: ' + (err.message || err));
@@ -681,7 +759,14 @@ export function CheckoutPage() {
   // Validate fields for Step 3
   const isStep3Valid = () => {
     if (selectedMethodId === 'leeway') {
-      if (!user || leewayRequestStatus !== 'approved') return false;
+      if (!user) return false;
+      const allCartItemsApproved = items.every(cartItem => {
+        const matchedRequestItem = leewayRequestedItems.find(
+          reqItem => reqItem.id === cartItem.id && (reqItem.size === (cartItem.selectedSize || null) || !reqItem.size)
+        );
+        return matchedRequestItem && matchedRequestItem.status === 'approved';
+      });
+      if (!allCartItemsApproved) return false;
       if (leewayDownPayment < minDownPayment || leewayDownPayment > cartTotal) return false;
       if (leewayDownPayment > 0) {
         if (leewayPaymentMethodId !== 'walk_in' && selectedDownPaymentMethod && (selectedDownPaymentMethod.type === 'qr' || selectedDownPaymentMethod.type === 'bank_transfer')) {
@@ -1284,149 +1369,171 @@ export function CheckoutPage() {
                           Sign In / Register
                         </button>
                       </div>
-                    ) : leewayRequestStatus === 'not_requested' ? (
-                      <div className="space-y-4">
-                        <p className="text-xs text-typography-muted">To avail the leeway payment option, you must first submit a request for administrator approval. This helps us ensure limits are safe for your account.</p>
-                        <button
-                          type="button"
-                          onClick={handleRequestLeeway}
-                          disabled={isRequestingLeeway}
-                          className="bg-brand-navy hover:bg-brand-pink text-white rounded-xl px-6 py-3 text-xs font-bold uppercase tracking-wider transition-all disabled:opacity-50 flex items-center gap-2"
-                        >
-                          {isRequestingLeeway && <Loader2 className="w-4 h-4 animate-spin" />}
-                          Request Leeway Access
-                        </button>
-                      </div>
-                    ) : leewayRequestStatus === 'pending' ? (
-                      <div className="bg-amber-50 border border-amber-200/50 p-5 rounded-2xl text-xs space-y-4">
-                        <div>
-                          <strong className="block text-amber-600 uppercase tracking-wide text-[10px]">Access Review Pending</strong>
-                          <p className="text-typography-muted leading-relaxed mt-1">
-                            Your request to purchase using Leeway installments has been submitted and is currently pending review by our store administrators. We will unlock leeway checkout for your account once approved.
-                          </p>
-                        </div>
-                        {leewayRequestedItems.length > 0 && (
-                          <div className="border-t border-amber-200/30 pt-3">
-                            <span className="text-[9px] font-bold text-amber-600 uppercase block mb-2">Requested Items:</span>
-                            <div className="space-y-2">
-                              {leewayRequestedItems.map((item: any, idx: number) => (
-                                <div key={idx} className="flex justify-between items-center text-[11px] text-typography-muted">
-                                  <span>{item.title} {item.size ? `(${item.size})` : ''} <strong className="text-typography-primary">x{item.quantity}</strong></span>
-                                  <span className="font-semibold">{currencySymbol}{(item.price * item.quantity).toLocaleString()}</span>
-                                </div>
-                              ))}
+                    ) : (() => {
+                      const cartItemStatuses = items.map(item => ({
+                        item,
+                        status: getCartItemLeewayStatus(item)
+                      }));
+
+                      const hasUnrequested = cartItemStatuses.some(x => x.status === 'not_requested');
+                      const hasPending = cartItemStatuses.some(x => x.status === 'pending');
+                      const hasRejected = cartItemStatuses.some(x => x.status === 'rejected');
+                      const allApproved = cartItemStatuses.every(x => x.status === 'approved');
+
+                      if (allApproved) {
+                        return (
+                          <div className="space-y-5">
+                            <div className="bg-emerald-50 border border-emerald-200 text-emerald-600 p-4 rounded-xl text-xs font-semibold animate-fadeIn">
+                              ✓ Leeway pre-approval is Approved for all items in your cart! You can customize your installment details below.
                             </div>
-                          </div>
-                        )}
-                      </div>
-                    ) : leewayRequestStatus === 'rejected' ? (
-                      <div className="bg-red-50 border border-red-200/50 p-5 rounded-2xl text-xs space-y-4">
-                        <div>
-                          <strong className="block text-red-500 uppercase tracking-wide text-[10px]">Access Request Declined</strong>
-                          <p className="text-typography-muted leading-relaxed mt-1">
-                            Your request for leeway installments was declined by the administrator. Please choose an alternative payment option to complete your checkout.
-                          </p>
-                        </div>
-                        {leewayRequestedItems.length > 0 && (
-                          <div className="border-t border-red-200/30 pt-3">
-                            <span className="text-[9px] font-bold text-red-500 uppercase block mb-2">Requested Items:</span>
-                            <div className="space-y-2">
-                              {leewayRequestedItems.map((item: any, idx: number) => (
-                                <div key={idx} className="flex justify-between items-center text-[11px] text-typography-muted">
-                                  <span>{item.title} {item.size ? `(${item.size})` : ''} <strong className="text-typography-primary">x{item.quantity}</strong></span>
-                                  <span className="font-semibold">{currencySymbol}{(item.price * item.quantity).toLocaleString()}</span>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    ) : (
-                      <div className="space-y-5">
-                        <div className="bg-emerald-50 border border-emerald-200 text-emerald-600 p-4 rounded-xl text-xs font-semibold">
-                          ✓ Your leeway plan pre-approval is Approved! You can now customize your installment details below.
-                        </div>
-                        {/* 1. Installment schedule */}
-                        <div className="flex flex-col gap-1.5">
-                          <label className="text-[10px] font-bold uppercase text-typography-primary">Select Installment Schedule *</label>
-                          <select
-                            value={leewaySchedule}
-                            onChange={e => setLeewaySchedule(e.target.value as any)}
-                            className="bg-white border border-surface-light rounded-xl px-4 py-2.5 text-sm text-typography-primary outline-none focus:border-brand-pink"
-                          >
-                            <option value="weekly">Pay Weekly</option>
-                            <option value="monthly">Pay Monthly</option>
-                            <option value="flexible">Flexible (Depends on Customer)</option>
-                          </select>
-                        </div>
-
-                        {/* 2. Downpayment amount */}
-                        <div className="flex flex-col gap-1.5">
-                          <label className="text-[10px] font-bold uppercase text-typography-primary">Down Payment Amount (PHP) *</label>
-                          <input
-                            type="number"
-                            value={leewayDownPayment || ''}
-                            onChange={e => setLeewayDownPayment(Math.max(0, Number(e.target.value)))}
-                            min={minDownPayment}
-                            max={cartTotal}
-                            placeholder={`Min downpayment: ${minDownPayment}`}
-                            className="bg-white border border-surface-light rounded-xl px-4 py-2.5 text-sm text-typography-primary outline-none focus:border-brand-pink"
-                          />
-                          <p className="text-[10px] text-typography-muted italic">Minimum required: {currencySymbol}{minDownPayment.toLocaleString()} — Max: {currencySymbol}{cartTotal.toLocaleString()}</p>
-                        </div>
-
-                        {/* 3. Downpayment routing */}
-                        {leewayDownPayment > 0 && (
-                          <div className="space-y-4 pt-3 border-t border-surface-light">
-                            <label className="text-[10px] font-bold uppercase text-typography-primary block">Select Down Payment Route</label>
-                            
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                              <label className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer text-xs ${leewayPaymentMethodId === 'walk_in' ? 'border-brand-pink bg-brand-pink/5' : 'border-surface-light'}`}>
-                                <input type="radio" checked={leewayPaymentMethodId === 'walk_in'} onChange={() => { setLeewayPaymentMethodId('walk_in'); setProofOfPaymentUrl(''); }} />
-                                <div>
-                                  <strong className="block">Cash / Walk-in</strong>
-                                  <span className="text-typography-muted">Pay downpayment directly in store.</span>
-                                </div>
-                              </label>
-
-                              {paymentMethods.map(m => (
-                                <label key={m.id} className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer text-xs ${leewayPaymentMethodId === m.id ? 'border-brand-pink bg-brand-pink/5' : 'border-surface-light'}`}>
-                                  <input type="radio" checked={leewayPaymentMethodId === m.id} onChange={() => { setLeewayPaymentMethodId(m.id); setProofOfPaymentUrl(''); }} />
-                                  <div className="flex-1 min-w-0">
-                                    <strong className="block uppercase truncate">{m.name} ({m.type.replace('_', ' ')})</strong>
-                                    {m.account_number && <span className="text-typography-muted text-[10px] truncate block">{m.account_number}</span>}
-                                  </div>
-                                </label>
-                              ))}
+                            {/* 1. Installment schedule */}
+                            <div className="flex flex-col gap-1.5 animate-fadeIn">
+                              <label className="text-[10px] font-bold uppercase text-typography-primary">Select Installment Schedule *</label>
+                              <select
+                                value={leewaySchedule}
+                                onChange={e => setLeewaySchedule(e.target.value as any)}
+                                className="bg-white border border-surface-light rounded-xl px-4 py-2.5 text-sm text-typography-primary outline-none focus:border-brand-pink"
+                              >
+                                <option value="weekly">Pay Weekly</option>
+                                <option value="monthly">Pay Monthly</option>
+                                <option value="flexible">Flexible (Depends on Customer)</option>
+                              </select>
                             </div>
 
-                            {/* Downpayment receipt upload */}
-                            {leewayPaymentMethodId !== 'walk_in' && selectedDownPaymentMethod && (selectedDownPaymentMethod.type === 'qr' || selectedDownPaymentMethod.type === 'bank_transfer') && (
-                              <div className="bg-white border border-surface-light p-4 rounded-xl space-y-4 mt-3">
-                                <span className="text-[10px] uppercase font-bold text-typography-primary block border-b border-surface-light pb-1">Digital Transfer Details</span>
-                                {selectedDownPaymentMethod.qr_code_url && (
-                                  <div className="flex flex-col items-center gap-3">
-                                    <div className="w-40 h-40 border border-surface-light p-1 rounded-xl">
-                                      <img src={selectedDownPaymentMethod.qr_code_url} alt="QR Code" className="w-full h-full object-contain" />
+                            {/* 2. Downpayment amount */}
+                            <div className="flex flex-col gap-1.5 animate-fadeIn">
+                              <label className="text-[10px] font-bold uppercase text-typography-primary">Down Payment Amount (PHP) *</label>
+                              <input
+                                type="number"
+                                value={leewayDownPayment || ''}
+                                onChange={e => setLeewayDownPayment(Math.max(0, Number(e.target.value)))}
+                                min={minDownPayment}
+                                max={cartTotal}
+                                placeholder={`Min downpayment: ${minDownPayment}`}
+                                className="bg-white border border-surface-light rounded-xl px-4 py-2.5 text-sm text-typography-primary outline-none focus:border-brand-pink"
+                              />
+                              <p className="text-[10px] text-typography-muted italic">Minimum required: {currencySymbol}{minDownPayment.toLocaleString()} — Max: {currencySymbol}{cartTotal.toLocaleString()}</p>
+                            </div>
+
+                            {/* 3. Downpayment routing */}
+                            {leewayDownPayment > 0 && (
+                              <div className="space-y-4 pt-3 border-t border-surface-light animate-fadeIn">
+                                <label className="text-[10px] font-bold uppercase text-typography-primary block">Select Down Payment Route</label>
+                                
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                  <label className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer text-xs ${leewayPaymentMethodId === 'walk_in' ? 'border-brand-pink bg-brand-pink/5' : 'border-surface-light'}`}>
+                                    <input type="radio" checked={leewayPaymentMethodId === 'walk_in'} onChange={() => { setLeewayPaymentMethodId('walk_in'); setProofOfPaymentUrl(''); }} />
+                                    <div>
+                                      <strong className="block">Cash / Walk-in</strong>
+                                      <span className="text-typography-muted">Pay downpayment directly in store.</span>
                                     </div>
-                                    <a href={selectedDownPaymentMethod.qr_code_url} target="_blank" rel="noreferrer" download className="text-[10px] text-brand-pink font-semibold hover:underline">Download QR</a>
+                                  </label>
+
+                                  {paymentMethods.map(m => (
+                                    <label key={m.id} className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer text-xs ${leewayPaymentMethodId === m.id ? 'border-brand-pink bg-brand-pink/5' : 'border-surface-light'}`}>
+                                      <input type="radio" checked={leewayPaymentMethodId === m.id} onChange={() => { setLeewayPaymentMethodId(m.id); setProofOfPaymentUrl(''); }} />
+                                      <div className="flex-1 min-w-0">
+                                        <strong className="block uppercase truncate">{m.name} ({m.type.replace('_', ' ')})</strong>
+                                        {m.account_number && <span className="text-typography-muted text-[10px] truncate block">{m.account_number}</span>}
+                                      </div>
+                                    </label>
+                                  ))}
+                                </div>
+
+                                {/* Downpayment receipt upload */}
+                                {leewayPaymentMethodId !== 'walk_in' && selectedDownPaymentMethod && (selectedDownPaymentMethod.type === 'qr' || selectedDownPaymentMethod.type === 'bank_transfer') && (
+                                  <div className="bg-white border border-surface-light p-4 rounded-xl space-y-4 mt-3">
+                                    <span className="text-[10px] uppercase font-bold text-typography-primary block border-b border-surface-light pb-1">Digital Transfer Details</span>
+                                    {selectedDownPaymentMethod.qr_code_url && (
+                                      <div className="flex flex-col items-center gap-3">
+                                        <div className="w-40 h-40 border border-surface-light p-1 rounded-xl">
+                                          <img src={selectedDownPaymentMethod.qr_code_url} alt="QR Code" className="w-full h-full object-contain" />
+                                        </div>
+                                        <a href={selectedDownPaymentMethod.qr_code_url} target="_blank" rel="noreferrer" download className="text-[10px] text-brand-pink font-semibold hover:underline">Download QR</a>
+                                      </div>
+                                    )}
+                                    <div className="space-y-1.5">
+                                      <label className="text-[10px] font-bold uppercase text-typography-primary block">Upload Down Payment Receipt *</label>
+                                      <ImageUploadInput
+                                        value={proofOfPaymentUrl}
+                                        onChange={setProofOfPaymentUrl}
+                                        tenantId={tenantId}
+                                        placeholder="Select receipt file..."
+                                      />
+                                    </div>
                                   </div>
                                 )}
-                                <div className="space-y-1.5">
-                                  <label className="text-[10px] font-bold uppercase text-typography-primary block">Upload Down Payment Receipt *</label>
-                                  <ImageUploadInput
-                                    value={proofOfPaymentUrl}
-                                    onChange={setProofOfPaymentUrl}
-                                    tenantId={tenantId}
-                                    placeholder="Select receipt file..."
-                                  />
-                                </div>
                               </div>
                             )}
                           </div>
-                        )}
-                      </div>
-                    )}
+                        );
+                      }
+
+                      return (
+                        <div className="space-y-4 animate-fadeIn">
+                          <p className="text-xs text-typography-muted">
+                            Leeway pre-approval is managed on an item-by-item basis. Please check the status of each item in your cart below:
+                          </p>
+
+                          <div className="space-y-2 border border-surface-light rounded-2xl p-4 bg-white/50">
+                            {cartItemStatuses.map(({ item, status }, idx) => {
+                              let statusLabel = 'Not Requested';
+                              let statusClass = 'bg-gray-100 text-gray-600 border-gray-200';
+                              if (status === 'pending') {
+                                statusLabel = 'Review Pending';
+                                statusClass = 'bg-amber-50 text-amber-600 border-amber-200';
+                              } else if (status === 'approved') {
+                                statusLabel = 'Approved';
+                                statusClass = 'bg-emerald-50 text-emerald-600 border-emerald-200';
+                              } else if (status === 'rejected') {
+                                statusLabel = 'Declined';
+                                statusClass = 'bg-red-50 text-red-600 border-red-200';
+                              }
+
+                              return (
+                                <div key={idx} className="flex justify-between items-center text-xs border-b border-surface-light pb-2 last:border-0 last:pb-0">
+                                  <div>
+                                    <span className="font-semibold text-typography-primary block">{item.title}</span>
+                                    {item.selectedSize && <span className="text-[10px] text-typography-muted">Size: {item.selectedSize}</span>}
+                                  </div>
+                                  <span className={`px-2 py-0.5 rounded text-[9px] uppercase font-bold border ${statusClass}`}>
+                                    {statusLabel}
+                                  </span>
+                                </div>
+                              );
+                            })}
+                          </div>
+
+                          {(hasUnrequested || hasRejected) && (
+                            <div className="space-y-3">
+                              <p className="text-xs text-typography-muted">
+                                {hasRejected 
+                                  ? 'Some items in your cart have been declined for leeway. You can request leeway for any new/unrequested items, but declined items cannot be checked out via leeway.' 
+                                  : 'Submit a request to authorize leeway pre-approval for the items in your cart.'}
+                              </p>
+                              <button
+                                type="button"
+                                onClick={handleRequestLeeway}
+                                disabled={isRequestingLeeway}
+                                className="bg-brand-navy hover:bg-brand-pink text-white rounded-xl px-6 py-3 text-xs font-bold uppercase tracking-wider transition-all disabled:opacity-50 flex items-center gap-2"
+                              >
+                                {isRequestingLeeway && <Loader2 className="w-4 h-4 animate-spin" />}
+                                Request Leeway Plan for this item
+                              </button>
+                            </div>
+                          )}
+
+                          {hasPending && !hasUnrequested && (
+                            <div className="bg-amber-50 border border-amber-200/50 p-4 rounded-xl text-xs text-amber-800">
+                              <strong>Access Review Pending</strong>
+                              <p className="mt-1 leading-relaxed text-typography-muted">
+                                Some items are currently pending review by our store administrators. We will unlock leeway checkout for your cart once all items are approved.
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })()}
                   </div>
                 )}
 
