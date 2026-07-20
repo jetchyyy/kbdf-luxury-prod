@@ -22,7 +22,7 @@ export function LuxuryNavbar() {
 
   const navLinks = [
     { label: "Home", href: "/" },
-    { label: "New Arrivals", href: "/shop" },
+    { label: "Latest Arrivals", href: "/latest" },
     { label: "Shop", href: "/shop" },
     { label: "Categories", href: "/categories" },
     { label: "Contact", href: "/contact" },

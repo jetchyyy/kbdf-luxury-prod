@@ -45,6 +45,10 @@ export function SettingsPage() {
   const [currencySymbol, setCurrencySymbol] = useState('₱');
   const [timezone, setTimezone] = useState('Asia/Manila');
   const [reservationDurationMins, setReservationDurationMins] = useState(5);
+  
+  // Custom Login Backgrounds
+  const [authBgUrl, setAuthBgUrl] = useState('');
+  const [adminBgUrl, setAdminBgUrl] = useState('');
 
   // Tab 2: Contact
   const [address, setAddress] = useState('');
@@ -140,6 +144,10 @@ export function SettingsPage() {
       setAddress(settings.address || '');
       setPhone(settings.phone || '');
       setEmail(settings.email || '');
+
+      const branding = settings.branding || {};
+      setAuthBgUrl(branding.auth_bg_url || '');
+      setAdminBgUrl(branding.admin_bg_url || '');
       
       const hours = settings.hours || {};
       setMonFriHours(hours.monday_friday || '10:00 AM - 9:00 PM');
@@ -257,6 +265,10 @@ export function SettingsPage() {
           monday_friday: monFriHours.trim(),
           saturday: satHours.trim(),
           sunday: sunHours.trim(),
+        },
+        branding: {
+          auth_bg_url: authBgUrl.trim(),
+          admin_bg_url: adminBgUrl.trim(),
         },
         homepage: {
           announcement_text: announcementText.trim(),
@@ -526,6 +538,27 @@ export function SettingsPage() {
                     />
                     <span className="font-mono text-xs text-white/70">{accentColor}</span>
                   </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4 pt-2">
+                <div className="flex flex-col gap-2">
+                  <label className="text-white/60 text-xs font-medium uppercase tracking-wider">User Login BG Image</label>
+                  <ImageUploadInput
+                    value={authBgUrl}
+                    onChange={setAuthBgUrl}
+                    tenantId={tenantId}
+                    placeholder="Optional background"
+                  />
+                </div>
+                <div className="flex flex-col gap-2">
+                  <label className="text-white/60 text-xs font-medium uppercase tracking-wider">Admin Login BG Image</label>
+                  <ImageUploadInput
+                    value={adminBgUrl}
+                    onChange={setAdminBgUrl}
+                    tenantId={tenantId}
+                    placeholder="Optional background"
+                  />
                 </div>
               </div>
             </div>

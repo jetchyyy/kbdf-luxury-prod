@@ -57,7 +57,7 @@ export function CartDrawer() {
               {items.length === 0 ? (
                 <div className="flex flex-col items-center justify-center h-full text-center opacity-60">
                   <p className="font-serif italic text-lg mb-2">Your bag is empty.</p>
-                  <p className="text-[10px] uppercase tracking-widest font-bold">Discover our new arrivals</p>
+                  <p className="text-[10px] uppercase tracking-widest font-bold">Discover our latest arrivals</p>
                 </div>
               ) : (
                 items.map((item) => {

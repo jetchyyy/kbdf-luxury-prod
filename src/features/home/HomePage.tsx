@@ -207,7 +207,7 @@ export function HomePage() {
         <div className="animate-marquee inline-flex items-center whitespace-nowrap">
            {[...Array(20)].map((_, i) => (
              <span key={i} className="text-[#d32f2f] font-bold uppercase tracking-widest px-4 text-xs md:text-sm">
-               New Arrivals <span className="text-[#d32f2f] mx-4">•</span>
+               Latest Arrivals <span className="text-[#d32f2f] mx-4">•</span>
              </span>
            ))}
         </div>
@@ -217,16 +217,25 @@ export function HomePage() {
       {categories.length > 0 && (
         <section className="w-full bg-surface-white flex overflow-x-auto no-scrollbar">
           {categories.map((cat, i) => (
-            <Link key={i} to={`/shop?category=${cat.slug}`} className="group relative min-w-[150px] md:flex-1 aspect-square md:aspect-auto md:h-[250px] overflow-hidden bg-brand-navy/10 flex items-center justify-center">
+            <Link key={i} to={`/shop?category=${cat.slug}`} className="group relative min-w-[150px] md:flex-1 aspect-square md:aspect-auto md:h-[350px] overflow-hidden bg-surface-offWhite flex items-center justify-center">
               {cat.img ? (
-                <img src={cat.img} alt={cat.slug} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                <img src={cat.img} alt={cat.slug} className="w-full h-full object-cover transition-transform duration-1000 ease-[cubic-bezier(0.25,0.46,0.45,0.94)] group-hover:scale-110" />
               ) : (
                 <span className="text-brand-navy/30 text-xs font-bold uppercase tracking-widest">{cat.slug}</span>
               )}
-              <div className="absolute inset-0 bg-black/10 group-hover:bg-black/20 transition-colors"></div>
-              <span className="absolute bottom-4 left-4 text-white text-[10px] md:text-xs font-bold uppercase tracking-widest drop-shadow-md">
-                {cat.slug}
-              </span>
+              {/* Luxury Gradient Overlay */}
+              <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0a]/90 via-[#0a0a0a]/20 to-transparent opacity-70 group-hover:opacity-90 transition-opacity duration-700"></div>
+              
+              <div className="absolute inset-0 flex flex-col items-center justify-center translate-y-4 group-hover:translate-y-0 transition-transform duration-700 ease-out">
+                <span className="text-white text-lg md:text-2xl font-serif tracking-widest drop-shadow-md">
+                  {cat.slug}
+                </span>
+                <div className="mt-3 opacity-0 group-hover:opacity-100 transition-opacity duration-700 delay-100">
+                  <span className="text-[10px] uppercase tracking-widest text-brand-peach pb-1 font-medium">
+                    Shop Now
+                  </span>
+                </div>
+              </div>
             </Link>
           ))}
         </section>
@@ -290,19 +299,24 @@ export function HomePage() {
                 className="relative aspect-[4/5] bg-surface-offWhite group overflow-hidden block"
               >
                 {col.image_url && (
-                  <img src={col.image_url} className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000 ease-out" alt={col.title} />
+                  <img src={col.image_url} className="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 ease-[cubic-bezier(0.25,0.46,0.45,0.94)] group-hover:scale-110" alt={col.title} />
                 )}
-                {/* Elegant full overlay that darkens slightly on hover */}
-                <div className="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-colors duration-700"></div>
+                {/* Luxury Gradient Overlay */}
+                <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0a]/90 via-[#0a0a0a]/20 to-transparent opacity-80 group-hover:opacity-90 transition-opacity duration-700"></div>
                 
-                {/* Centered Typography with hover animation */}
-                <div className="absolute inset-0 flex flex-col items-center justify-center p-6 z-10">
-                  <span className="text-white text-center text-2xl md:text-3xl font-serif uppercase tracking-[0.2em] drop-shadow-lg transform group-hover:-translate-y-2 transition-transform duration-700">
+                {/* Inner subtle border */}
+                <div className="absolute inset-4 border border-white/10 group-hover:border-white/30 transition-colors duration-700 pointer-events-none"></div>
+
+                {/* Text Content */}
+                <div className="absolute inset-0 flex flex-col justify-end p-8 translate-y-4 group-hover:translate-y-0 transition-transform duration-700 ease-out">
+                  <span className="text-white text-3xl md:text-4xl font-serif tracking-wide drop-shadow-lg mb-2">
                     {col.title}
                   </span>
-                  <span className="mt-4 text-[10px] md:text-xs text-white uppercase tracking-widest border-b border-white pb-1 opacity-0 transform translate-y-4 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-700">
-                    Explore Collection
-                  </span>
+                  <div className="opacity-0 group-hover:opacity-100 transition-all duration-700 delay-100 transform translate-y-2 group-hover:translate-y-0">
+                    <span className="inline-flex items-center gap-2 text-[10px] uppercase tracking-widest text-brand-peach transition-colors">
+                      Explore Collection <span className="text-white">→</span>
+                    </span>
+                  </div>
                 </div>
               </Link>
             ))}

@@ -106,35 +106,38 @@ export function CategoriesPage() {
         {isLoading ? (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {[1, 2, 3].map(i => (
-              <div key={i} className="animate-pulse bg-surface-light h-[350px] md:h-[450px] w-full" />
+              <div key={i} className="animate-pulse bg-surface-light h-[400px] md:h-[550px] w-full" />
             ))}
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {categories.map((category, idx) => (
               <FadeUp key={category.title} delay={idx * 0.1} className={category.colSpan}>
-                <Link to={`/shop?category=${category.title.toLowerCase()}`} className={`group relative block w-full h-[350px] md:h-[450px] overflow-hidden border-b-4 ${category.accent} bg-surface-offWhite`}>
+                <Link to={`/shop?category=${category.title.toLowerCase()}`} className="group relative block w-full h-[400px] md:h-[550px] overflow-hidden bg-surface-offWhite">
                   {category.image && (
                     <img 
                       src={category.image} 
                       alt={category.title} 
-                      className="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:scale-105"
+                      className="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 ease-[cubic-bezier(0.25,0.46,0.45,0.94)] group-hover:scale-110"
                     />
                   )}
-                  {/* Gradient Overlay */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-80 group-hover:opacity-100 transition-opacity duration-500"></div>
+                  {/* Luxury Gradient Overlay */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0a]/90 via-[#0a0a0a]/20 to-transparent opacity-80 group-hover:opacity-90 transition-opacity duration-700"></div>
                   
+                  {/* Inner subtle border */}
+                  <div className="absolute inset-4 border border-white/10 group-hover:border-white/30 transition-colors duration-700 pointer-events-none"></div>
+
                   {/* Text Content */}
-                  <div className="absolute inset-0 flex flex-col items-center justify-center p-8 text-center translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
-                    <p className="text-[10px] tracking-widest text-brand-peach uppercase font-bold mb-2 opacity-0 group-hover:opacity-100 transition-opacity duration-500 delay-100">
-                      {category.subtitle}
-                    </p>
-                    <h3 className="text-3xl font-serif text-white drop-shadow-md">
+                  <div className="absolute inset-0 flex flex-col justify-end p-10 translate-y-4 group-hover:translate-y-0 transition-transform duration-700 ease-out">
+                    <h3 className="text-4xl md:text-5xl font-serif text-white mb-2 drop-shadow-lg tracking-wide">
                       {category.title}
                     </h3>
-                    <div className="mt-4 opacity-0 group-hover:opacity-100 transition-opacity duration-500 delay-200">
-                      <span className="text-[10px] uppercase tracking-widest text-white border-b-2 border-brand-pink pb-1 font-bold">
-                        Explore
+                    <p className="text-[10px] tracking-[0.3em] text-brand-peach uppercase font-medium mb-6 opacity-0 group-hover:opacity-100 transition-all duration-700 delay-100 transform translate-y-2 group-hover:translate-y-0">
+                      {category.subtitle}
+                    </p>
+                    <div className="opacity-0 group-hover:opacity-100 transition-all duration-700 delay-200 transform translate-y-2 group-hover:translate-y-0">
+                      <span className="inline-flex items-center gap-2 text-[10px] uppercase tracking-widest text-white hover:text-brand-pink transition-colors">
+                        Explore Collection <span className="text-brand-pink">→</span>
                       </span>
                     </div>
                   </div>

@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Upload, Loader2, Check, Trash2, AlertCircle } from 'lucide-react';
 import { supabase } from '../../../lib/supabase/supabaseClient';
 import { compressImage } from '../utils/compression';
@@ -18,11 +18,25 @@ export function ImageUploadInput({
   tenantId,
   placeholder = 'Select photo...',
   maxSizeMB = 5,
-  theme = 'dark'
+  theme
 }: ImageUploadInputProps) {
   const [isUploading, setIsUploading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const [globalTheme, setGlobalTheme] = useState<'dark' | 'light'>(() => {
+    return (localStorage.getItem('admin-theme') as 'dark' | 'light') || 'dark';
+  });
+
+  useEffect(() => {
+    const handleThemeChange = (e: Event) => {
+      setGlobalTheme((e as CustomEvent).detail);
+    };
+    window.addEventListener('admin-theme-change', handleThemeChange);
+    return () => window.removeEventListener('admin-theme-change', handleThemeChange);
+  }, []);
+
+  const effectiveTheme = theme || globalTheme;
 
   async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -87,7 +101,7 @@ export function ImageUploadInput({
     fileInputRef.current?.click();
   };
 
-  const isDark = theme === 'dark';
+  const isDark = effectiveTheme === 'dark';
   const containerClasses = isDark 
     ? "bg-[#0f1117] hover:bg-[#0f1117]/80 border-white/10 hover:border-[#fb7a90]/40" 
     : "bg-surface-white hover:bg-surface-offWhite border-surface-light hover:border-brand-navy";
@@ -115,20 +129,22 @@ export function ImageUploadInput({
         </div>
       ) : value ? (
         /* UPLOAD SUCCESS STATE WITH PREVIEW */
-        <div className={`flex items-center justify-between gap-4 border rounded-xl p-3.5 ${isDark ? 'bg-[#0f1117]/50 border-white/10' : 'bg-surface-white border-surface-light shadow-sm'}`}>
-          <div className="flex items-center gap-3 min-w-0">
+        /* UPLOAD SUCCESS STATE WITH PREVIEW */
+        <div className={`flex flex-wrap items-center justify-between gap-2 sm:gap-4 border rounded-xl p-2.5 sm:p-3.5 ${isDark ? 'bg-[#0f1117]/50 border-white/10' : 'bg-surface-white border-surface-light shadow-sm'}`}>
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
             {/* Small image preview circle */}
             <div className={`w-10 h-10 rounded-lg overflow-hidden border flex-shrink-0 ${isDark ? 'bg-black border-white/10' : 'bg-surface-light border-surface-light'}`}>
               <img src={value} alt="Preview" className={`w-full h-full object-cover ${!isDark ? 'mix-blend-multiply' : ''}`} />
             </div>
             <div className="min-w-0 flex items-center">
-              <span className={`text-xs font-semibold flex items-center gap-1 ${textTitleClasses}`}>
-                <Check className={`w-3.5 h-3.5 ${isDark ? 'text-emerald-400' : 'text-emerald-500'}`} /> Photo Uploaded
+              <span className={`text-[10px] sm:text-xs font-semibold flex items-center gap-1 truncate ${textTitleClasses}`}>
+                <Check className={`w-3.5 h-3.5 flex-shrink-0 ${isDark ? 'text-emerald-400' : 'text-emerald-500'}`} /> 
+                <span className="truncate">Photo Uploaded</span>
               </span>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-shrink-0">
             <button
               type="button"
               onClick={triggerUpload}

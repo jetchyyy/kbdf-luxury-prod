@@ -104,6 +104,7 @@ function App() {
                     <AppShell>
                       <Routes>
                         <Route path="/" element={<HomePage />} />
+                        <Route path="/latest" element={<ShopPage isLatest={true} />} />
                         <Route path="/shop" element={<ShopPage />} />
                         <Route path="/product/:slug" element={<ProductDetailPage />} />
                         <Route path="/categories" element={<CategoriesPage />} />

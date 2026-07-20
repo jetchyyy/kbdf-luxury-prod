@@ -49,9 +49,12 @@ export function AdminLoginPage() {
   return (
     <div className="min-h-screen bg-surface-white flex font-sans">
       {/* Left Side Image */}
-      <div className="hidden lg:block w-1/2 relative bg-[#111827]">
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
-        <div className="absolute bottom-16 left-16 right-16 text-white">
+      <div className="hidden lg:block w-1/2 relative bg-[#111827] overflow-hidden">
+        {tenant?.store_settings?.branding?.admin_bg_url && (
+          <img src={tenant.store_settings.branding.admin_bg_url} className="absolute inset-0 w-full h-full object-cover" alt="Admin Background" />
+        )}
+        <div className={`absolute inset-0 ${tenant?.store_settings?.branding?.admin_bg_url ? 'bg-black/60' : 'bg-gradient-to-t from-black/80 via-black/20 to-transparent'}`}></div>
+        <div className="absolute bottom-16 left-16 right-16 text-white z-10">
           <h1 className="text-4xl font-serif mb-4 drop-shadow-md">
             {tenant?.name || 'Store'} Workspace
           </h1>

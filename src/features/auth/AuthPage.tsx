@@ -4,12 +4,17 @@ import { useUserAuth } from "../../core/context/UserAuthContext";
 import { useNavigate } from "react-router-dom";
 import { Loader2, AlertCircle, CheckCircle, Check, X, Eye, EyeOff } from "lucide-react";
 import { useNotification } from "../../core/context/NotificationContext";
+import { useTenant } from "../../core/context/TenantContext";
 
 export function AuthPage() {
   const [isLogin, setIsLogin] = useState(true);
   const { signIn, signUp } = useUserAuth();
   const navigate = useNavigate();
   const { showInfo } = useNotification();
+  const { tenant } = useTenant();
+  
+  const settings = (tenant?.store_settings as any) || {};
+  const authBgUrl = settings.branding?.auth_bg_url;
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -86,12 +91,18 @@ export function AuthPage() {
   return (
     <div className="pt-24 min-h-screen bg-surface-white flex">
       {/* Left side Image */}
-      <div className="hidden lg:block w-1/2 relative bg-surface-offWhite">
-        <div className="absolute inset-0 bg-brand-navy/5 mix-blend-multiply"></div>
-        <div className="absolute inset-0 flex items-center justify-center">
-          <h1 className="text-4xl font-sans tracking-[0.2em] uppercase font-bold text-white drop-shadow-md">
-            Quiet Luxury
+      <div className="hidden lg:block w-1/2 relative bg-surface-offWhite overflow-hidden">
+        {authBgUrl && (
+          <img src={authBgUrl} className="absolute inset-0 w-full h-full object-cover" alt="Brand Lifestyle" />
+        )}
+        <div className={`absolute inset-0 ${authBgUrl ? 'bg-black/40' : 'bg-brand-navy/5 mix-blend-multiply'}`}></div>
+        <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-8">
+          <h1 className="text-5xl md:text-7xl font-sans tracking-[0.15em] uppercase font-bold text-white drop-shadow-lg mb-4">
+            KBDF
           </h1>
+          <p className="text-xs md:text-sm uppercase tracking-[0.25em] font-medium text-white/90 drop-shadow-md">
+            Bringing you the Best in Goods!
+          </p>
         </div>
       </div>
       

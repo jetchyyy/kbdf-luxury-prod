@@ -4,7 +4,7 @@ import { Link, useLocation } from "react-router-dom";
 import { fetchCategories } from "../admin/api/categories";
 import { TENANT_ID } from "../../lib/supabase/supabaseClient";
 
-export function ShopPage() {
+export function ShopPage({ isLatest = false }: { isLatest?: boolean }) {
   const location = useLocation();
   const searchParams = new URLSearchParams(location.search);
   const currentCategory = searchParams.get("category") || "all";
@@ -59,10 +59,10 @@ export function ShopPage() {
         {/* Page Header */}
         <div className="mb-12 border-b border-surface-light pb-6">
           <h1 className="text-3xl font-serif text-typography-primary">
-            {searchQuery ? `Results for "${searchQuery}"` : 'The Collection'}
+            {searchQuery ? `Results for "${searchQuery}"` : isLatest ? 'Latest Arrivals' : 'The Collection'}
           </h1>
           <p className="text-[10px] tracking-widest uppercase font-bold text-brand-peach mt-2">
-            Explore our meticulously curated pieces.
+            {isLatest ? 'Discover our newest acquisitions.' : 'Explore our meticulously curated pieces.'}
           </p>
         </div>
 
@@ -93,7 +93,7 @@ export function ShopPage() {
 
           {/* Main Product Grid */}
           <main className="flex-1">
-             <ProductGrid hideHeader category={currentCategory} searchQuery={searchQuery} />
+             <ProductGrid hideHeader category={currentCategory} searchQuery={searchQuery} onlyNewArrivals={isLatest} />
           </main>
 
         </div>
