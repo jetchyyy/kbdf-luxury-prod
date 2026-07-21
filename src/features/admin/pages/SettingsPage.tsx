@@ -49,6 +49,10 @@ export function SettingsPage() {
   // Custom Login Backgrounds
   const [authBgUrl, setAuthBgUrl] = useState('');
   const [adminBgUrl, setAdminBgUrl] = useState('');
+ 
+  // Social Media Meta Tags
+  const [metaImageUrl, setMetaImageUrl] = useState('');
+  const [metaDescription, setMetaDescription] = useState('');
 
   // Tab 2: Contact
   const [address, setAddress] = useState('');
@@ -148,6 +152,8 @@ export function SettingsPage() {
       const branding = settings.branding || {};
       setAuthBgUrl(branding.auth_bg_url || '');
       setAdminBgUrl(branding.admin_bg_url || '');
+      setMetaImageUrl(branding.meta_image_url || '');
+      setMetaDescription(branding.meta_description || '');
       
       const hours = settings.hours || {};
       setMonFriHours(hours.monday_friday || '10:00 AM - 9:00 PM');
@@ -269,6 +275,8 @@ export function SettingsPage() {
         branding: {
           auth_bg_url: authBgUrl.trim(),
           admin_bg_url: adminBgUrl.trim(),
+          meta_image_url: metaImageUrl.trim() || null,
+          meta_description: metaDescription.trim() || null,
         },
         homepage: {
           announcement_text: announcementText.trim(),
@@ -508,6 +516,7 @@ export function SettingsPage() {
                   onChange={setLogoUrl}
                   tenantId={tenantId}
                   placeholder="https://example.com/logo.png"
+                  disabled={!canEdit}
                 />
               </div>
 
@@ -549,6 +558,7 @@ export function SettingsPage() {
                     onChange={setAuthBgUrl}
                     tenantId={tenantId}
                     placeholder="Optional background"
+                    disabled={!canEdit}
                   />
                 </div>
                 <div className="flex flex-col gap-2">
@@ -558,8 +568,39 @@ export function SettingsPage() {
                     onChange={setAdminBgUrl}
                     tenantId={tenantId}
                     placeholder="Optional background"
+                    disabled={!canEdit}
                   />
                 </div>
+              </div>
+            </div>
+ 
+            {/* Social Media Meta Section */}
+            <div className="bg-[#111827] border border-white/5 p-5 rounded-2xl space-y-4">
+              <h3 className="text-white font-semibold text-sm border-b border-white/5 pb-2">Social Media Sharing (Meta Tags)</h3>
+              
+              <div className="flex flex-col gap-2">
+                <label className="text-white/60 text-xs font-medium uppercase tracking-wider">Social Share Banner Image (OG Image - 1200x630)</label>
+                <ImageUploadInput
+                  value={metaImageUrl}
+                  onChange={setMetaImageUrl}
+                  tenantId={tenantId}
+                  placeholder="https://example.com/share-banner.png"
+                  disabled={!canEdit}
+                />
+                <p className="text-[10px] text-white/40">This image is displayed when sharing your store link on Facebook, WhatsApp, Twitter, etc. Defaults to Store Logo if left blank.</p>
+              </div>
+ 
+              <div className="flex flex-col gap-2">
+                <label className="text-white/60 text-xs font-medium uppercase tracking-wider">Meta Description / Tagline</label>
+                <textarea
+                  value={metaDescription}
+                  onChange={e => setMetaDescription(e.target.value)}
+                  disabled={!canEdit}
+                  placeholder="Describe your store in 150-160 characters..."
+                  rows={3}
+                  className="bg-[#0f1117] border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder:text-white/20 outline-none focus:border-[#fb7a90]/50 transition-colors disabled:opacity-50 resize-none"
+                />
+                <p className="text-[10px] text-white/40">This description appears under your store title in search results and social share previews.</p>
               </div>
             </div>
 
@@ -740,6 +781,7 @@ export function SettingsPage() {
                   onChange={setHeroImageUrl}
                   tenantId={tenantId}
                   placeholder="https://example.com/image.png"
+                  disabled={!canEdit}
                 />
               </div>
 
@@ -792,6 +834,7 @@ export function SettingsPage() {
                   onChange={setHero2ImageUrl}
                   tenantId={tenantId}
                   placeholder="Leave empty to disable"
+                  disabled={!canEdit}
                 />
               </div>
 
@@ -844,6 +887,7 @@ export function SettingsPage() {
                   onChange={setHero3ImageUrl}
                   tenantId={tenantId}
                   placeholder="Leave empty to disable"
+                  disabled={!canEdit}
                 />
               </div>
 
@@ -914,6 +958,7 @@ export function SettingsPage() {
                     onChange={setEditorialBannerImage}
                     tenantId={tenantId}
                     placeholder="https://example.com/image.png"
+                    disabled={!canEdit}
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-2">
@@ -931,10 +976,10 @@ export function SettingsPage() {
               <div className="pt-2">
                 <label className="text-white/60 text-xs font-medium uppercase tracking-wider block mb-2">Editorial Grid Images (4 URLs / Photos)</label>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <ImageUploadInput value={editorialGrid1} onChange={setEditorialGrid1} tenantId={tenantId} placeholder="Grid Image 1 URL" />
-                  <ImageUploadInput value={editorialGrid2} onChange={setEditorialGrid2} tenantId={tenantId} placeholder="Grid Image 2 URL" />
-                  <ImageUploadInput value={editorialGrid3} onChange={setEditorialGrid3} tenantId={tenantId} placeholder="Grid Image 3 URL" />
-                  <ImageUploadInput value={editorialGrid4} onChange={setEditorialGrid4} tenantId={tenantId} placeholder="Grid Image 4 URL" />
+                  <ImageUploadInput value={editorialGrid1} onChange={setEditorialGrid1} tenantId={tenantId} placeholder="Grid Image 1 URL" disabled={!canEdit} />
+                  <ImageUploadInput value={editorialGrid2} onChange={setEditorialGrid2} tenantId={tenantId} placeholder="Grid Image 2 URL" disabled={!canEdit} />
+                  <ImageUploadInput value={editorialGrid3} onChange={setEditorialGrid3} tenantId={tenantId} placeholder="Grid Image 3 URL" disabled={!canEdit} />
+                  <ImageUploadInput value={editorialGrid4} onChange={setEditorialGrid4} tenantId={tenantId} placeholder="Grid Image 4 URL" disabled={!canEdit} />
                 </div>
               </div>
             </div>
@@ -947,19 +992,19 @@ export function SettingsPage() {
                 <div className="space-y-2 border border-white/5 p-3 rounded-xl">
                   <span className="text-[10px] text-white/40 uppercase font-bold">Collection 1</span>
                   <input type="text" value={col1Title} onChange={e => setCol1Title(e.target.value)} disabled={!canEdit} placeholder="Title (e.g. All Flats)" className="w-full bg-[#0f1117] border border-white/10 rounded-xl px-3 py-1.5 text-xs text-white mb-1" />
-                  <ImageUploadInput value={col1Image} onChange={setCol1Image} tenantId={tenantId} placeholder="Image URL / Photo" />
+                  <ImageUploadInput value={col1Image} onChange={setCol1Image} tenantId={tenantId} placeholder="Image URL / Photo" disabled={!canEdit} />
                 </div>
 
                 <div className="space-y-2 border border-white/5 p-3 rounded-xl">
                   <span className="text-[10px] text-white/40 uppercase font-bold">Collection 2</span>
                   <input type="text" value={col2Title} onChange={e => setCol2Title(e.target.value)} disabled={!canEdit} placeholder="Title (e.g. Tote Bags)" className="w-full bg-[#0f1117] border border-white/10 rounded-xl px-3 py-1.5 text-xs text-white mb-1" />
-                  <ImageUploadInput value={col2Image} onChange={setCol2Image} tenantId={tenantId} placeholder="Image URL / Photo" />
+                  <ImageUploadInput value={col2Image} onChange={setCol2Image} tenantId={tenantId} placeholder="Image URL / Photo" disabled={!canEdit} />
                 </div>
 
                 <div className="space-y-2 border border-white/5 p-3 rounded-xl">
                   <span className="text-[10px] text-white/40 uppercase font-bold">Collection 3</span>
                   <input type="text" value={col3Title} onChange={e => setCol3Title(e.target.value)} disabled={!canEdit} placeholder="Title (e.g. Sneakers)" className="w-full bg-[#0f1117] border border-white/10 rounded-xl px-3 py-1.5 text-xs text-white mb-1" />
-                  <ImageUploadInput value={col3Image} onChange={setCol3Image} tenantId={tenantId} placeholder="Image URL / Photo" />
+                  <ImageUploadInput value={col3Image} onChange={setCol3Image} tenantId={tenantId} placeholder="Image URL / Photo" disabled={!canEdit} />
                 </div>
               </div>
             </div>
@@ -976,7 +1021,7 @@ export function SettingsPage() {
                     <input type="text" value={t1Author} onChange={e => setT1Author(e.target.value)} disabled={!canEdit} placeholder="Author Name" className="w-full bg-[#0f1117] border border-white/10 rounded-xl px-3 py-1.5 text-xs text-white mb-1" />
                     <input type="text" value={t1Product} onChange={e => setT1Product(e.target.value)} disabled={!canEdit} placeholder="Product Label (e.g. CLASSIC WALLET)" className="w-full bg-[#0f1117] border border-white/10 rounded-xl px-3 py-1.5 text-xs text-white mb-2" />
                   </div>
-                  <ImageUploadInput value={t1Image} onChange={setT1Image} tenantId={tenantId} placeholder="Product Thumbnail Image URL" />
+                  <ImageUploadInput value={t1Image} onChange={setT1Image} tenantId={tenantId} placeholder="Product Thumbnail Image URL" disabled={!canEdit} />
                 </div>
 
                 <div className="space-y-2 border border-white/5 p-3 rounded-xl flex flex-col justify-between">
@@ -986,7 +1031,7 @@ export function SettingsPage() {
                     <input type="text" value={t2Author} onChange={e => setT2Author(e.target.value)} disabled={!canEdit} placeholder="Author Name" className="w-full bg-[#0f1117] border border-white/10 rounded-xl px-3 py-1.5 text-xs text-white mb-1" />
                     <input type="text" value={t2Product} onChange={e => setT2Product(e.target.value)} disabled={!canEdit} placeholder="Product Label (e.g. KESHI SLIDES)" className="w-full bg-[#0f1117] border border-white/10 rounded-xl px-3 py-1.5 text-xs text-white mb-2" />
                   </div>
-                  <ImageUploadInput value={t2Image} onChange={setT2Image} tenantId={tenantId} placeholder="Product Thumbnail Image URL" />
+                  <ImageUploadInput value={t2Image} onChange={setT2Image} tenantId={tenantId} placeholder="Product Thumbnail Image URL" disabled={!canEdit} />
                 </div>
 
                 <div className="space-y-2 border border-white/5 p-3 rounded-xl flex flex-col justify-between">
@@ -996,7 +1041,7 @@ export function SettingsPage() {
                     <input type="text" value={t3Author} onChange={e => setT3Author(e.target.value)} disabled={!canEdit} placeholder="Author Name" className="w-full bg-[#0f1117] border border-white/10 rounded-xl px-3 py-1.5 text-xs text-white mb-1" />
                     <input type="text" value={t3Product} onChange={e => setT3Product(e.target.value)} disabled={!canEdit} placeholder="Product Label (e.g. EVERYDAY SNEAKERS)" className="w-full bg-[#0f1117] border border-white/10 rounded-xl px-3 py-1.5 text-xs text-white mb-2" />
                   </div>
-                  <ImageUploadInput value={t3Image} onChange={setT3Image} tenantId={tenantId} placeholder="Product Thumbnail Image URL" />
+                  <ImageUploadInput value={t3Image} onChange={setT3Image} tenantId={tenantId} placeholder="Product Thumbnail Image URL" disabled={!canEdit} />
                 </div>
               </div>
             </div>
@@ -1008,7 +1053,7 @@ export function SettingsPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="flex flex-col gap-2">
                   <label className="text-white/60 text-xs font-medium uppercase tracking-wider">Background Image URL / Photo</label>
-                  <ImageUploadInput value={lifestyleImage} onChange={setLifestyleImage} tenantId={tenantId} placeholder="Background URL / Photo" />
+                  <ImageUploadInput value={lifestyleImage} onChange={setLifestyleImage} tenantId={tenantId} placeholder="Background URL / Photo" disabled={!canEdit} />
                 </div>
                 <div className="flex flex-col gap-2">
                   <label className="text-white/60 text-xs font-medium uppercase tracking-wider">CTA Button Link</label>
@@ -1039,11 +1084,11 @@ export function SettingsPage() {
               <div className="pt-2 space-y-2">
                 <label className="text-white/60 text-xs font-medium uppercase tracking-wider block">Grid Post Images (5 URLs / Photos)</label>
                 <div className="grid grid-cols-1 sm:grid-cols-5 gap-3">
-                  <ImageUploadInput value={socialImg1} onChange={setSocialImg1} tenantId={tenantId} placeholder="Post 1 URL" />
-                  <ImageUploadInput value={socialImg2} onChange={setSocialImg2} tenantId={tenantId} placeholder="Post 2 URL" />
-                  <ImageUploadInput value={socialImg3} onChange={setSocialImg3} tenantId={tenantId} placeholder="Post 3 URL" />
-                  <ImageUploadInput value={socialImg4} onChange={setSocialImg4} tenantId={tenantId} placeholder="Post 4 URL" />
-                  <ImageUploadInput value={socialImg5} onChange={setSocialImg5} tenantId={tenantId} placeholder="Post 5 URL" />
+                  <ImageUploadInput value={socialImg1} onChange={setSocialImg1} tenantId={tenantId} placeholder="Post 1 URL" disabled={!canEdit} />
+                  <ImageUploadInput value={socialImg2} onChange={setSocialImg2} tenantId={tenantId} placeholder="Post 2 URL" disabled={!canEdit} />
+                  <ImageUploadInput value={socialImg3} onChange={setSocialImg3} tenantId={tenantId} placeholder="Post 3 URL" disabled={!canEdit} />
+                  <ImageUploadInput value={socialImg4} onChange={setSocialImg4} tenantId={tenantId} placeholder="Post 4 URL" disabled={!canEdit} />
+                  <ImageUploadInput value={socialImg5} onChange={setSocialImg5} tenantId={tenantId} placeholder="Post 5 URL" disabled={!canEdit} />
                 </div>
               </div>
             </div>

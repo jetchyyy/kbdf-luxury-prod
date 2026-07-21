@@ -10,6 +10,7 @@ interface ImageUploadInputProps {
   placeholder?: string;
   maxSizeMB?: number;
   theme?: 'dark' | 'light';
+  disabled?: boolean;
 }
 
 export function ImageUploadInput({
@@ -18,7 +19,8 @@ export function ImageUploadInput({
   tenantId,
   placeholder = 'Select photo...',
   maxSizeMB = 5,
-  theme
+  theme,
+  disabled = false
 }: ImageUploadInputProps) {
   const [isUploading, setIsUploading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -98,6 +100,7 @@ export function ImageUploadInput({
   }
 
   const triggerUpload = () => {
+    if (disabled) return;
     fileInputRef.current?.click();
   };
 
@@ -117,7 +120,7 @@ export function ImageUploadInput({
         type="file"
         accept="image/*"
         onChange={handleFileChange}
-        disabled={isUploading}
+        disabled={isUploading || disabled}
         className="hidden"
       />
 
@@ -148,7 +151,8 @@ export function ImageUploadInput({
             <button
               type="button"
               onClick={triggerUpload}
-              className={`px-3 py-1.5 border text-[11px] font-bold rounded-lg transition-all ${
+              disabled={disabled}
+              className={`px-3 py-1.5 border text-[11px] font-bold rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
                 isDark 
                   ? 'bg-white/5 hover:bg-white/10 border-white/10 text-white' 
                   : 'bg-white hover:bg-surface-light border-surface-light text-typography-primary shadow-sm'
@@ -159,7 +163,8 @@ export function ImageUploadInput({
             <button
               type="button"
               onClick={() => onChange('')}
-              className={`p-1.5 border rounded-lg transition-all ${
+              disabled={disabled}
+              className={`p-1.5 border rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
                 isDark
                   ? 'bg-red-500/10 hover:bg-red-500/20 text-red-400 border-red-500/20'
                   : 'bg-red-50 hover:bg-red-100 text-red-500 border-red-200 shadow-sm'
@@ -175,7 +180,8 @@ export function ImageUploadInput({
         <button
           type="button"
           onClick={triggerUpload}
-          className={`w-full flex flex-col items-center justify-center gap-2 border border-dashed rounded-xl p-6 transition-all ${containerClasses}`}
+          disabled={disabled}
+          className={`w-full flex flex-col items-center justify-center gap-2 border border-dashed rounded-xl p-6 transition-all disabled:opacity-50 disabled:cursor-not-allowed ${containerClasses}`}
         >
           <div className={`w-9 h-9 rounded-full flex items-center justify-center ${iconBgClasses}`}>
             <Upload className="w-4 h-4" />
