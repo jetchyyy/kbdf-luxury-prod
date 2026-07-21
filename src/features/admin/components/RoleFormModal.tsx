@@ -21,7 +21,7 @@ const MODULES: { key: PermissionModule; label: string; actions: PermissionAction
   { key: 'expenses', label: 'Expense Tracker', actions: ['create', 'read', 'edit', 'delete'] },
   { key: 'payment_methods', label: 'Payment Methods & QR', actions: ['create', 'read', 'edit', 'delete'] },
   { key: 'promo_codes', label: 'Promo Codes', actions: ['create', 'read', 'edit', 'delete'] },
-  { key: 'leeway', label: 'Leeway Management', actions: ['create', 'read', 'edit', 'delete'] },
+  { key: 'leeway', label: 'Installment Management', actions: ['create', 'read', 'edit', 'delete'] },
   { key: 'settings', label: 'Settings', actions: ['read', 'edit'] },
 ];
 

@@ -10,7 +10,7 @@ interface ProductDetailModalProps {
 }
 
 export function ProductDetailModal({ isOpen, onClose, product }: ProductDetailModalProps) {
-  const { addToCart } = useCart();
+  const { addToCart, items } = useCart();
   const [selectedImageIdx, setSelectedImageIdx] = useState(0);
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState('');
@@ -18,10 +18,21 @@ export function ProductDetailModal({ isOpen, onClose, product }: ProductDetailMo
   if (!isOpen) return null;
 
   const hasSizes = product.sizes && product.sizes.length > 0;
-  const matchedSizeObj = product.sizes?.find(s => s.size === selectedSize);
-  const allSizesOutOfStock = hasSizes && (!product.sizes || product.sizes.every(s => s.quantity <= 0));
-  const isOutOfStock = allSizesOutOfStock || 
-    (!hasSizes && (product.stock_status === 'out_of_stock' || (product.stock_quantity !== undefined && product.stock_quantity <= 0)));
+  const matchedSizeObj = hasSizes ? product.sizes?.find(s => s.size === selectedSize) : null;
+  const allSizesOutOfStock = hasSizes && product.sizes?.every(s => s.quantity <= 0);
+  const isOutOfStock = hasSizes 
+    ? (selectedSize ? (matchedSizeObj?.quantity ?? 0) <= 0 : allSizesOutOfStock)
+    : product.stock_status === 'out_of_stock' || (product.stock_quantity ?? 0) <= 0;
+
+  const maxAvailable = allSizesOutOfStock
+    ? 0
+    : hasSizes
+    ? (matchedSizeObj ? matchedSizeObj.quantity : 1)
+    : (product.stock_status === 'out_of_stock' ? 0 : (product.stock_quantity ?? 99));
+
+  const cartItem = items?.find(item => item.id === product.id && item.selectedSize === (selectedSize || null));
+  const cartQuantity = cartItem ? cartItem.quantity : 0;
+  const isCartLimitReached = maxAvailable > 0 && cartQuantity >= maxAvailable;
 
   const handleAddToBag = () => {
     setErrorMsg('');
@@ -32,6 +43,11 @@ export function ProductDetailModal({ isOpen, onClose, product }: ProductDetailMo
 
     if (isOutOfStock || (matchedSizeObj && matchedSizeObj.quantity <= 0)) {
       setErrorMsg('This item is out of stock.');
+      return;
+    }
+
+    if (isCartLimitReached) {
+      setErrorMsg('You already have all available stock of this item in your bag.');
       return;
     }
 
@@ -155,10 +171,6 @@ export function ProductDetailModal({ isOpen, onClose, product }: ProductDetailMo
                     );
                   })}
                 </div>
-
-                {errorMsg && (
-                  <p className="text-red-500 text-xs font-medium animate-pulse">{errorMsg}</p>
-                )}
               </div>
             )}
 
@@ -172,13 +184,16 @@ export function ProductDetailModal({ isOpen, onClose, product }: ProductDetailMo
           </div>
 
           {/* Add to bag action */}
-          <div className="pt-6 border-t border-surface-light mt-6">
+          <div className="pt-6 border-t border-surface-light mt-6 space-y-2">
+            {errorMsg && (
+              <p className="text-red-500 text-xs font-medium animate-pulse">{errorMsg}</p>
+            )}
             <button
               onClick={handleAddToBag}
-              disabled={isOutOfStock}
+              disabled={isOutOfStock || isCartLimitReached}
               className="w-full flex items-center justify-center gap-2 bg-brand-navy hover:bg-brand-pink text-white py-4 text-xs uppercase tracking-widest font-bold transition-colors rounded-xl shadow-lg disabled:bg-surface-light disabled:text-typography-muted disabled:cursor-not-allowed disabled:shadow-none"
             >
-              <ShoppingBag className="w-4 h-4" /> {isOutOfStock ? 'Out of Stock' : 'Add to Bag'}
+              <ShoppingBag className="w-4 h-4" /> {isOutOfStock ? 'Out of Stock' : isCartLimitReached ? 'All Stock in Bag' : 'Add to Bag'}
             </button>
           </div>
         </div>

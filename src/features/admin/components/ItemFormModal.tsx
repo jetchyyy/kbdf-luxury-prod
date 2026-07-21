@@ -440,11 +440,12 @@ export function ItemFormModal({ isOpen, onClose, onSave, item, tenantId }: ItemF
             </div>
           </div>
 
-          {/* Leeway Configuration */}
-          <div className="border-t border-white/5 pt-4 space-y-4">
-            <h4 className="text-white/80 text-sm font-semibold uppercase tracking-wider">Leeway Payment Settings</h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <label className="flex items-center gap-3 text-sm text-white/80 cursor-pointer select-none">
+          {/* Installment Configuration */}
+          <div className="bg-[#0f1117] border border-white/5 p-4 rounded-xl space-y-4">
+            <h4 className="text-white/80 text-sm font-semibold uppercase tracking-wider">Installment Payment Settings</h4>
+            
+            <div className="space-y-3">
+              <label className="flex items-center gap-3 cursor-pointer">
                 <input
                   type="checkbox"
                   checked={leewayEnabled}
@@ -455,9 +456,11 @@ export function ItemFormModal({ isOpen, onClose, onSave, item, tenantId }: ItemF
                       setLeewayDownPaymentAmount(0);
                     }
                   }}
-                  className="w-4 h-4 rounded border-white/10 text-[#fb7a90] bg-transparent outline-none focus:ring-0 focus:ring-offset-0 cursor-pointer"
+                  className="w-4 h-4 rounded border-white/10 text-[#fb7a90] focus:ring-[#fb7a90] bg-[#111827]"
                 />
-                Available for Leeway Checkout
+                <span className="text-sm font-medium text-white">
+                  Available for Installment Checkout
+                </span>
               </label>
 
               {leewayEnabled && (

@@ -13,6 +13,7 @@ interface CartContextType {
   closeCart: () => void;
   items: CartItem[];
   addToCart: (product: Product & { selectedSize?: string | null, selectedColor?: string | null }) => void;
+  updateQuantity: (productId: string, selectedSize?: string | null, selectedColor?: string | null, newQuantity?: number) => void;
   removeFromCart: (productId: string, selectedSize?: string | null, selectedColor?: string | null) => void;
   setCartItems: (items: CartItem[]) => void;
   clearCart: () => void;
@@ -64,18 +65,31 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const openCart = () => setIsCartOpen(true);
   const closeCart = () => setIsCartOpen(false);
 
+  const getItemMaxStock = (product: Product & { selectedSize?: string | null }) => {
+    let maxStock = product.stock_quantity ?? 999;
+    if (product.sizes && product.sizes.length > 0 && product.selectedSize) {
+      const sizeObj = product.sizes.find((s: any) => s.size === product.selectedSize);
+      if (sizeObj && sizeObj.quantity !== undefined) {
+        maxStock = sizeObj.quantity;
+      }
+    }
+    return maxStock;
+  };
+
   const addToCart = (product: Product & { selectedSize?: string | null, selectedColor?: string | null }) => {
     const key = getCartItemKey(product.id, product.selectedSize, product.selectedColor);
+    const maxStock = getItemMaxStock(product);
     
     setItems(prev => {
       const existing = prev.find(item => item.id === product.id && item.selectedSize === product.selectedSize && item.selectedColor === product.selectedColor);
       if (existing) {
+        const newQty = Math.min(existing.quantity + 1, maxStock);
         return prev.map(item => (item.id === product.id && item.selectedSize === product.selectedSize && item.selectedColor === product.selectedColor) 
-          ? { ...item, quantity: item.quantity + 1 } 
+          ? { ...item, ...product, quantity: newQty } 
           : item
         );
       }
-      return [...prev, { ...product, quantity: 1 }];
+      return [...prev, { ...product, quantity: Math.min(1, maxStock) }];
     });
     
     setSelectedCartKeys(prev => {
@@ -84,6 +98,22 @@ export function CartProvider({ children }: { children: ReactNode }) {
     });
     
     openCart();
+  };
+
+  const updateQuantity = (productId: string, selectedSize?: string | null, selectedColor?: string | null, newQuantity: number = 1) => {
+    if (newQuantity <= 0) {
+      removeFromCart(productId, selectedSize, selectedColor);
+      return;
+    }
+
+    setItems(prev => prev.map(item => {
+      if (item.id === productId && item.selectedSize === selectedSize && item.selectedColor === selectedColor) {
+        const maxStock = getItemMaxStock(item);
+        const clampedQuantity = Math.min(newQuantity, maxStock);
+        return { ...item, quantity: clampedQuantity };
+      }
+      return item;
+    }));
   };
 
   const removeFromCart = (productId: string, selectedSize?: string | null, selectedColor?: string | null) => {
@@ -124,7 +154,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   return (
     <CartContext.Provider value={{ 
-      isCartOpen, openCart, closeCart, items, addToCart, removeFromCart, setCartItems, clearCart, cartTotal,
+      isCartOpen, openCart, closeCart, items, addToCart, updateQuantity, removeFromCart, setCartItems, clearCart, cartTotal,
       selectedCartKeys, toggleCartItemSelection, selectAllCartItems, selectedCartItems, selectedCartTotal, clearSelectedItems
     }}>
       {children}

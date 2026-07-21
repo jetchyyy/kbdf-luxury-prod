@@ -8,7 +8,7 @@ const PAGE_TITLES: Record<string, string> = {
   '/admin': 'Overview',
   '/admin/analytics': 'Analytics',
   '/admin/orders': 'Order Verification',
-  '/admin/leeway': 'Leeway Management',
+  '/admin/leeway': 'Installment Management',
   '/admin/items': 'Item Management',
   '/admin/categories': 'Categories',
   '/admin/promo-codes': 'Promo Codes',

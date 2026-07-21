@@ -300,7 +300,7 @@ export function AdminLeewayPage() {
       }
     } catch (err) {
       console.error('Error fetching leeway data:', err);
-      showError('Failed to load leeway data.');
+      showError('Failed to load installment data.');
     } finally {
       setLoading(false);
     }
@@ -326,7 +326,7 @@ export function AdminLeewayPage() {
       loadData();
     } catch (err: any) {
       console.error(err);
-      showError('Failed to update leeway payment: ' + (err.message || err));
+      showError('Failed to update installment payment: ' + (err.message || err));
     } finally {
       setIsVerifying(false);
     }
@@ -396,11 +396,11 @@ export function AdminLeewayPage() {
 
       if (error) throw error;
 
-      showSuccess(`All items in leeway request have been ${action}!`);
+      showSuccess(`All items in installment request have been ${action}!`);
       loadData();
     } catch (err: any) {
       console.error(err);
-      showError('Failed to update leeway request: ' + (err.message || err));
+      showError('Failed to update installment request: ' + (err.message || err));
     }
   }
 
@@ -710,9 +710,9 @@ export function AdminLeewayPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 className="text-xl font-bold text-white flex items-center gap-2">
-            <Coins className="w-5 h-5 text-[#fb7a90]" /> Leeway Management
+            <Coins className="w-5 h-5 text-[#fb7a90]" /> Installment Management
           </h2>
-          <p className="text-white/40 text-xs mt-0.5">Manage customer leeway accounts, verify digital payments, and log outstanding balances.</p>
+          <p className="text-white/40 text-xs mt-0.5">Manage customer installment accounts, verify digital payments, and log outstanding balances.</p>
         </div>
 
         {/* Tab Selectors */}
@@ -723,7 +723,7 @@ export function AdminLeewayPage() {
               activeTab === 'accounts' ? 'bg-[#fb7a90] text-white' : 'text-white/50 hover:text-white'
             }`}
           >
-            Leeway Accounts
+            Installment Accounts
           </button>
           <button
             onClick={() => setActiveTab('requests')}
@@ -766,7 +766,7 @@ export function AdminLeewayPage() {
             data={accounts}
             isLoading={loading}
             searchPlaceholder="Search customer, email, or order..."
-            emptyMessage="No active leeway accounts found."
+            emptyMessage="No active installment accounts found."
           />
         )}
 
@@ -796,7 +796,7 @@ export function AdminLeewayPage() {
             data={leewayRequests}
             isLoading={loading}
             searchPlaceholder="Search request customer..."
-            emptyMessage="No leeway access requests submitted."
+            emptyMessage="No installment access requests submitted."
           />
         )}
       </div>
@@ -808,7 +808,7 @@ export function AdminLeewayPage() {
             
             <div className="px-6 py-4 border-b border-white/5 flex items-center justify-between flex-shrink-0">
               <h3 className="text-white font-semibold text-lg">
-                Review Leeway Payment Submission
+                Review Installment Payment Submission
               </h3>
               <button 
                 onClick={() => { setSelectedPayment(null); setAdminNotes(''); }} 
@@ -908,7 +908,7 @@ export function AdminLeewayPage() {
                     </button>
                   </div>
                 ) : (
-                  <p className="text-xs text-amber-400 bg-amber-500/10 p-3 rounded-lg">You do not have permissions to edit leeway transactions.</p>
+                  <p className="text-xs text-amber-400 bg-amber-500/10 p-3 rounded-lg">You do not have permissions to edit installment transactions.</p>
                 )}
               </div>
 

@@ -6,7 +6,7 @@ import { Link } from "react-router-dom";
 
 export function CartDrawer() {
   const { 
-    isCartOpen, closeCart, items, removeFromCart, 
+    isCartOpen, closeCart, items, removeFromCart, updateQuantity,
     selectedCartKeys, toggleCartItemSelection, selectedCartItems, selectedCartTotal 
   } = useCart();
   
@@ -19,6 +19,17 @@ export function CartDrawer() {
       return !sizeObj || sizeObj.quantity <= 0;
     }
     return item.stock_status === 'out_of_stock' || (item.stock_quantity !== undefined && item.stock_quantity <= 0);
+  };
+
+  const getItemMaxStock = (cartItem: any) => {
+    const hasSizes = cartItem.sizes && cartItem.sizes.length > 0;
+    if (hasSizes && cartItem.selectedSize) {
+      const sizeObj = cartItem.sizes.find((s: any) => s.size === cartItem.selectedSize);
+      if (sizeObj && sizeObj.quantity !== undefined) {
+        return sizeObj.quantity;
+      }
+    }
+    return cartItem.stock_quantity ?? 999;
   };
 
   const hasOutOfStockItems = items.some(checkItemOutOfStock);
@@ -64,6 +75,8 @@ export function CartDrawer() {
                   const isOutOfStock = checkItemOutOfStock(item);
                   const itemKey = getCartItemKey(item.id, item.selectedSize, item.selectedColor);
                   const isSelected = selectedCartKeys.includes(itemKey);
+                  const maxStock = getItemMaxStock(item);
+                  const isAtMaxStock = item.quantity >= maxStock;
 
                   return (
                     <div key={itemKey} className={`flex items-center gap-4 border border-surface-light p-4 bg-white ${isOutOfStock ? 'opacity-70' : ''}`}>
@@ -86,11 +99,11 @@ export function CartDrawer() {
                           </div>
                         )}
                       </div>
-                      <div className="flex flex-col flex-1 justify-between py-2">
+                      <div className="flex flex-col flex-1 justify-between py-1 min-h-[128px]">
                         <div>
                           <div className="flex justify-between items-start mb-1">
                             <h3 className="text-sm font-bold text-typography-primary leading-tight">{item.title}</h3>
-                            <button onClick={() => removeFromCart(item.id, item.selectedSize, item.selectedColor)} className="text-typography-muted hover:text-brand-pink">
+                            <button onClick={() => removeFromCart(item.id, item.selectedSize, item.selectedColor)} className="text-typography-muted hover:text-brand-pink ml-2">
                               <Trash2 className="w-4 h-4" strokeWidth={1.5} />
                             </button>
                           </div>
@@ -113,9 +126,31 @@ export function CartDrawer() {
                             )}
                           </div>
                         </div>
-                        <div className="flex justify-between items-end">
-                          <p className="text-xs text-typography-muted font-medium">Qty: {item.quantity}</p>
-                          <p className="text-sm font-bold text-typography-primary">PHP {(item.price * item.quantity).toLocaleString()}</p>
+
+                        <div className="flex justify-between items-center mt-3 pt-2 border-t border-surface-light/60">
+                          {/* Quantity Controls */}
+                          <div className="flex items-center border border-surface-light rounded-lg bg-surface-offWhite overflow-hidden">
+                            <button 
+                              onClick={() => updateQuantity(item.id, item.selectedSize, item.selectedColor, item.quantity - 1)}
+                              className="px-2.5 py-1 text-typography-muted hover:text-typography-primary hover:bg-surface-light transition-colors text-xs font-bold"
+                              title="Decrease quantity"
+                            >
+                              -
+                            </button>
+                            <span className="px-2 py-1 text-xs font-bold text-typography-primary min-w-[22px] text-center select-none">
+                              {item.quantity}
+                            </span>
+                            <button 
+                              onClick={() => updateQuantity(item.id, item.selectedSize, item.selectedColor, item.quantity + 1)}
+                              disabled={isAtMaxStock}
+                              className="px-2.5 py-1 text-typography-muted hover:text-typography-primary hover:bg-surface-light transition-colors text-xs font-bold disabled:opacity-30 disabled:cursor-not-allowed"
+                              title={isAtMaxStock ? `Available stock limit (${maxStock}) reached` : "Increase quantity"}
+                            >
+                              +
+                            </button>
+                          </div>
+
+                          <p className="text-xs font-bold text-typography-primary">PHP {(item.price * item.quantity).toLocaleString()}</p>
                         </div>
                       </div>
                     </div>

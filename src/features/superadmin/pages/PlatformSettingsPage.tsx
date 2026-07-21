@@ -54,7 +54,7 @@ export function PlatformSettingsPage() {
               features: [
                 "Custom Brand Domain Bindings",
                 "Unlimited Catalog Products",
-                "Leeway Pre-Approval Installments",
+                "Pre-Approval Installments",
                 "Advanced Sales Reports & Analytics",
                 "Inventory Reservation Timer Flow",
                 "Multiple Admin Staff & Permissions",

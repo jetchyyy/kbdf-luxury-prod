@@ -61,7 +61,7 @@ export function PlatformLandingPage() {
               features: [
                 "Custom Brand Domain Bindings",
                 "Unlimited Catalog Products",
-                "Leeway Pre-Approval Installments",
+                "Pre-Approval Installments",
                 "Advanced Sales Reports & Analytics",
                 "Inventory Reservation Timer Flow",
                 "Multiple Admin Staff & Permissions",
@@ -200,7 +200,7 @@ export function PlatformLandingPage() {
 
         <FadeUp delay={200}>
           <p className="text-sm md:text-base text-slate-400 max-w-2xl mx-auto leading-relaxed">
-            Create beautiful multi-brand store layouts, enable secure order inventory reservations, and offer customized leeway payment installment plans directly to your buyers.
+            Create beautiful multi-brand store layouts, enable secure order inventory reservations, and offer customized installment plans directly to your buyers.
           </p>
         </FadeUp>
 
@@ -240,9 +240,9 @@ export function PlatformLandingPage() {
               <div className="w-12 h-12 rounded-2xl bg-brand-pink/10 flex items-center justify-center text-brand-pink mb-6 group-hover:scale-110 transition-transform">
                 <Coins className="w-6 h-6" />
               </div>
-              <h4 className="text-base font-bold text-white font-serif mb-2">Leeway Installments Engine</h4>
+              <h4 className="text-base font-bold text-white font-serif mb-2">Installments Engine</h4>
               <p className="text-xs text-slate-400 leading-relaxed">
-                Approve leeway installment accounts on an item-by-item level. Shoppers request pre-approval at checkout, and admins verify receipts and manage payments inline.
+                Approve installment accounts on an item-by-item level. Shoppers request pre-approval at checkout, and admins verify receipts and manage payments inline.
               </p>
             </div>
 
@@ -406,10 +406,10 @@ export function PlatformLandingPage() {
 
             <div className="bg-white/[0.02] border border-white/5 p-6 rounded-2xl">
               <h4 className="text-sm font-bold font-serif text-white flex items-center gap-2">
-                <HelpCircle className="w-4 h-4 text-brand-pink" /> What are leeway installments?
+                <HelpCircle className="w-4 h-4 text-brand-pink" /> What are installment plans?
               </h4>
-              <p className="text-xs text-slate-400 mt-2 leading-relaxed">
-                Leeway is an item-level, post-payment installment process where buyers request pre-approval. When approved, they checkout their shopping bag on customizable schedules and upload billing receipts for admin verification.
+              <p className="text-xs text-slate-400 leading-relaxed">
+                Installment is an item-level, post-payment process where buyers request pre-approval. When approved, they checkout their shopping bag on customizable schedules and upload billing receipts for admin verification.
               </p>
             </div>
 

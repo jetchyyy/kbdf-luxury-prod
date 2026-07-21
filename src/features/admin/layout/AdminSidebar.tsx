@@ -13,7 +13,7 @@ const NAV_ITEMS = [
   { label: 'Overview',         href: '/admin',                  icon: LayoutDashboard, key: 'overview' },
   { label: 'Analytics',        href: '/admin/analytics',        icon: BarChart3,       key: 'analytics' },
   { label: 'Orders',           href: '/admin/orders',           icon: ShoppingBag,     key: 'orders' },
-  { label: 'Leeway',           href: '/admin/leeway',           icon: Coins,           key: 'leeway' },
+  { label: 'Installments',     href: '/admin/leeway',           icon: Coins,           key: 'leeway' },
   { label: 'Items',            href: '/admin/items',            icon: Package,         key: 'items' },
   { label: 'Categories',       href: '/admin/categories',       icon: Tag,             key: 'categories' },
   { label: 'Promo Codes',      href: '/admin/promo-codes',      icon: Ticket,          key: 'promo_codes' },

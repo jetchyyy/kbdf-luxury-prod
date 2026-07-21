@@ -530,12 +530,10 @@ export function CheckoutPage() {
       }
 
       setLeewayRequestedItems(mergedItems);
-
-      showSuccess('Leeway pre-approval request submitted successfully for your items!');
+      showSuccess('Installment pre-approval request submitted successfully for your items!');
     } catch (err: any) {
       console.error(err);
-      showError('Failed to submit leeway request: ' + (err.message || err));
-    } finally {
+      showError('Failed to submit installment request: ' + (err.message || err));
       setIsRequestingLeeway(false);
     }
   };
@@ -1333,10 +1331,10 @@ export function CheckoutPage() {
                     <label className={`flex items-start gap-4 p-4 rounded-xl border cursor-pointer transition-all ${selectedMethodId === 'leeway' ? 'border-brand-pink bg-brand-pink/5' : 'border-surface-light'}`}>
                       <input type="radio" name="paymentMethod" checked={selectedMethodId === 'leeway'} onChange={() => { setSelectedMethodId('leeway'); setProofOfPaymentUrl(''); }} className="mt-1" />
                       <div className="flex-1">
-                        <span className="font-bold text-sm text-typography-primary block">Leeway Installment Plan</span>
+                        <span className="font-bold text-sm text-typography-primary block">Installment Plan</span>
                         <span className="text-xs text-typography-muted">Acquire items now with a downpayment, then pay the remaining balance in installments.</span>
                         {!user && (
-                          <p className="text-[10px] text-amber-500 font-bold mt-1">⚠️ Account login required for Leeway checkout.</p>
+                          <p className="text-[10px] text-amber-500 font-bold mt-1">⚠️ Account login required for Installment checkout.</p>
                         )}
                       </div>
                     </label>
@@ -1346,11 +1344,11 @@ export function CheckoutPage() {
                 {/* Leeway Customization Forms */}
                 {selectedMethodId === 'leeway' && (
                   <div className="border border-surface-light bg-surface-offWhite p-6 rounded-2xl space-y-6">
-                    <h3 className="text-xs uppercase tracking-widest font-bold text-typography-primary border-b border-surface-light pb-2">Leeway Pre-Approval Check</h3>
+                    <h3 className="text-xs uppercase tracking-widest font-bold text-typography-primary border-b border-surface-light pb-2">Installment Pre-Approval Check</h3>
                     
                     {!user ? (
                       <div className="space-y-4">
-                        <p className="text-xs text-amber-500 font-bold">You are currently checking out as a Guest. Leeway is only available to logged-in users so they can track outstanding balances and submit payments in their profile dashboards.</p>
+                        <p className="text-xs text-amber-500 font-bold">You are currently checking out as a Guest. Installments are only available to logged-in users so they can track outstanding balances and submit payments in their profile dashboards.</p>
                         <button
                           type="button"
                           onClick={() => { setCheckoutMode('auth'); setAuthTab('login'); }}
@@ -1374,7 +1372,7 @@ export function CheckoutPage() {
                         return (
                           <div className="space-y-5">
                             <div className="bg-emerald-50 border border-emerald-200 text-emerald-600 p-4 rounded-xl text-xs font-semibold animate-fadeIn">
-                              ✓ Leeway pre-approval is Approved for all items in your cart! You can customize your installment details below.
+                              ✓ Installment pre-approval is Approved for all items in your cart! You can customize your installment details below.
                             </div>
                             {/* 1. Installment schedule */}
                             <div className="flex flex-col gap-1.5 animate-fadeIn">
@@ -1462,7 +1460,7 @@ export function CheckoutPage() {
                       return (
                         <div className="space-y-4 animate-fadeIn">
                           <p className="text-xs text-typography-muted">
-                            Leeway pre-approval is managed on an item-by-item basis. Please check the status of each item in your cart below:
+                            Installment pre-approval is managed on an item-by-item basis. Please check the status of each item in your cart below:
                           </p>
 
                           <div className="space-y-2 border border-surface-light rounded-2xl p-4 bg-white/50">
@@ -1498,8 +1496,8 @@ export function CheckoutPage() {
                             <div className="space-y-3">
                               <p className="text-xs text-typography-muted">
                                 {hasRejected 
-                                  ? 'Some items in your cart have been declined for leeway. You can request leeway for any new/unrequested items, but declined items cannot be checked out via leeway.' 
-                                  : 'Submit a request to authorize leeway pre-approval for the items in your cart.'}
+                                  ? 'Some items in your cart have been declined for installment. You can request installment for any new/unrequested items, but declined items cannot be checked out via installment.' 
+                                  : 'Submit a request to authorize installment pre-approval for the items in your cart.'}
                               </p>
                               <button
                                 type="button"
@@ -1508,7 +1506,7 @@ export function CheckoutPage() {
                                 className="bg-brand-navy hover:bg-brand-pink text-white rounded-xl px-6 py-3 text-xs font-bold uppercase tracking-wider transition-all disabled:opacity-50 flex items-center gap-2"
                               >
                                 {isRequestingLeeway && <Loader2 className="w-4 h-4 animate-spin" />}
-                                Request Leeway Plan for this item
+                                Request Installment Plan for this item
                               </button>
                             </div>
                           )}
@@ -1517,7 +1515,7 @@ export function CheckoutPage() {
                             <div className="bg-amber-50 border border-amber-200/50 p-4 rounded-xl text-xs text-amber-800">
                               <strong>Access Review Pending</strong>
                               <p className="mt-1 leading-relaxed text-typography-muted">
-                                Some items are currently pending review by our store administrators. We will unlock leeway checkout for your cart once all items are approved.
+                                Some items are currently pending review by our store administrators. We will unlock installment checkout for your cart once all items are approved.
                               </p>
                             </div>
                           )}

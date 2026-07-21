@@ -11,7 +11,7 @@ import { ProductCarousel } from './components/ProductCarousel';
 export function ProductDetailPage() {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
-  const { addToCart } = useCart();
+  const { addToCart, items } = useCart();
   const { showError, showSuccess } = useNotification();
 
   const [product, setProduct] = useState<Product | null>(null);
@@ -126,6 +126,10 @@ export function ProductDetailPage() {
     ? (matchedSizeObj ? matchedSizeObj.quantity : 1)
     : (product.stock_status === 'out_of_stock' ? 0 : (product.stock_quantity ?? 99));
 
+  const cartItem = items?.find(item => item.id === product.id && item.selectedSize === (selectedSize || null) && item.selectedColor === (selectedColor || null));
+  const cartQuantity = cartItem ? cartItem.quantity : 0;
+  const isCartLimitReached = maxAvailable > 0 && cartQuantity >= maxAvailable;
+
   const handleAddToBag = () => {
     setErrorMsg('');
     if (hasSizes && !selectedSize) {
@@ -140,6 +144,11 @@ export function ProductDetailPage() {
 
     if (maxAvailable <= 0) {
       setErrorMsg('Selected size is out of stock.');
+      return;
+    }
+
+    if (isCartLimitReached) {
+      setErrorMsg('You already have all available stock of this item in your bag.');
       return;
     }
 
@@ -356,7 +365,7 @@ export function ProductDetailPage() {
                 </p>
                 {product.leeway_enabled && (
                   <div className="mt-3 p-3 bg-brand-pink/5 border border-brand-pink/20 rounded-xl text-xs space-y-1">
-                    <span className="font-bold text-brand-pink uppercase tracking-wider block text-[10px]">Leeway Plan Available</span>
+                    <span className="font-bold text-brand-pink uppercase tracking-wider block text-[10px]">Installment Plan Available</span>
                     <p className="text-typography-muted text-[11px]">
                       Acquire this item now with a downpayment, then settle the remaining balance in installments (weekly, monthly, or flexible).
                     </p>
@@ -426,20 +435,20 @@ export function ProductDetailPage() {
                       );
                     })}
                   </div>
-                  {errorMsg && (
-                    <p className="text-red-500 text-xs font-medium mt-2">{errorMsg}</p>
-                  )}
                 </div>
               )}
 
               {/* Add to bag button */}
-              <div className="pt-2">
+              <div className="pt-2 space-y-2">
+                {errorMsg && (
+                  <p className="text-red-500 text-xs font-medium mt-2">{errorMsg}</p>
+                )}
                 <button
                   onClick={handleAddToBag}
-                  disabled={maxAvailable <= 0}
+                  disabled={maxAvailable <= 0 || isCartLimitReached}
                   className="w-full flex items-center justify-center gap-2 bg-brand-navy hover:bg-opacity-90 text-white py-4 text-xs uppercase tracking-[0.2em] font-bold transition-all disabled:bg-surface-light disabled:text-typography-muted disabled:cursor-not-allowed"
                 >
-                  <ShoppingBag className="w-4 h-4" /> {maxAvailable <= 0 ? 'Out of Stock' : 'Add to Bag'}
+                  <ShoppingBag className="w-4 h-4" /> {maxAvailable <= 0 ? 'Out of Stock' : isCartLimitReached ? 'All Stock in Bag' : 'Add to Bag'}
                 </button>
                  <div className="mt-4 flex gap-2 justify-center">
                    <p className="text-[10px] text-typography-muted tracking-wide uppercase text-center flex items-center gap-1">

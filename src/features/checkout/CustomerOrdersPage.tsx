@@ -726,7 +726,7 @@ export function CustomerOrdersPage() {
             Account Dashboard
           </h1>
           <p className="text-[10px] uppercase tracking-[0.2em] text-typography-muted font-bold">
-            Manage your purchase records and active leeway schedules
+            Manage your purchase records and active installment schedules
           </p>
         </div>
 
@@ -752,7 +752,7 @@ export function CustomerOrdersPage() {
               activeTab === 'leeway' ? 'border-brand-navy text-brand-navy' : 'border-transparent text-typography-muted hover:text-typography-primary hover:border-typography-primary/30'
             }`}
           >
-            <Coins className="w-4 h-4" /> Leeway Installments
+            <Coins className="w-4 h-4" /> Installments
           </button>
           <button
             onClick={() => {
@@ -821,7 +821,7 @@ export function CustomerOrdersPage() {
                             <span>•</span>
                             <span>{order.order_items.length} {order.order_items.length === 1 ? 'item' : 'items'}</span>
                             {order.payment_method_type === 'leeway' && (
-                              <span className="bg-brand-pink/10 text-brand-pink text-[9px] uppercase font-bold px-1.5 py-0.5 rounded">Leeway</span>
+                              <span className="bg-brand-pink/10 text-brand-pink text-[9px] uppercase font-bold px-1.5 py-0.5 rounded">Installment</span>
                             )}
                           </div>
                         </div>
@@ -1009,7 +1009,7 @@ export function CustomerOrdersPage() {
                 <div className="space-y-1 relative z-10">
                   <span className="text-[10px] uppercase tracking-[0.2em] font-bold text-brand-pink">Cumulative Outstanding Balance</span>
                   <h2 className="text-3xl md:text-4xl font-extrabold tracking-wide">{currencySymbol}{totalOutstandingBalance.toLocaleString()}</h2>
-                  <p className="text-xs text-white/60">Across all active leeway installment plans</p>
+                  <p className="text-xs text-white/60">Across all active installment plans</p>
                 </div>
                 
                 {leewayAccounts.some(a => a.status === 'active') && (
@@ -1032,12 +1032,12 @@ export function CustomerOrdersPage() {
               </div>
             )}
 
-            {/* Leeway Pre-Approval Requests Dashboard */}
+            {/* Installment Pre-Approval Requests Dashboard */}
             <div className="border border-surface-light bg-surface-offWhite rounded-3xl p-6 md:p-8 space-y-6">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-surface-light pb-4">
                 <div>
                   <h3 className="text-sm font-serif font-bold text-typography-primary flex items-center gap-2">
-                    <Coins className="w-4 h-4 text-brand-pink" /> Leeway Pre-Approval Requests
+                    <Coins className="w-4 h-4 text-brand-pink" /> Installment Pre-Approval Requests
                   </h3>
                   <p className="text-[11px] text-typography-muted mt-0.5 uppercase tracking-wider">
                     Item-by-item installment plan authorization status
@@ -1063,7 +1063,7 @@ export function CustomerOrdersPage() {
                 <div className="text-center py-6 space-y-4">
                   <Coins className="w-10 h-10 text-typography-muted/40 mx-auto" strokeWidth={1} />
                   <p className="text-xs text-typography-muted max-w-md mx-auto uppercase tracking-wider leading-relaxed">
-                    You haven't requested leeway pre-approval for any items yet. You can request leeway for items in your shopping bag during the checkout process.
+                    You haven't requested installment pre-approval for any items yet. You can request installment authorization for items in your shopping bag during the checkout process.
                   </p>
                 </div>
               ) : (
